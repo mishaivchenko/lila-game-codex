@@ -1,6 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LilaBoardCanvas } from '../LilaBoardCanvas';
+import { PATH_DRAW_DURATION_MS, TOKEN_MOVE_DURATION_MS } from '../../../lib/animations/lilaMotion';
 
 describe('LilaBoardCanvas', () => {
   it('renders full board image and token overlay', () => {
@@ -39,7 +40,7 @@ describe('LilaBoardCanvas', () => {
     expect(onComplete).not.toHaveBeenCalled();
 
     act(() => {
-      vi.advanceTimersByTime(1059);
+      vi.advanceTimersByTime(PATH_DRAW_DURATION_MS + TOKEN_MOVE_DURATION_MS - 1);
     });
     expect(onComplete).not.toHaveBeenCalled();
 

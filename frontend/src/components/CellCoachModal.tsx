@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { getCardImagePath } from '../content/cardAssets';
 import type { CellContent, DepthSetting } from '../domain/types';
 import { getLilaCellContent } from '../lib/lila/cellContent';
+import {
+  buttonHoverScale,
+  buttonTapScale,
+  modalBackdropVariants,
+  modalPanelVariants,
+} from '../lib/animations/lilaMotion';
 
 interface CellCoachModalProps {
   cellNumber: number;
@@ -36,8 +43,18 @@ export const CellCoachModal = ({
   }, [initialText]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/45 p-0 sm:items-center sm:justify-center sm:p-4">
-      <div data-testid="cell-coach-modal-shell" className="w-full max-h-[94vh] overflow-hidden rounded-t-3xl bg-white shadow-xl sm:max-h-[92vh] sm:max-w-4xl sm:rounded-3xl">
+    <motion.div
+      className="fixed inset-0 z-50 flex items-end bg-black/45 p-0 sm:items-center sm:justify-center sm:p-4"
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={modalBackdropVariants}
+    >
+      <motion.div
+        data-testid="cell-coach-modal-shell"
+        className="w-full max-h-[94vh] overflow-hidden rounded-t-3xl bg-white shadow-xl sm:max-h-[92vh] sm:max-w-4xl sm:rounded-3xl"
+        variants={modalPanelVariants}
+      >
         <div className="flex max-h-[94vh] flex-col overflow-hidden sm:max-h-[92vh] sm:flex-row">
           <section className="w-full shrink-0 border-b border-stone-100 bg-stone-50 p-3 sm:w-[44%] sm:border-b-0 sm:border-r sm:p-4">
             <button className="mb-2 text-sm text-stone-500" onClick={onClose} type="button">
@@ -72,22 +89,26 @@ export const CellCoachModal = ({
             />
 
             <div className="mt-5 flex gap-2">
-              <button
+              <motion.button
                 className="flex-1 rounded-xl bg-emerald-600 px-3 py-3 text-sm font-medium text-white disabled:opacity-50"
                 type="button"
                 onClick={() => onSave(text)}
                 disabled={readOnly && text.trim().length === 0}
+                whileTap={buttonTapScale}
+                whileHover={buttonHoverScale}
               >
                 {readOnly ? 'Зберегти зміни' : 'Зберегти і продовжити'}
-              </button>
+              </motion.button>
               {!readOnly && (
-                <button
+                <motion.button
                   className="rounded-xl border border-stone-300 px-3 py-3 text-sm text-stone-700"
                   type="button"
                   onClick={onSkip}
+                  whileTap={buttonTapScale}
+                  whileHover={buttonHoverScale}
                 >
                   Пропустити
-                </button>
+                </motion.button>
               )}
             </div>
 
@@ -98,7 +119,7 @@ export const CellCoachModal = ({
             )}
           </section>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

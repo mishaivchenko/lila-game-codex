@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GamePage } from './GamePage';
 import type { GameSession, GameMove } from '../domain/types';
+import { PATH_DRAW_DURATION_MS, TOKEN_MOVE_DURATION_MS } from '../lib/animations/lilaMotion';
 
 const mockUseGameContext = vi.fn();
 
@@ -106,7 +107,7 @@ describe('GamePage modal timing', () => {
     });
 
     act(() => {
-      vi.advanceTimersByTime(1059);
+      vi.advanceTimersByTime(PATH_DRAW_DURATION_MS + TOKEN_MOVE_DURATION_MS - 1);
     });
     expect(screen.queryByText('Зберегти і продовжити')).toBeNull();
 

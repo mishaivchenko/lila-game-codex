@@ -9,6 +9,8 @@ import { FinalScreen } from '../components/FinalScreen';
 import type { ChakraInfo, GameMove } from '../domain/types';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { buttonHoverScale, buttonTapScale } from '../lib/animations/lilaMotion';
 
 const chakras = chakrasRaw as ChakraInfo[];
 
@@ -114,35 +116,43 @@ export const GamePage = () => {
             {error && <p className="text-red-600">{error}</p>}
           </div>
         </div>
-        <button
+        <motion.button
           onClick={() => {
             void onRoll();
           }}
           type="button"
           disabled={isAnimatingMove}
-          className="w-full rounded-xl bg-emerald-600 px-4 py-4 text-base font-semibold text-white disabled:opacity-70"
+          className="w-full rounded-xl bg-emerald-600 px-4 py-4 text-base font-semibold text-white transition duration-300 ease-out disabled:opacity-70"
+          whileTap={buttonTapScale}
+          whileHover={buttonHoverScale}
         >
           Кинути кубик
-        </button>
+        </motion.button>
         <div className="mt-3 flex items-center justify-between text-xs text-stone-600">
-          <Link to="/settings">Налаштування</Link>
-          <Link to="/history">Мій шлях</Link>
+          <Link className="transition duration-200 ease-out hover:scale-[1.02] active:scale-[0.99]" to="/settings">
+            Налаштування
+          </Link>
+          <Link className="transition duration-200 ease-out hover:scale-[1.02] active:scale-[0.99]" to="/history">
+            Мій шлях
+          </Link>
           <span>Звук</span>
         </div>
       </section>
 
-      {showCoach && (
-        <CellCoachModal
-          cellNumber={modalCellNumber}
-          cellContent={cellContent}
-          depth={currentSession.settings.depth}
-          onSave={(text) => {
-            void saveInsight(modalCellNumber, text).then(() => setShowCoach(false));
-          }}
-          onSkip={() => setShowCoach(false)}
-          onClose={() => setShowCoach(false)}
-        />
-      )}
+      <AnimatePresence>
+        {showCoach && (
+          <CellCoachModal
+            cellNumber={modalCellNumber}
+            cellContent={cellContent}
+            depth={currentSession.settings.depth}
+            onSave={(text) => {
+              void saveInsight(modalCellNumber, text).then(() => setShowCoach(false));
+            }}
+            onSkip={() => setShowCoach(false)}
+            onClose={() => setShowCoach(false)}
+          />
+        )}
+      </AnimatePresence>
     </main>
   );
 };

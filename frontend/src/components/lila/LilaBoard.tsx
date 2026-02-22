@@ -1,4 +1,5 @@
 import type { BoardDefinition } from '../../domain/types';
+import { motion } from 'framer-motion';
 import { LilaBoardCanvas } from './LilaBoardCanvas';
 
 export interface LilaTransition {
@@ -36,17 +37,20 @@ export const LilaBoard = ({
       />
 
       {animationMove?.type && (
-        <div
+        <motion.div
           className={`mt-3 rounded-full px-3 py-1 text-center text-[11px] font-medium ${
             animationMove.type === 'arrow'
               ? 'bg-emerald-50 text-emerald-700'
               : 'bg-amber-50 text-amber-700'
           }`}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
         >
           {animationMove.type === 'arrow'
             ? 'Сходи піднімають вас вище'
             : 'Змія запрошує до глибшого уроку'}
-        </div>
+        </motion.div>
       )}
     </section>
   );
