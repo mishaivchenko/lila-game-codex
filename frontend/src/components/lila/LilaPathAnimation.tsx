@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import snakeSpirit from '../../assets/lila/snake-spirit.svg';
+import stairsLight from '../../assets/lila/stairs-light.svg';
 import { getCellPosition } from '../../lib/lila/boardCoordinates';
 
 interface LilaPathAnimationProps {
@@ -8,7 +10,37 @@ interface LilaPathAnimationProps {
 }
 
 const DRAW_DURATION_MS = 420;
-const CLEAR_AFTER_MS = 760;
+const CLEAR_AFTER_MS = 1200;
+
+const buildSnakePath = (fromX: number, fromY: number, toX: number, toY: number): string => {
+  const midX = (fromX + toX) / 2;
+  const midY = (fromY + toY) / 2;
+  const direction = toX > fromX ? 1 : -1;
+  const arc = 5.4 * direction;
+
+  return [
+    `M ${fromX} ${fromY}`,
+    `Q ${midX - arc} ${midY - 4}, ${midX} ${midY}`,
+    `Q ${midX + arc} ${midY + 4}, ${toX} ${toY}`,
+  ].join(' ');
+};
+
+const buildStairsPath = (fromX: number, fromY: number, toX: number, toY: number): string => {
+  const steps = 5;
+  let x = fromX;
+  let y = fromY;
+  let path = `M ${x} ${y}`;
+
+  for (let i = 1; i <= steps; i += 1) {
+    const nx = fromX + ((toX - fromX) / steps) * i;
+    const ny = fromY + ((toY - fromY) / steps) * i;
+    path += ` L ${nx} ${y} L ${nx} ${ny}`;
+    x = nx;
+    y = ny;
+  }
+
+  return `${path} L ${toX} ${toY}`;
+};
 
 export const LilaPathAnimation = ({ fromCell, toCell, type }: LilaPathAnimationProps) => {
   const [visible, setVisible] = useState(true);
@@ -30,12 +62,16 @@ export const LilaPathAnimation = ({ fromCell, toCell, type }: LilaPathAnimationP
     return null;
   }
 
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const length = Math.sqrt(dx * dx + dy * dy) || 1;
+  const path =
+    type === 'snake'
+      ? buildSnakePath(from.x, from.y, to.x, to.y)
+      : buildStairsPath(from.x, from.y, to.x, to.y);
+
+  const length = 42;
   const color = type === 'arrow' ? '#2CBFAF' : '#D18A43';
-  const glow = type === 'arrow' ? 'drop-shadow(0 0 8px rgba(44,191,175,0.35))' : 'drop-shadow(0 0 8px rgba(209,138,67,0.35))';
-  const path = `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
+  const shadowColor = type === 'arrow' ? 'rgba(44,191,175,0.38)' : 'rgba(209,138,67,0.38)';
+  const artIcon = type === 'arrow' ? stairsLight : snakeSpirit;
+  const midpoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
 
   return (
     <svg className="absolute inset-0 h-full w-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -43,19 +79,51 @@ export const LilaPathAnimation = ({ fromCell, toCell, type }: LilaPathAnimationP
         d={path}
         fill="none"
         stroke={color}
-        strokeWidth={1.6}
+        strokeWidth={1.8}
         strokeLinecap="round"
+        strokeLinejoin="round"
         strokeDasharray={length}
         strokeDashoffset={drawn ? 0 : length}
         style={{
-          filter: glow,
-          transition: `stroke-dashoffset ${DRAW_DURATION_MS}ms ease-out`,
-          opacity: drawn ? 0.95 : 0.55,
+          filter: `drop-shadow(0 0 8px ${shadowColor})`,
+          transition: `stroke-dashoffset ${DRAW_DURATION_MS}ms ease-out, opacity 300ms ease-out`,
+          opacity: drawn ? 0.96 : 0.5,
         }}
         data-testid={`lila-path-${type}`}
       />
+
+      <path
+        d={path}
+        fill="none"
+        stroke={color}
+        strokeWidth={0.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ opacity: drawn ? 0.4 : 0 }}
+      />
+
+      <image
+        href={artIcon}
+        x={midpoint.x - 2.2}
+        y={midpoint.y - 2.2}
+        width="4.4"
+        height="4.4"
+        style={{
+          opacity: drawn ? 1 : 0,
+          transformOrigin: `${midpoint.x}% ${midpoint.y}%`,
+          animation: drawn ? 'lila-soft-float 1200ms ease-in-out infinite' : undefined,
+        }}
+        data-testid={`lila-art-${type}`}
+      />
+
       {type === 'arrow' && (
-        <circle cx={to.x} cy={to.y} r={1.1} fill={color} style={{ opacity: drawn ? 1 : 0, transition: 'opacity 200ms ease-out' }} />
+        <circle
+          cx={to.x}
+          cy={to.y}
+          r={1.2}
+          fill={color}
+          style={{ opacity: drawn ? 1 : 0, transition: 'opacity 220ms ease-out' }}
+        />
       )}
     </svg>
   );

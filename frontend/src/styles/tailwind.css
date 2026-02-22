@@ -17,3 +17,30 @@ body {
 * {
   box-sizing: border-box;
 }
+
+@keyframes lila-soft-float {
+  0% {
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate(-50%, -54%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0.55;
+  }
+}
+
+@keyframes lila-soft-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

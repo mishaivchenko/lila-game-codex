@@ -68,6 +68,7 @@ export const LilaBoard = ({ board, currentCell, transition }: LilaBoardProps) =>
                 className={`relative flex h-10 items-center justify-center rounded-lg text-xs transition-all duration-300 ${
                   isCurrent ? 'bg-emerald-500 text-white' : 'bg-white text-stone-700'
                 } ${isPulsing ? `scale-105 ring-2 ${pulseClass}` : ''}`}
+                style={{ animation: isPulsing ? 'lila-soft-pulse 260ms ease-out 1' : undefined }}
               >
                 {cellNumber}
               </div>
@@ -84,6 +85,20 @@ export const LilaBoard = ({ board, currentCell, transition }: LilaBoardProps) =>
           />
         )}
 
+        {transition && (
+          <div
+            className={`absolute left-1/2 top-2 -translate-x-1/2 rounded-full px-3 py-1 text-[11px] font-medium ${
+              transition.type === 'arrow'
+                ? 'bg-emerald-50 text-emerald-700'
+                : 'bg-amber-50 text-amber-700'
+            }`}
+          >
+            {transition.type === 'arrow'
+              ? 'Сходи піднімають вас вище'
+              : 'Змія запрошує до глибшого уроку'}
+          </div>
+        )}
+
         <div
           className="pointer-events-none absolute h-4 w-4 rounded-full border border-white bg-stone-900 shadow-md"
           style={{
@@ -91,6 +106,12 @@ export const LilaBoard = ({ board, currentCell, transition }: LilaBoardProps) =>
             top: `${tokenPosition.y}%`,
             transform: 'translate(-50%, -50%)',
             transition: `left ${TOKEN_DURATION_MS}ms ease-in-out, top ${TOKEN_DURATION_MS}ms ease-in-out`,
+            boxShadow:
+              transition?.type === 'arrow'
+                ? '0 0 12px rgba(44,191,175,0.4)'
+                : transition?.type === 'snake'
+                  ? '0 0 12px rgba(209,138,67,0.4)'
+                  : undefined,
           }}
           aria-label="token"
         />
