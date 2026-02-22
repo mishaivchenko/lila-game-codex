@@ -1,7 +1,7 @@
 import chakrasRaw from '../content/chakras.json';
 import { BOARD_DEFINITIONS } from '../content/boards';
 import { useGameContext } from '../context/GameContext';
-import { Board } from '../components/Board';
+import { LilaBoard, type LilaTransition } from '../components/lila/LilaBoard';
 import { Dice } from '../components/Dice';
 import { ChakraNotification } from '../components/ChakraNotification';
 import { CellCoachModal } from '../components/CellCoachModal';
@@ -17,6 +17,7 @@ export const GamePage = () => {
   const { currentSession, performMove, saveInsight, error } = useGameContext();
   const [lastMove, setLastMove] = useState<GameMove | undefined>();
   const [showCoach, setShowCoach] = useState(false);
+  const [transition, setTransition] = useState<LilaTransition | undefined>();
 
   const currentChakra = useMemo(() => {
     if (!currentSession) {
@@ -45,6 +46,18 @@ export const GamePage = () => {
       return;
     }
     setLastMove(move);
+
+    if (move.snakeOrArrow) {
+      setTransition({
+        id: move.id,
+        fromCell: move.fromCell,
+        toCell: move.toCell,
+        type: move.snakeOrArrow,
+      });
+    } else {
+      setTransition(undefined);
+    }
+
     setShowCoach(true);
   };
 
@@ -67,7 +80,7 @@ export const GamePage = () => {
         </div>
       </header>
 
-      <Board board={board} currentCell={currentSession.currentCell} />
+      <LilaBoard board={board} currentCell={currentSession.currentCell} transition={transition} />
 
       <section className="mt-4 rounded-3xl bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
