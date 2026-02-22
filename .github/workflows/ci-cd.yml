@@ -73,61 +73,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy:
-    name: Deploy to Fly.io
-    needs: docker-build-and-push
-    runs-on: ubuntu-latest
-    if: ${{ secrets.FLY_API_TOKEN != '' && secrets.FLY_APP_NAME != '' }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Flyctl
-        uses: superfly/flyctl-actions/setup-flyctl@master
-
-      - name: Deploy image
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        run: >
-          flyctl deploy
-          --app "${{ secrets.FLY_APP_NAME }}"
-          --config fly.toml
-          --image "${{ needs.docker-build-and-push.outputs.image }}"
-          --strategy immediate
-
-  deploy-render:
-    name: Deploy to Render (fallback)
-    needs: docker-build-and-push
-    runs-on: ubuntu-latest
-    if: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
-    steps:
-      - name: Trigger Render deploy hook
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL"
-
-  deploy-koyeb:
-    name: Deploy to Koyeb (free fallback)
-    needs: docker-build-and-push
-    runs-on: ubuntu-latest
-    if: ${{ secrets.KOYEB_API_TOKEN != '' && secrets.KOYEB_APP_NAME != '' && secrets.KOYEB_SERVICE_NAME != '' }}
-    steps:
-      - name: Install and configure Koyeb CLI
-        uses: koyeb-community/koyeb-actions@v2
-        with:
-          api_token: ${{ secrets.KOYEB_API_TOKEN }}
-
-      - name: Deploy Docker image to Koyeb
-        uses: koyeb/action-git-deploy@v1
-        with:
-          app-name: ${{ secrets.KOYEB_APP_NAME }}
-          service-name: ${{ secrets.KOYEB_SERVICE_NAME }}
-          docker: ${{ needs.docker-build-and-push.outputs.image }}
-          service-ports: "3001:http"
-          service-routes: "/:3001"
-          service-checks: "3001:http:/health"
-          service-env: NODE_ENV=production,PORT=3001
-
   deploy-hf-spaces:
     name: Deploy to Hugging Face Spaces (free)
     needs: docker-build-and-push
@@ -170,13 +115,10 @@ jobs:
     name: Deploy skipped (no provider secrets)
     needs: docker-build-and-push
     runs-on: ubuntu-latest
-    if: ${{ secrets.FLY_API_TOKEN == '' && secrets.FLY_APP_NAME == '' && secrets.RENDER_DEPLOY_HOOK_URL == '' && secrets.KOYEB_API_TOKEN == '' && secrets.HF_TOKEN == '' }}
+    if: ${{ secrets.HF_TOKEN == '' }}
     steps:
       - name: Explain missing deployment secrets
         run: |
           echo "No deployment target configured."
           echo "Set either:"
           echo "- HF_TOKEN + HF_SPACE_ID (Hugging Face Spaces, free), or"
-          echo "- FLY_API_TOKEN + FLY_APP_NAME (Fly.io), or"
-          echo "- KOYEB_API_TOKEN + KOYEB_APP_NAME + KOYEB_SERVICE_NAME (Koyeb), or"
-          echo "- RENDER_DEPLOY_HOOK_URL (Render deploy hook)."
