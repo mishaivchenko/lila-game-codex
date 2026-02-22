@@ -2,10 +2,15 @@ import { act, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Dice3D } from './Dice3D';
 import { DICE_FALL_MS, DICE_SETTLE_MS, generateDiceValue } from './diceRoll';
+import type { ReactNode } from 'react';
 
 vi.mock('@react-three/fiber', () => ({
   Canvas: () => <div data-testid="dice3d-canvas" />,
   useFrame: () => {},
+}));
+
+vi.mock('@react-three/drei', () => ({
+  RoundedBox: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
 }));
 
 describe('diceRoll helpers', () => {

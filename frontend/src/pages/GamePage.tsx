@@ -39,6 +39,7 @@ interface SimplePlayerHistoryEntry {
   fromCell: number;
   toCell: number;
   dice: number;
+  moveType: 'normal' | 'snake' | 'ladder';
   snakeOrArrow: 'snake' | 'arrow' | null;
   createdAt: string;
 }
@@ -84,6 +85,7 @@ export const GamePage = () => {
     fromCell: number;
     toCell: number;
     dice: number;
+    moveType: 'normal' | 'snake' | 'ladder';
     snakeOrArrow: 'snake' | 'arrow' | null;
     finished: boolean;
     hasEnteredGame: boolean;
@@ -137,7 +139,22 @@ export const GamePage = () => {
         parsed && !Array.isArray(parsed) && typeof parsed === 'object' && parsed.historyByPlayer
           ? (parsed.historyByPlayer as Record<string, SimplePlayerHistoryEntry[]>)
           : {};
-      simpleHistoryByPlayerRef.current = parsedHistory;
+      const normalizedHistory = Object.fromEntries(
+        Object.entries(parsedHistory).map(([playerId, entries]) => [
+          playerId,
+          entries.map((entry) => ({
+            ...entry,
+            moveType:
+              entry.moveType ??
+              (entry.snakeOrArrow === 'snake'
+                ? 'snake'
+                : entry.snakeOrArrow === 'arrow'
+                  ? 'ladder'
+                  : 'normal'),
+          })),
+        ]),
+      ) as Record<string, SimplePlayerHistoryEntry[]>;
+      simpleHistoryByPlayerRef.current = normalizedHistory;
 
       // Initialize multiplayer state only once per session, otherwise we keep runtime turn order.
       if (multiplayerInitializedSessionIdRef.current !== currentSession.id) {
@@ -216,6 +233,7 @@ export const GamePage = () => {
               fromCell: pending.fromCell,
               toCell: pending.toCell,
               dice: pending.dice,
+              moveType: pending.moveType,
               snakeOrArrow: pending.snakeOrArrow,
               createdAt: pending.createdAt,
             },
@@ -317,6 +335,12 @@ export const GamePage = () => {
         fromCell: computed.fromCell,
         toCell: computed.toCell,
         dice: computed.dice,
+        moveType:
+          computed.snakeOrArrow === 'snake'
+            ? 'snake'
+            : computed.snakeOrArrow === 'arrow'
+              ? 'ladder'
+              : 'normal',
         snakeOrArrow: computed.snakeOrArrow,
         createdAt: new Date().toISOString(),
       });
@@ -328,6 +352,12 @@ export const GamePage = () => {
         fromCell: computed.fromCell,
         toCell: computed.toCell,
         dice: computed.dice,
+        moveType:
+          computed.snakeOrArrow === 'snake'
+            ? 'snake'
+            : computed.snakeOrArrow === 'arrow'
+              ? 'ladder'
+              : 'normal',
         snakeOrArrow: computed.snakeOrArrow,
         finished: computed.finished,
         hasEnteredGame: computed.hasEnteredGame,
@@ -545,6 +575,21 @@ export const GamePage = () => {
             cellNumber={modalCellNumber}
             cellContent={cellContent}
             depth={currentSession.settings.depth}
+            moveContext={
+              lastMove && lastMove.toCell === modalCellNumber
+                ? {
+                    fromCell: lastMove.fromCell,
+                    toCell: lastMove.toCell,
+                    type:
+                      lastMove.moveType ??
+                      (lastMove.snakeOrArrow === 'snake'
+                        ? 'snake'
+                        : lastMove.snakeOrArrow === 'arrow'
+                          ? 'ladder'
+                          : 'normal'),
+                  }
+                : undefined
+            }
             onSave={(text) => {
               void saveInsight(modalCellNumber, text).then(() => setShowCoach(false));
             }}

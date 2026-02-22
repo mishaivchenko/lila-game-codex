@@ -91,7 +91,7 @@ describe('GamePage modal timing', () => {
     expect(screen.queryByText('Зберегти і продовжити')).toBeNull();
 
     act(() => {
-      vi.advanceTimersByTime(619);
+      vi.advanceTimersByTime(TOKEN_MOVE_DURATION_MS - 1);
     });
     expect(screen.queryByText('Зберегти і продовжити')).toBeNull();
 
