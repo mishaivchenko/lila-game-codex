@@ -1,98 +1,39 @@
-# Lila MVP
+# Lila Game
 
-Monorepo with a mobile-first React SPA and a lightweight Express backend.
+Monorepo:
+- `frontend` — React + TypeScript + Vite + Dexie + Tailwind
+- `backend` — Express + TypeScript (`/api/events`, `/health`)
 
-## Workspaces
-- `frontend` — React + TypeScript + Vite + Dexie + Tailwind CSS
-- `backend` — Express + TypeScript API for anonymous events
+## Local run
+- `npm run dev` — frontend + backend
+- `npm run test:all` — all tests
+- `npm run build` — frontend + backend build
 
-## Root scripts
-- `npm run dev` — starts frontend and backend together
-- `npm run build` — builds both workspaces
-- `npm run test` — runs frontend tests
-- `npm run test:backend` — runs backend tests
-- `npm run test:all` — runs all tests
+## Docker
+- Build: `docker build -t lila-game-codex:prod .`
+- Run: `docker run --rm -p 3001:3001 lila-game-codex:prod`
+- App URL: `http://localhost:3001`
 
-## Routes
-- Frontend: `/`, `/setup`, `/game`, `/history`, `/settings`
-- Backend: `POST /api/events`, `GET /health`
+Container details:
+- multi-stage build
+- non-root runtime user
+- serves built frontend + backend API in one container
 
-## Notes
-- Local-first: frontend remains playable when backend is unavailable.
-- Card files are mapped from `/cards` to cell numbers via `frontend/src/content/cardMap.json`.
+## CI/CD
+Workflow: `/Users/mishaivchenko/dev/lila-game-codex/.github/workflows/ci-cd.yml`
 
-## Docker (production)
-- Build image: `docker build -t lila-game-codex:prod .`
-- Run image: `docker run --rm -p 3001:3001 lila-game-codex:prod`
-- Open app: `http://localhost:3001`
-
-The runtime container serves:
-- frontend static bundle from `frontend/dist`
-- backend API on `/api/events`
-- health check on `/health`
-
-Image-size optimization in this setup:
-- multi-stage build (build tools stay in builder stage)
-- runtime keeps only backend production dependencies
-- container runs as non-root user (`node`)
-
-## Docker Compose (local)
-- `docker compose up --build`
-
-## CI/CD (GitHub Actions + GHCR + HF Spaces/Fly/Koyeb/Render)
-Workflow file: `.github/workflows/ci-cd.yml`
-
-On every push to `main`, pipeline:
-1. Installs dependencies, runs frontend/backend tests, and builds both workspaces.
-2. Builds Docker image and pushes:
-   - `ghcr.io/<owner>/lila-game-codex:<commit-sha>`
+On each push to `main`:
+1. Run tests and build.
+2. Build and push Docker image to GHCR:
+   - `ghcr.io/<owner>/lila-game-codex:<sha>`
    - `ghcr.io/<owner>/lila-game-codex:latest`
-3. Deploys automatically to:
-   - Hugging Face Spaces if `HF_TOKEN` and `HF_SPACE_ID` are configured (free/public), or
-   - Fly.io if `FLY_API_TOKEN` and `FLY_APP_NAME` are configured, or
-   - Koyeb if `KOYEB_API_TOKEN`, `KOYEB_APP_NAME`, and `KOYEB_SERVICE_NAME` are configured, or
-   - Render if `RENDER_DEPLOY_HOOK_URL` is configured.
-4. If no deploy secrets are configured, build/push still succeeds and deploy is marked as skipped.
+3. Deploy to Hugging Face Space (Docker).
 
-### Required GitHub secrets
-- `FLY_API_TOKEN` — Fly.io API token
-- `FLY_APP_NAME` — Fly app name (for example `my-lila-app`)
-- `KOYEB_API_TOKEN` — Koyeb API token
-- `KOYEB_APP_NAME` — Koyeb app name
-- `KOYEB_SERVICE_NAME` — Koyeb service name
-- `RENDER_DEPLOY_HOOK_URL` — Render deploy hook URL (fallback deploy target)
-- `HF_TOKEN` — Hugging Face User Access Token (write)
-- `HF_SPACE_ID` — Hugging Face space id in format `username/space-name`
+Required GitHub Environment secrets (environment name: `HF_SPACE_ID`):
+- `HF_TOKEN` — Hugging Face write token
+- `HF_SPACE_ID` — `username/space-name` or full HF Space URL
 
-### One-time Fly setup
-1. Install Fly CLI and log in.
-2. Create app once: `flyctl apps create <your-app-name>`
-3. Ensure `fly.toml` exists in repo root.
-4. Add required GitHub secrets.
-
-After that, each push to `main` auto-deploys the latest image.
-
-### Render fallback (no Fly token required)
-1. Create a Web Service on Render from this repository.
-2. In Render service settings, create/copy Deploy Hook URL.
-3. Add `RENDER_DEPLOY_HOOK_URL` in GitHub repository secrets.
-4. Push to `main` and GitHub Actions will trigger Render deploy automatically.
-
-### Koyeb fallback (recommended free path)
-1. Create a free app + web service in Koyeb once.
-2. Add GitHub repository secrets:
-   - `KOYEB_API_TOKEN`
-   - `KOYEB_APP_NAME`
-   - `KOYEB_SERVICE_NAME`
-3. Push to `main`; workflow deploys `ghcr.io/<owner>/lila-game-codex:<sha>` to Koyeb automatically.
-
-### Truly free fallback: Hugging Face Spaces (Docker, public)
-1. Create a new public Space in Hugging Face with Docker SDK.
-2. Add GitHub repository secrets:
-   - `HF_TOKEN` (write token)
-   - `HF_SPACE_ID` (for example `yourname/lila-game`)
-3. Push to `main`; workflow will sync repository to the Space and trigger a redeploy.
-
-Notes for HF free limits:
-- Large/binary board and card assets are not pushed to the Space repository.
-- On `*.hf.space`, frontend loads `/cards` and `/field` assets directly from this GitHub repository (raw URLs).
+HF free-tier note:
+- Space repo rejects large/binary assets.
+- During deploy, binary assets are replaced inside Space.
+- On `*.hf.space`, frontend loads real `/cards` and `/field` assets from this GitHub repo (`raw.githubusercontent.com`).
