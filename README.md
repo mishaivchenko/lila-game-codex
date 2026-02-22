@@ -39,7 +39,7 @@ Image-size optimization in this setup:
 ## Docker Compose (local)
 - `docker compose up --build`
 
-## CI/CD (GitHub Actions + GHCR + Fly.io)
+## CI/CD (GitHub Actions + GHCR + Fly.io/Render)
 Workflow file: `.github/workflows/ci-cd.yml`
 
 On every push to `main`, pipeline:
@@ -47,11 +47,15 @@ On every push to `main`, pipeline:
 2. Builds Docker image and pushes:
    - `ghcr.io/<owner>/lila-game-codex:<commit-sha>`
    - `ghcr.io/<owner>/lila-game-codex:latest`
-3. Deploys to Fly.io using the pushed image.
+3. Deploys automatically to:
+   - Fly.io if `FLY_API_TOKEN` and `FLY_APP_NAME` are configured, or
+   - Render if `RENDER_DEPLOY_HOOK_URL` is configured.
+4. If no deploy secrets are configured, build/push still succeeds and deploy is marked as skipped.
 
 ### Required GitHub secrets
 - `FLY_API_TOKEN` — Fly.io API token
 - `FLY_APP_NAME` — Fly app name (for example `my-lila-app`)
+- `RENDER_DEPLOY_HOOK_URL` — Render deploy hook URL (fallback deploy target)
 
 ### One-time Fly setup
 1. Install Fly CLI and log in.
@@ -60,3 +64,9 @@ On every push to `main`, pipeline:
 4. Add required GitHub secrets.
 
 After that, each push to `main` auto-deploys the latest image.
+
+### Render fallback (no Fly token required)
+1. Create a Web Service on Render from this repository.
+2. In Render service settings, create/copy Deploy Hook URL.
+3. Add `RENDER_DEPLOY_HOOK_URL` in GitHub repository secrets.
+4. Push to `main` and GitHub Actions will trigger Render deploy automatically.

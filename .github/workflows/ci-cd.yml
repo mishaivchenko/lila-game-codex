@@ -94,3 +94,27 @@ jobs:
           --config fly.toml
           --image "${{ needs.docker-build-and-push.outputs.image }}"
           --strategy immediate
+
+  deploy-render:
+    name: Deploy to Render (fallback)
+    needs: docker-build-and-push
+    runs-on: ubuntu-latest
+    if: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
+    steps:
+      - name: Trigger Render deploy hook
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL"
+
+  deploy-skipped:
+    name: Deploy skipped (no provider secrets)
+    needs: docker-build-and-push
+    runs-on: ubuntu-latest
+    if: ${{ secrets.FLY_API_TOKEN == '' && secrets.FLY_APP_NAME == '' && secrets.RENDER_DEPLOY_HOOK_URL == '' }}
+    steps:
+      - name: Explain missing deployment secrets
+        run: |
+          echo "No deployment target configured."
+          echo "Set either:"
+          echo "- FLY_API_TOKEN + FLY_APP_NAME (Fly.io), or"
+          echo "- RENDER_DEPLOY_HOOK_URL (Render deploy hook)."
