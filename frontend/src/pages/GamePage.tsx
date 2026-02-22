@@ -8,7 +8,7 @@ import { CellCoachModal } from '../components/CellCoachModal';
 import { FinalScreen } from '../components/FinalScreen';
 import type { ChakraInfo, GameMove } from '../domain/types';
 import { Link, useNavigate } from 'react-router-dom';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { buttonHoverScale, buttonTapScale } from '../lib/animations/lilaMotion';
 
@@ -16,13 +16,19 @@ const chakras = chakrasRaw as ChakraInfo[];
 
 export const GamePage = () => {
   const navigate = useNavigate();
-  const { currentSession, performMove, saveInsight, error } = useGameContext();
+  const { currentSession, performMove, saveInsight, updateSessionRequest, error } = useGameContext();
   const [lastMove, setLastMove] = useState<GameMove | undefined>();
   const [showCoach, setShowCoach] = useState(false);
+  const [showDeepRequestModal, setShowDeepRequestModal] = useState(false);
+  const [deepRequestDraft, setDeepRequestDraft] = useState('');
+  const [showHintInfo, setShowHintInfo] = useState(false);
+  const [entryHint, setEntryHint] = useState<string | undefined>(undefined);
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
   const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>();
   const pendingMoveIdRef = useRef<string | undefined>(undefined);
   const pendingModalCellRef = useRef<number | undefined>(undefined);
+  const pendingEntryMoveIdRef = useRef<string | undefined>(undefined);
+  const pendingEntryResultRef = useRef<'retry' | 'entered' | undefined>(undefined);
 
   const currentChakra = useMemo(() => {
     if (!currentSession) {
@@ -59,10 +65,30 @@ export const GamePage = () => {
       return;
     }
 
+    if (pendingEntryMoveIdRef.current === moveId) {
+      const result = pendingEntryResultRef.current;
+      setIsAnimatingMove(false);
+      setAnimationMove(undefined);
+      pendingEntryMoveIdRef.current = undefined;
+      pendingEntryResultRef.current = undefined;
+
+      if (result === 'retry') {
+        setShowDeepRequestModal(true);
+      }
+      if (result === 'entered') {
+        setEntryHint('Ви увійшли в гру. Наступний кидок почне рух по полю.');
+      }
+      return;
+    }
+
     setIsAnimatingMove(false);
     setShowCoach(true);
     setAnimationMove(undefined);
   }, []);
+
+  useEffect(() => {
+    setDeepRequestDraft(currentSession.request.simpleRequest ?? '');
+  }, [currentSession.request.simpleRequest]);
 
   const onRoll = async (): Promise<void> => {
     if (isAnimatingMove) {
@@ -70,17 +96,27 @@ export const GamePage = () => {
     }
 
     setShowCoach(false);
+    setShowDeepRequestModal(false);
+    setEntryHint(undefined);
 
     const move = await performMove();
     if (!move) {
       return;
     }
 
+    const isDeepEntryRoll = currentSession.request.isDeepEntry && !currentSession.hasEnteredGame;
     setLastMove(move);
     setIsAnimatingMove(true);
 
     pendingMoveIdRef.current = move.id;
     pendingModalCellRef.current = move.toCell;
+    pendingEntryMoveIdRef.current = undefined;
+    pendingEntryResultRef.current = undefined;
+
+    if (isDeepEntryRoll) {
+      pendingEntryMoveIdRef.current = move.id;
+      pendingEntryResultRef.current = move.dice === 6 ? 'entered' : 'retry';
+    }
 
     setAnimationMove({
       id: move.id,
@@ -101,9 +137,30 @@ export const GamePage = () => {
   return (
     <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-5">
       <header className="mb-3 rounded-3xl bg-white p-4 shadow-sm">
-        <p className="text-sm text-stone-800">Ви зараз на клітині {safeCurrentCell}</p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm text-stone-800">Ви зараз на клітині {safeCurrentCell}</p>
+          <button
+            type="button"
+            onClick={() => setShowHintInfo((prev) => !prev)}
+            aria-label="Підказка про змій і стріли"
+            className="rounded-full border border-stone-300 px-2 py-1 text-xs text-stone-600 transition hover:bg-stone-100"
+          >
+            ?
+          </button>
+        </div>
         <h1 className="mt-1 text-base font-semibold text-stone-900">{currentChakra?.name ?? 'Шлях триває'}</h1>
         {currentChakra && <p className="mt-1 text-xs text-stone-600">{currentChakra.description}</p>}
+        {currentSession.request.isDeepEntry && !currentSession.hasEnteredGame && (
+          <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Щоб увійти в глибоку гру, потрібно викинути 6.
+          </p>
+        )}
+        {entryHint && <p className="mt-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-800">{entryHint}</p>}
+        {showHintInfo && (
+          <p className="mt-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-700">
+            Змії — це уроки. Стріли — це ресурси.
+          </p>
+        )}
         <div className="mt-2">
           <ChakraNotification text={`Ви увійшли в ${currentChakra?.name ?? 'новий рівень'}.`} />
         </div>
@@ -148,6 +205,54 @@ export const GamePage = () => {
       </section>
 
       <AnimatePresence>
+        {showDeepRequestModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="w-full max-w-lg rounded-3xl bg-white p-4 shadow-xl"
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.99 }}
+            >
+              <h3 className="text-lg font-semibold text-stone-900">Мій запит</h3>
+              <p className="mt-2 text-sm text-stone-600">
+                Ще не 6. Уточніть намір і киньте кубик знову.
+              </p>
+              <textarea
+                value={deepRequestDraft}
+                onChange={(event) => setDeepRequestDraft(event.target.value)}
+                placeholder={
+                  'Сформулюй його чітко за формулою:\nПотреба + Питання\n(“Хочу відчувати гармонію у стосунках” +\n“Що мені заважає це відчувати?”)'
+                }
+                className="mt-3 min-h-32 w-full rounded-2xl border border-stone-200 px-3 py-3 text-sm text-stone-700 outline-none focus:border-emerald-300"
+              />
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void updateSessionRequest(deepRequestDraft).then(() => {
+                      setShowDeepRequestModal(false);
+                    });
+                  }}
+                  className="flex-1 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white"
+                >
+                  Зберегти намір
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeepRequestModal(false)}
+                  className="rounded-xl border border-stone-300 px-3 py-2.5 text-sm text-stone-700"
+                >
+                  Закрити
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
         {showCoach && (
           <CellCoachModal
             cellNumber={modalCellNumber}
