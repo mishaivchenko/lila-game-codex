@@ -18,4 +18,13 @@ export class LilaDexieDb extends Dexie {
   }
 }
 
-export const db = new LilaDexieDb();
+const createDbSafely = (): LilaDexieDb | undefined => {
+  try {
+    return new LilaDexieDb();
+  } catch (error) {
+    console.error('Dexie init failed. Falling back to in-memory repositories.', error);
+    return undefined;
+  }
+};
+
+export const db = createDbSafely();

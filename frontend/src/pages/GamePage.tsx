@@ -42,9 +42,17 @@ export const GamePage = () => {
     );
   }
 
-  const board = BOARD_DEFINITIONS[currentSession.boardType];
-  const modalCellNumber = pendingModalCellRef.current ?? currentSession.currentCell;
-  const cellContent = board.cells[modalCellNumber - 1];
+  const board =
+    BOARD_DEFINITIONS[currentSession.boardType] ?? BOARD_DEFINITIONS.full;
+  const safeCurrentCell = Math.min(
+    Math.max(currentSession.currentCell || 1, 1),
+    board.maxCell,
+  );
+  const modalCellNumber = Math.min(
+    Math.max(pendingModalCellRef.current ?? safeCurrentCell, 1),
+    board.maxCell,
+  );
+  const cellContent = board.cells[modalCellNumber - 1] ?? board.cells[0];
 
   const onMoveAnimationComplete = useCallback((moveId: string) => {
     if (pendingMoveIdRef.current !== moveId) {
@@ -93,7 +101,7 @@ export const GamePage = () => {
   return (
     <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-5">
       <header className="mb-3 rounded-3xl bg-white p-4 shadow-sm">
-        <p className="text-sm text-stone-800">Ви зараз на клітині {currentSession.currentCell}</p>
+        <p className="text-sm text-stone-800">Ви зараз на клітині {safeCurrentCell}</p>
         <h1 className="mt-1 text-base font-semibold text-stone-900">{currentChakra?.name ?? 'Шлях триває'}</h1>
         {currentChakra && <p className="mt-1 text-xs text-stone-600">{currentChakra.description}</p>}
         <div className="mt-2">
@@ -103,7 +111,7 @@ export const GamePage = () => {
 
       <LilaBoard
         board={board}
-        currentCell={currentSession.currentCell}
+        currentCell={safeCurrentCell}
         animationMove={animationMove}
         onMoveAnimationComplete={onMoveAnimationComplete}
       />

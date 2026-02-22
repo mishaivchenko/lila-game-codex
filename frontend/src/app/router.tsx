@@ -4,11 +4,12 @@ import { GameSetupPage } from '../pages/GameSetupPage';
 import { GamePage } from '../pages/GamePage';
 import { HistoryPage } from '../pages/HistoryPage';
 import { SettingsPage } from '../pages/SettingsPage';
+import { RouteErrorPage } from '../pages/RouteErrorPage';
 
 export const router = createBrowserRouter([
-  { path: '/', element: <HomePage /> },
-  { path: '/setup', element: <GameSetupPage /> },
-  { path: '/game', element: <GamePage /> },
-  { path: '/history', element: <HistoryPage /> },
-  { path: '/settings', element: <SettingsPage /> },
+  { path: '/', element: <HomePage />, errorElement: <RouteErrorPage /> },
+  { path: '/setup', element: <GameSetupPage />, errorElement: <RouteErrorPage /> },
+  { path: '/game', element: <GamePage />, errorElement: <RouteErrorPage /> },
+  { path: '/history', element: <HistoryPage />, errorElement: <RouteErrorPage /> },
+  { path: '/settings', element: <SettingsPage />, errorElement: <RouteErrorPage /> },
 ]);
