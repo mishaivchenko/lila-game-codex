@@ -77,12 +77,26 @@ jobs:
     name: Deploy to Hugging Face Spaces (free)
     needs: docker-build-and-push
     runs-on: ubuntu-latest
-    if: ${{ secrets.HF_TOKEN != '' && secrets.HF_SPACE_ID != '' }}
+    environment: HF_SPACE_ID
     steps:
+      - name: Check HF secrets
+        id: hf
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_ID: ${{ secrets.HF_SPACE_ID }}
+        run: |
+          if [ -n "${HF_TOKEN}" ] && [ -n "${HF_SPACE_ID}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout
+        if: steps.hf.outputs.ready == 'true'
         uses: actions/checkout@v4
 
       - name: Sync repository to HF Space
+        if: steps.hf.outputs.ready == 'true'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_SPACE_ID: ${{ secrets.HF_SPACE_ID }}
@@ -111,14 +125,7 @@ jobs:
             echo "No changes to deploy."
           fi
 
-  deploy-skipped:
-    name: Deploy skipped (no provider secrets)
-    needs: docker-build-and-push
-    runs-on: ubuntu-latest
-    if: ${{ secrets.HF_TOKEN == '' }}
-    steps:
-      - name: Explain missing deployment secrets
+      - name: Explain missing HF secrets
+        if: steps.hf.outputs.ready != 'true'
         run: |
-          echo "No deployment target configured."
-          echo "Set either:"
-          echo "- HF_TOKEN + HF_SPACE_ID (Hugging Face Spaces, free), or"
+          echo "HF deploy skipped: missing HF_TOKEN or HF_SPACE_ID secret."
