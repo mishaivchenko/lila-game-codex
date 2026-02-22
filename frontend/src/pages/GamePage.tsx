@@ -3,10 +3,11 @@ import { BOARD_DEFINITIONS } from '../content/boards';
 import { useGameContext } from '../context/GameContext';
 import { LilaBoard, type LilaTransition } from '../components/lila/LilaBoard';
 import { Dice } from '../components/Dice';
+import { Dice3D } from '../components/dice3d/Dice3D';
 import { ChakraNotification } from '../components/ChakraNotification';
 import { CellCoachModal } from '../components/CellCoachModal';
 import { FinalScreen } from '../components/FinalScreen';
-import { computeNextPosition, rollDice } from '../domain/gameEngine';
+import { computeNextPosition } from '../domain/gameEngine';
 import type { ChakraInfo, GameMove } from '../domain/types';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -66,6 +67,9 @@ export const GamePage = () => {
   const [entryHint, setEntryHint] = useState<string | undefined>(undefined);
   const [simplePlayers, setSimplePlayers] = useState<SimplePlayerState[]>([]);
   const [activeSimplePlayerIndex, setActiveSimplePlayerIndex] = useState(0);
+  const [diceRollToken, setDiceRollToken] = useState(0);
+  const [diceRequestedValue, setDiceRequestedValue] = useState<number | undefined>(undefined);
+  const [diceRollingVisible, setDiceRollingVisible] = useState(false);
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
   const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>();
   const pendingMoveIdRef = useRef<string | undefined>(undefined);
@@ -289,7 +293,7 @@ export const GamePage = () => {
     );
   }
 
-  const onRoll = async (): Promise<void> => {
+  const applyRolledValue = async (diceValue: number): Promise<void> => {
     if (isAnimatingMove || multiplayerFinished) {
       return;
     }
@@ -299,10 +303,9 @@ export const GamePage = () => {
     setEntryHint(undefined);
 
     if (isSimpleMultiplayer && activeSimplePlayer) {
-      const dice = rollDice();
       const computed = computeNextPosition(
         activeSimplePlayer.currentCell,
-        dice,
+        diceValue,
         board,
         activeSimplePlayer.hasEnteredGame,
       );
@@ -339,7 +342,7 @@ export const GamePage = () => {
       return;
     }
 
-    const move = await performMove();
+    const move = await performMove(diceValue);
     if (!move) {
       return;
     }
@@ -364,6 +367,16 @@ export const GamePage = () => {
       toCell: move.toCell,
       type: move.snakeOrArrow ?? null,
     });
+  };
+
+  const triggerDiceRoll = (requestedValue?: number): void => {
+    if (isAnimatingMove || multiplayerFinished || diceRollingVisible) {
+      return;
+    }
+    setShowCoach(false);
+    setDiceRequestedValue(requestedValue);
+    setDiceRollingVisible(true);
+    setDiceRollToken((prev) => prev + 1);
   };
 
   if ((!isSimpleMultiplayer && currentSession.finished) || multiplayerFinished) {
@@ -457,10 +470,10 @@ export const GamePage = () => {
         </div>
         <motion.button
           onClick={() => {
-            void onRoll();
+            triggerDiceRoll();
           }}
           type="button"
-          disabled={isAnimatingMove}
+          disabled={isAnimatingMove || diceRollingVisible}
           className="w-full rounded-xl bg-emerald-600 px-4 py-4 text-base font-semibold text-white transition duration-300 ease-out disabled:opacity-70"
           whileTap={buttonTapScale}
           whileHover={buttonHoverScale}
@@ -540,6 +553,18 @@ export const GamePage = () => {
           />
         )}
       </AnimatePresence>
+
+      <Dice3D
+        rollToken={diceRollToken}
+        requestedValue={diceRequestedValue}
+        onResult={(value) => {
+          void applyRolledValue(value);
+        }}
+        onFinished={() => {
+          setDiceRollingVisible(false);
+          setDiceRequestedValue(undefined);
+        }}
+      />
     </main>
   );
 };
