@@ -15,6 +15,13 @@ describe('LilaBoardCanvas', () => {
     expect(token).not.toBeNull();
   });
 
+  it('renders short board with dedicated short-board PNG', () => {
+    render(<LilaBoardCanvas boardType="short" currentCell={10} />);
+
+    const image = screen.getByAltText('Lila short board');
+    expect(image.getAttribute('src')).toContain('lila-board-short.png');
+  });
+
   it('renders animated transition path overlay for snake/arrow', () => {
     render(
       <LilaBoardCanvas

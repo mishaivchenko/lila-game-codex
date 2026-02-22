@@ -15,7 +15,7 @@ const PATH_DURATION_MS = 440;
 const TOKEN_DURATION_MS = 620;
 
 const FULL_BOARD_IMAGE = encodeURI('/field/НОВИЙ ДИЗАЙН.png');
-const SHORT_BOARD_IMAGE = '/field/SHORT_BOARD_PLACEHOLDER.png';
+const SHORT_BOARD_IMAGE = '/field/lila-board-short.png';
 
 const getBoardImage = (boardType: BoardType): string =>
   boardType === 'full' ? FULL_BOARD_IMAGE : SHORT_BOARD_IMAGE;

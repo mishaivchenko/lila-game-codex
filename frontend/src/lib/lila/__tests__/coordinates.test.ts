@@ -17,9 +17,7 @@ describe('board coordinate mapping', () => {
     expect(pos.yPercent).toBeLessThanOrEqual(100);
   });
 
-  it('maps short board and clamps overflow cells', () => {
-    const maxPos = mapCellToBoardPosition('short', 36);
-    const overflowPos = mapCellToBoardPosition('short', 80);
-    expect(overflowPos).toEqual(maxPos);
+  it('throws when short board cell is out of range', () => {
+    expect(() => mapCellToBoardPosition('short', 80)).toThrow(/No board coordinate/);
   });
 });

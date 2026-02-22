@@ -1,24 +1,26 @@
 export interface CellCoord {
   cell: number;
-  x: number;
-  y: number;
+  xPercent: number;
+  yPercent: number;
 }
 
-const FULL_COLUMNS = 6;
-const FULL_ROWS = 12;
-const X_MIN = 6.2;
-const X_MAX = 93.5;
-const Y_TOP = 8.5;
-const Y_BOTTOM = 92.2;
+const FULL_COLUMNS = 9;
+const FULL_ROWS = 8;
+
+// Calibrated to the printed number centers on /field/НОВИЙ ДИЗАЙН.png.
+const X_MIN = 8.0;
+const X_MAX = 91.8;
+const Y_TOP = 12.0;
+const Y_BOTTOM = 88.1;
 
 const rowY = (rowFromBottom: number): number => {
   const ratio = rowFromBottom / (FULL_ROWS - 1);
-  return Y_BOTTOM - ratio * (Y_BOTTOM - Y_TOP);
+  return Number((Y_BOTTOM - ratio * (Y_BOTTOM - Y_TOP)).toFixed(2));
 };
 
 const colX = (column: number): number => {
   const ratio = column / (FULL_COLUMNS - 1);
-  return X_MIN + ratio * (X_MAX - X_MIN);
+  return Number((X_MIN + ratio * (X_MAX - X_MIN)).toFixed(2));
 };
 
 export const FULL_BOARD_COORDS: CellCoord[] = Array.from({ length: 72 }, (_, index) => {
@@ -30,7 +32,7 @@ export const FULL_BOARD_COORDS: CellCoord[] = Array.from({ length: 72 }, (_, ind
 
   return {
     cell,
-    x: Number(colX(column).toFixed(2)),
-    y: Number(rowY(rowFromBottom).toFixed(2)),
+    xPercent: colX(column),
+    yPercent: rowY(rowFromBottom),
   };
 });

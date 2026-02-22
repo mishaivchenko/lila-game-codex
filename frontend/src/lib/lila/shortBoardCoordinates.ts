@@ -2,19 +2,21 @@ import type { CellCoord } from './fullBoardCoordinates';
 
 const SHORT_COLUMNS = 6;
 const SHORT_ROWS = 6;
-const X_MIN = 7.5;
-const X_MAX = 92.8;
-const Y_TOP = 12.4;
-const Y_BOTTOM = 88.2;
+
+// Calibrated to /field/lila-board-short.png placeholder.
+const X_MIN = 11.0;
+const X_MAX = 89.0;
+const Y_TOP = 13.0;
+const Y_BOTTOM = 87.0;
 
 const rowY = (rowFromBottom: number): number => {
   const ratio = rowFromBottom / (SHORT_ROWS - 1);
-  return Y_BOTTOM - ratio * (Y_BOTTOM - Y_TOP);
+  return Number((Y_BOTTOM - ratio * (Y_BOTTOM - Y_TOP)).toFixed(2));
 };
 
 const colX = (column: number): number => {
   const ratio = column / (SHORT_COLUMNS - 1);
-  return X_MIN + ratio * (X_MAX - X_MIN);
+  return Number((X_MIN + ratio * (X_MAX - X_MIN)).toFixed(2));
 };
 
 export const SHORT_BOARD_COORDS: CellCoord[] = Array.from({ length: 36 }, (_, index) => {
@@ -26,7 +28,7 @@ export const SHORT_BOARD_COORDS: CellCoord[] = Array.from({ length: 36 }, (_, in
 
   return {
     cell,
-    x: Number(colX(column).toFixed(2)),
-    y: Number(rowY(rowFromBottom).toFixed(2)),
+    xPercent: colX(column),
+    yPercent: rowY(rowFromBottom),
   };
 });
