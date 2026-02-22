@@ -102,6 +102,7 @@ export const LilaBoardCanvas = ({
 
   const pulsePosition = pulseCell ? mapCellToBoardPosition(boardType, pulseCell) : undefined;
   const activeCellType = specialTransitions.get(currentCell);
+  const shouldAnimateToken = Boolean(animationMove);
   const passiveTokens = otherTokens.map((token) => ({
     ...token,
     position: mapCellToBoardPosition(boardType, token.cell),
@@ -189,7 +190,7 @@ export const LilaBoardCanvas = ({
             top: `${tokenPosition.yPercent}%`,
             scale: activePath?.type ? [1, 1.08, 1] : 1,
           }}
-          transition={tokenMoveTransition}
+          transition={shouldAnimateToken ? tokenMoveTransition : { duration: 0 }}
           aria-label="token"
         />
 

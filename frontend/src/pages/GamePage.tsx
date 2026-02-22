@@ -98,6 +98,8 @@ export const GamePage = () => {
 
   const isSimpleMultiplayer = Boolean(currentSession && !currentSession.request.isDeepEntry && simplePlayers.length > 1);
   const activeSimplePlayer = isSimpleMultiplayer ? simplePlayers[activeSimplePlayerIndex] : undefined;
+  const multiplayerFinished =
+    isSimpleMultiplayer && simplePlayers.length > 0 && simplePlayers.every((player) => player.finished);
   const board =
     currentSession
       ? (BOARD_DEFINITIONS[currentSession.boardType] ?? BOARD_DEFINITIONS.full)
@@ -187,7 +189,7 @@ export const GamePage = () => {
   }
 
   const onRoll = async (): Promise<void> => {
-    if (isAnimatingMove) {
+    if (isAnimatingMove || multiplayerFinished) {
       return;
     }
 
@@ -259,7 +261,7 @@ export const GamePage = () => {
     });
   };
 
-  if (!isSimpleMultiplayer && currentSession.finished) {
+  if ((!isSimpleMultiplayer && currentSession.finished) || multiplayerFinished) {
     return (
       <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-6">
         <FinalScreen onViewPath={() => navigate('/history')} onStartNew={() => navigate('/setup')} />
