@@ -72,6 +72,7 @@ export const GamePage = () => {
   const pendingModalCellRef = useRef<number | undefined>(undefined);
   const pendingEntryMoveIdRef = useRef<string | undefined>(undefined);
   const pendingEntryResultRef = useRef<'retry' | 'entered' | undefined>(undefined);
+  const multiplayerInitializedSessionIdRef = useRef<string | undefined>(undefined);
   const pendingSimpleMoveRef = useRef<{
     moveId: string;
     playerId: string;
@@ -98,11 +99,13 @@ export const GamePage = () => {
     if (!currentSession) {
       setSimplePlayers([]);
       simpleHistoryByPlayerRef.current = {};
+      multiplayerInitializedSessionIdRef.current = undefined;
       return;
     }
     if (currentSession.request.isDeepEntry) {
       setSimplePlayers([]);
       simpleHistoryByPlayerRef.current = {};
+      multiplayerInitializedSessionIdRef.current = undefined;
       return;
     }
 
@@ -129,12 +132,18 @@ export const GamePage = () => {
         parsed && !Array.isArray(parsed) && typeof parsed === 'object' && parsed.historyByPlayer
           ? (parsed.historyByPlayer as Record<string, SimplePlayerHistoryEntry[]>)
           : {};
-      setSimplePlayers(players);
       simpleHistoryByPlayerRef.current = parsedHistory;
-      setActiveSimplePlayerIndex(0);
+
+      // Initialize multiplayer state only once per session, otherwise we keep runtime turn order.
+      if (multiplayerInitializedSessionIdRef.current !== currentSession.id) {
+        setSimplePlayers(players);
+        setActiveSimplePlayerIndex(0);
+        multiplayerInitializedSessionIdRef.current = currentSession.id;
+      }
     } catch {
       setSimplePlayers([]);
       simpleHistoryByPlayerRef.current = {};
+      multiplayerInitializedSessionIdRef.current = undefined;
     }
   }, [currentSession]);
 
@@ -223,9 +232,11 @@ export const GamePage = () => {
         };
         void updateSessionRequest({ question: JSON.stringify(payload) });
       }
+      pendingModalCellRef.current = pending.toCell;
       pendingSimpleMoveRef.current = undefined;
       setIsAnimatingMove(false);
       setAnimationMove(undefined);
+      setShowCoach(true);
       return;
     }
 
