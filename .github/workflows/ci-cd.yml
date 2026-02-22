@@ -158,7 +158,6 @@ jobs:
           header = (
               "---\n"
               "title: Lila Game\n"
-              "emoji: robot\n"
               "colorFrom: indigo\n"
               "colorTo: blue\n"
               "sdk: docker\n"
