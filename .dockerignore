@@ -1,0 +1,17 @@
+.git
+.github
+.idea
+.codex
+node_modules
+frontend/node_modules
+backend/node_modules
+frontend/dist
+backend/dist
+npm-debug.log
+yarn-error.log
+*.log
+.env
+.env.*
+docker-compose*.yml
+.DS_Store
+cards2

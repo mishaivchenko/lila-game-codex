@@ -1,5 +1,7 @@
 import cors from 'cors';
 import express from 'express';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { eventsRouter } from './routes/events.js';
 
 export const createApp = (): express.Express => {
@@ -16,6 +18,22 @@ export const createApp = (): express.Express => {
   });
 
   app.use('/api/events', eventsRouter);
+
+  if (process.env.NODE_ENV === 'production') {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const frontendDist = process.env.FRONTEND_DIST ?? path.resolve(__dirname, '../../frontend/dist');
+    const cardsDir = process.env.CARDS_DIR ?? path.resolve(__dirname, '../../cards');
+    const fieldDir = process.env.FIELD_DIR ?? path.resolve(__dirname, '../../field');
+
+    app.use(express.static(frontendDist, { index: false }));
+    app.use('/cards', express.static(cardsDir));
+    app.use('/field', express.static(fieldDir));
+
+    app.get(/^(?!\/api|\/health).*/, (_req, res) => {
+      res.sendFile(path.join(frontendDist, 'index.html'));
+    });
+  }
+
   return app;
 };
 
