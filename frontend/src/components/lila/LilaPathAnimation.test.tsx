@@ -4,7 +4,7 @@ import { LilaPathAnimation } from './LilaPathAnimation';
 
 describe('LilaPathAnimation', () => {
   it('renders an arrow path with turquoise stroke and stairs art', () => {
-    render(<LilaPathAnimation fromCell={4} toCell={14} type="arrow" />);
+    render(<LilaPathAnimation boardType="full" fromCell={4} toCell={14} type="arrow" />);
     const path = screen.getByTestId('lila-path-arrow');
     const art = screen.getByTestId('lila-art-arrow');
 
@@ -15,7 +15,7 @@ describe('LilaPathAnimation', () => {
   });
 
   it('renders a snake path with amber stroke and snake art', () => {
-    render(<LilaPathAnimation fromCell={17} toCell={7} type="snake" />);
+    render(<LilaPathAnimation boardType="full" fromCell={17} toCell={7} type="snake" />);
     const path = screen.getByTestId('lila-path-snake');
     const art = screen.getByTestId('lila-art-snake');
 
