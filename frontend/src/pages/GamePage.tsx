@@ -57,7 +57,7 @@ interface SimpleMultiplayerPayload {
 
 export const GamePage = () => {
   const navigate = useNavigate();
-  const { currentSession, performMove, saveInsight, updateSessionRequest, error } = useGameContext();
+  const { currentSession, performMove, saveInsight, updateSessionRequest, resumeLastSession, loading, error } = useGameContext();
   const [lastMove, setLastMove] = useState<GameMove | undefined>();
   const [showCoach, setShowCoach] = useState(false);
   const [showDeepRequestModal, setShowDeepRequestModal] = useState(false);
@@ -73,6 +73,7 @@ export const GamePage = () => {
   const pendingEntryMoveIdRef = useRef<string | undefined>(undefined);
   const pendingEntryResultRef = useRef<'retry' | 'entered' | undefined>(undefined);
   const multiplayerInitializedSessionIdRef = useRef<string | undefined>(undefined);
+  const resumeAttemptedRef = useRef(false);
   const pendingSimpleMoveRef = useRef<{
     moveId: string;
     playerId: string;
@@ -265,11 +266,25 @@ export const GamePage = () => {
     setDeepRequestDraft(currentSession?.request.simpleRequest ?? '');
   }, [currentSession]);
 
+  useEffect(() => {
+    if (currentSession || resumeAttemptedRef.current) {
+      return;
+    }
+    resumeAttemptedRef.current = true;
+    void resumeLastSession();
+  }, [currentSession, resumeLastSession]);
+
   if (!currentSession) {
     return (
       <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-6">
-        <p className="text-sm text-stone-700">Немає активної сесії. Поверніться в налаштування.</p>
-        <Link to="/setup" className="mt-3 inline-block text-sm text-emerald-700">До налаштувань</Link>
+        <p className="text-sm text-stone-700">
+          {loading
+            ? 'Відновлюємо останню сесію...'
+            : 'Немає активної сесії. Поверніться в налаштування.'}
+        </p>
+        {!loading && (
+          <Link to="/setup" className="mt-3 inline-block text-sm text-emerald-700">До налаштувань</Link>
+        )}
       </main>
     );
   }
