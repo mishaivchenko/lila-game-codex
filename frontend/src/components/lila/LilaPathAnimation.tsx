@@ -1,62 +1,54 @@
 import { useEffect, useMemo, useState } from 'react';
 import snakeSpirit from '../../assets/lila/snake-spirit.svg';
 import stairsLight from '../../assets/lila/stairs-light.svg';
-import { getCellPosition } from '../../lib/lila/boardCoordinates';
+import type { BoardType } from '../../domain/types';
+import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
 
 interface LilaPathAnimationProps {
+  boardType: BoardType;
   fromCell: number;
   toCell: number;
   type: 'snake' | 'arrow';
 }
 
-const DRAW_DURATION_MS = 420;
+const DRAW_DURATION_MS = 460;
 const CLEAR_AFTER_MS = 1200;
 
 const buildSnakePath = (fromX: number, fromY: number, toX: number, toY: number): string => {
   const midX = (fromX + toX) / 2;
   const midY = (fromY + toY) / 2;
   const direction = toX > fromX ? 1 : -1;
-  const arc = 5.4 * direction;
+  const arc = 6.4 * direction;
 
   return [
     `M ${fromX} ${fromY}`,
-    `Q ${midX - arc} ${midY - 4}, ${midX} ${midY}`,
-    `Q ${midX + arc} ${midY + 4}, ${toX} ${toY}`,
+    `Q ${midX - arc} ${midY - 5}, ${midX} ${midY}`,
+    `Q ${midX + arc} ${midY + 5}, ${toX} ${toY}`,
   ].join(' ');
 };
 
-const buildStairsPath = (fromX: number, fromY: number, toX: number, toY: number): string => {
-  const steps = 5;
-  let x = fromX;
-  let y = fromY;
-  let path = `M ${x} ${y}`;
-
-  for (let i = 1; i <= steps; i += 1) {
-    const nx = fromX + ((toX - fromX) / steps) * i;
-    const ny = fromY + ((toY - fromY) / steps) * i;
-    path += ` L ${nx} ${y} L ${nx} ${ny}`;
-    x = nx;
-    y = ny;
-  }
-
-  return `${path} L ${toX} ${toY}`;
+const buildArrowPath = (fromX: number, fromY: number, toX: number, toY: number): string => {
+  const controlX = (fromX + toX) / 2;
+  const controlY = Math.min(fromY, toY) - 4.5;
+  return `M ${fromX} ${fromY} Q ${controlX} ${controlY}, ${toX} ${toY}`;
 };
 
-export const LilaPathAnimation = ({ fromCell, toCell, type }: LilaPathAnimationProps) => {
+export const LilaPathAnimation = ({ boardType, fromCell, toCell, type }: LilaPathAnimationProps) => {
   const [visible, setVisible] = useState(true);
   const [drawn, setDrawn] = useState(false);
 
-  const from = useMemo(() => getCellPosition(fromCell), [fromCell]);
-  const to = useMemo(() => getCellPosition(toCell), [toCell]);
+  const from = useMemo(() => mapCellToBoardPosition(boardType, fromCell), [boardType, fromCell]);
+  const to = useMemo(() => mapCellToBoardPosition(boardType, toCell), [boardType, toCell]);
 
   useEffect(() => {
     const raf = window.requestAnimationFrame(() => setDrawn(true));
     const timer = window.setTimeout(() => setVisible(false), CLEAR_AFTER_MS);
+
     return () => {
       window.cancelAnimationFrame(raf);
       window.clearTimeout(timer);
     };
-  }, [fromCell, toCell, type]);
+  }, [boardType, fromCell, toCell, type]);
 
   if (!visible) {
     return null;
@@ -64,14 +56,16 @@ export const LilaPathAnimation = ({ fromCell, toCell, type }: LilaPathAnimationP
 
   const path =
     type === 'snake'
-      ? buildSnakePath(from.x, from.y, to.x, to.y)
-      : buildStairsPath(from.x, from.y, to.x, to.y);
+      ? buildSnakePath(from.xPercent, from.yPercent, to.xPercent, to.yPercent)
+      : buildArrowPath(from.xPercent, from.yPercent, to.xPercent, to.yPercent);
 
-  const length = 42;
   const color = type === 'arrow' ? '#2CBFAF' : '#D18A43';
   const shadowColor = type === 'arrow' ? 'rgba(44,191,175,0.38)' : 'rgba(209,138,67,0.38)';
   const artIcon = type === 'arrow' ? stairsLight : snakeSpirit;
-  const midpoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
+  const midpoint = {
+    x: (from.xPercent + to.xPercent) / 2,
+    y: (from.yPercent + to.yPercent) / 2,
+  };
 
   return (
     <svg className="absolute inset-0 h-full w-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -82,24 +76,15 @@ export const LilaPathAnimation = ({ fromCell, toCell, type }: LilaPathAnimationP
         strokeWidth={1.8}
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeDasharray={length}
-        strokeDashoffset={drawn ? 0 : length}
+        pathLength={100}
+        strokeDasharray={100}
+        strokeDashoffset={drawn ? 0 : 100}
         style={{
           filter: `drop-shadow(0 0 8px ${shadowColor})`,
           transition: `stroke-dashoffset ${DRAW_DURATION_MS}ms ease-out, opacity 300ms ease-out`,
-          opacity: drawn ? 0.96 : 0.5,
+          opacity: drawn ? 0.96 : 0.52,
         }}
         data-testid={`lila-path-${type}`}
-      />
-
-      <path
-        d={path}
-        fill="none"
-        stroke={color}
-        strokeWidth={0.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{ opacity: drawn ? 0.4 : 0 }}
       />
 
       <image
@@ -110,7 +95,6 @@ export const LilaPathAnimation = ({ fromCell, toCell, type }: LilaPathAnimationP
         height="4.4"
         style={{
           opacity: drawn ? 1 : 0,
-          transformOrigin: `${midpoint.x}% ${midpoint.y}%`,
           animation: drawn ? 'lila-soft-float 1200ms ease-in-out infinite' : undefined,
         }}
         data-testid={`lila-art-${type}`}
@@ -118,8 +102,8 @@ export const LilaPathAnimation = ({ fromCell, toCell, type }: LilaPathAnimationP
 
       {type === 'arrow' && (
         <circle
-          cx={to.x}
-          cy={to.y}
+          cx={to.xPercent}
+          cy={to.yPercent}
           r={1.2}
           fill={color}
           style={{ opacity: drawn ? 1 : 0, transition: 'opacity 220ms ease-out' }}
