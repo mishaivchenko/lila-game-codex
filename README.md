@@ -92,3 +92,7 @@ After that, each push to `main` auto-deploys the latest image.
    - `HF_TOKEN` (write token)
    - `HF_SPACE_ID` (for example `yourname/lila-game`)
 3. Push to `main`; workflow will sync repository to the Space and trigger a redeploy.
+
+Notes for HF free limits:
+- Large/binary board and card assets are not pushed to the Space repository.
+- On `*.hf.space`, frontend loads `/cards` and `/field` assets directly from this GitHub repository (raw URLs).

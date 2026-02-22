@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { BoardType } from '../../domain/types';
 import { BOARD_DEFINITIONS } from '../../content/boards';
+import { resolveAssetUrl } from '../../content/assetBase';
 import {
   PATH_DRAW_DURATION_MS,
   PULSE_DURATION_MS,
@@ -25,11 +26,11 @@ interface LilaBoardCanvasProps {
 
 const PATH_DURATION_MS = PATH_DRAW_DURATION_MS;
 
-const FULL_BOARD_IMAGE = encodeURI('/field/НОВИЙ ДИЗАЙН.png');
+const FULL_BOARD_IMAGE = '/field/НОВИЙ ДИЗАЙН.png';
 const SHORT_BOARD_IMAGE = '/field/lila-board-short.png';
 
 const getBoardImage = (boardType: BoardType): string =>
-  boardType === 'full' ? FULL_BOARD_IMAGE : SHORT_BOARD_IMAGE;
+  resolveAssetUrl(boardType === 'full' ? encodeURI(FULL_BOARD_IMAGE) : SHORT_BOARD_IMAGE);
 
 export const LilaBoardCanvas = ({
   boardType,
