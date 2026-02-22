@@ -136,6 +136,8 @@ jobs:
             --exclude ".env.*" \
             --exclude "frontend/node_modules" \
             --exclude "backend/node_modules" \
+            --exclude "cards" \
+            --exclude "field" \
             ./ hf-space/
 
           # Ensure the Space is configured as Docker runtime.
@@ -169,25 +171,38 @@ jobs:
           readme.write_text(content, encoding="utf-8")
           PY
 
-          # Hugging Face free Spaces rejects files >10 MiB.
-          # Downscale oversized board PNGs in deployment copy only.
           python3 - <<'PY'
           from pathlib import Path
+          import json
           from PIL import Image
 
-          MAX_BYTES = 9_500_000
-          MAX_DIM = 2048
-          field_dir = Path("hf-space/field")
-          if field_dir.exists():
-              for image_path in field_dir.glob("*.png"):
-                  if image_path.stat().st_size <= MAX_BYTES:
-                      continue
-                  with Image.open(image_path) as img:
-                      width, height = img.size
-                      scale = min(1.0, MAX_DIM / max(width, height))
-                      if scale < 1.0:
-                          img = img.resize((int(width * scale), int(height * scale)), Image.Resampling.LANCZOS)
-                      img.save(image_path, format="PNG", optimize=True, compress_level=9)
+          base = Path("hf-space")
+          cards_dir = base / "cards"
+          field_dir = base / "field"
+          cards_dir.mkdir(parents=True, exist_ok=True)
+          field_dir.mkdir(parents=True, exist_ok=True)
+
+          card_map_path = base / "frontend" / "src" / "content" / "cardMap.json"
+          filenames = set()
+          if card_map_path.exists():
+              mapped = json.loads(card_map_path.read_text(encoding="utf-8"))
+              filenames = {str(v) for v in mapped.values() if isinstance(v, str) and v}
+
+          # Small neutral placeholder for all mapped card files.
+          card_image = Image.new("RGB", (640, 960), (238, 241, 245))
+          for filename in filenames:
+              output = cards_dir / filename
+              output.parent.mkdir(parents=True, exist_ok=True)
+              card_image.save(output, format="JPEG", quality=70, optimize=True)
+
+          # Lightweight board placeholders expected by frontend paths.
+          board_full = Image.new("RGB", (1200, 1200), (223, 226, 234))
+          board_full.save(field_dir / "НОВИЙ ДИЗАЙН.png", format="PNG", optimize=True, compress_level=9)
+
+          board_short = Image.new("RGB", (1200, 1200), (230, 234, 240))
+          board_short.save(field_dir / "lila-board-short.png", format="PNG", optimize=True, compress_level=9)
+
+          board_short.save(field_dir / "SHORT_BOARD_PLACEHOLDER.png", format="PNG", optimize=True, compress_level=9)
           PY
 
 
