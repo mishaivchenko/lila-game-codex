@@ -1,0 +1,19 @@
+{
+  "name": "lila-game-codex",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace frontend\" \"npm run dev --workspace backend\"",
+    "build": "npm run build --workspace frontend && npm run build --workspace backend",
+    "test": "npm run test --workspace frontend",
+    "test:backend": "npm run test --workspace backend",
+    "test:all": "npm run test && npm run test:backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
