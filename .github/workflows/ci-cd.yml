@@ -85,8 +85,16 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_SPACE_ID: ${{ secrets.HF_SPACE_ID }}
         run: |
-          if [ -n "${HF_TOKEN}" ] && [ -n "${HF_SPACE_ID}" ]; then
+          RAW_SPACE_ID="$(printf '%s' "${HF_SPACE_ID}" | tr -d '[:space:]')"
+          # Allow both forms:
+          # - username/space-name
+          # - https://huggingface.co/spaces/username/space-name
+          NORMALIZED_SPACE_ID="${RAW_SPACE_ID#https://huggingface.co/spaces/}"
+          NORMALIZED_SPACE_ID="${NORMALIZED_SPACE_ID#http://huggingface.co/spaces/}"
+
+          if [ -n "${HF_TOKEN}" ] && [ -n "${NORMALIZED_SPACE_ID}" ] && printf '%s' "${NORMALIZED_SPACE_ID}" | grep -Eq '^[^/]+/[^/]+$'; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "space_id=${NORMALIZED_SPACE_ID}" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
           fi
@@ -99,7 +107,7 @@ jobs:
         if: steps.hf.outputs.ready == 'true'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_SPACE_ID: ${{ secrets.HF_SPACE_ID }}
+          HF_SPACE_ID: ${{ steps.hf.outputs.space_id }}
         run: |
           set -euo pipefail
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -128,4 +136,8 @@ jobs:
       - name: Explain missing HF secrets
         if: steps.hf.outputs.ready != 'true'
         run: |
-          echo "HF deploy skipped: missing HF_TOKEN or HF_SPACE_ID secret."
+          echo "HF deploy skipped: missing/invalid HF secrets."
+          echo "Expected:"
+          echo "- HF_TOKEN: valid write token"
+          echo "- HF_SPACE_ID: username/space-name"
+          echo "  or full URL like https://huggingface.co/spaces/username/space-name"
