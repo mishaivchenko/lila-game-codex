@@ -32,6 +32,22 @@ const initialState: GameState = {
   loading: false,
 };
 
+const normalizeBoardType = (boardType: unknown): BoardType =>
+  boardType === 'short' || boardType === 'full' ? boardType : 'full';
+
+const normalizeSession = (session: GameSession): GameSession => {
+  const normalizedBoardType = normalizeBoardType(session.boardType);
+  const board = BOARD_DEFINITIONS[normalizedBoardType];
+  const normalizedCell = Math.min(Math.max(session.currentCell || 1, 1), board.maxCell);
+
+  return {
+    ...session,
+    boardType: normalizedBoardType,
+    currentCell: normalizedCell,
+    hasEnteredGame: Boolean(session.hasEnteredGame),
+  };
+};
+
 const reducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'NEW_SESSION_STARTED':
@@ -93,9 +109,10 @@ export const GameProvider = ({
           finished: false,
           hasEnteredGame: false,
         };
-        await repositories.sessionsRepository.saveSession(session);
-        dispatch({ type: 'NEW_SESSION_STARTED', payload: session });
-        void logEvent({ eventType: 'game_started', sessionId: session.id, timestamp: now });
+        const normalizedSession = normalizeSession(session);
+        await repositories.sessionsRepository.saveSession(normalizedSession);
+        dispatch({ type: 'NEW_SESSION_STARTED', payload: normalizedSession });
+        void logEvent({ eventType: 'game_started', sessionId: normalizedSession.id, timestamp: now });
       } catch {
         dispatch({ type: 'SET_ERROR', payload: 'Не вдалося почати нову сесію.' });
       }
@@ -111,7 +128,21 @@ export const GameProvider = ({
         dispatch({ type: 'SET_ERROR', payload: 'Активну сесію не знайдено.' });
         return;
       }
-      dispatch({ type: 'NEW_SESSION_STARTED', payload: session });
+      const normalizedSession = normalizeSession(session);
+
+      if (
+        normalizedSession.boardType !== session.boardType ||
+        normalizedSession.currentCell !== session.currentCell ||
+        normalizedSession.hasEnteredGame !== session.hasEnteredGame
+      ) {
+        await repositories.sessionsRepository.updateSession(session.id, {
+          boardType: normalizedSession.boardType,
+          currentCell: normalizedSession.currentCell,
+          hasEnteredGame: normalizedSession.hasEnteredGame,
+        });
+      }
+
+      dispatch({ type: 'NEW_SESSION_STARTED', payload: normalizedSession });
     } catch {
       dispatch({ type: 'SET_ERROR', payload: 'Не вдалося відновити сесію.' });
     }
@@ -124,20 +155,21 @@ export const GameProvider = ({
     }
 
     try {
+      const normalizedSession = normalizeSession(state.currentSession);
       const dice = rollDice(diceRng);
-      const board = BOARD_DEFINITIONS[state.currentSession.boardType];
+      const board = BOARD_DEFINITIONS[normalizedSession.boardType];
       const next = computeNextPosition(
-        state.currentSession.currentCell,
+        normalizedSession.currentCell,
         dice,
         board,
-        state.currentSession.hasEnteredGame,
+        normalizedSession.hasEnteredGame,
       );
       const now = new Date().toISOString();
-      const nextMoveNumber = await repositories.movesRepository.getNextMoveNumber(state.currentSession.id);
+      const nextMoveNumber = await repositories.movesRepository.getNextMoveNumber(normalizedSession.id);
 
       const move: GameMove = {
         id: uuidv4(),
-        sessionId: state.currentSession.id,
+        sessionId: normalizedSession.id,
         moveNumber: nextMoveNumber,
         fromCell: next.fromCell,
         toCell: next.toCell,
@@ -154,7 +186,7 @@ export const GameProvider = ({
       };
 
       const updatedSession = await repositories.sessionsRepository.updateSession(
-        state.currentSession.id,
+        normalizedSession.id,
         sessionPatch,
       );
 

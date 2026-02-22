@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import snakeSpirit from '../../assets/lila/snake-spirit.svg';
 import stairsLight from '../../assets/lila/stairs-light.svg';
 import type { BoardType } from '../../domain/types';
+import {
+  PATH_DRAW_DURATION_MS,
+  pathDrawTransition,
+  pathGlideTransition,
+} from '../../lib/animations/lilaMotion';
 import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
 
 interface LilaPathAnimationProps {
@@ -11,7 +17,6 @@ interface LilaPathAnimationProps {
   type: 'snake' | 'arrow';
 }
 
-const DRAW_DURATION_MS = 460;
 const CLEAR_AFTER_MS = 1200;
 
 const buildSnakePath = (fromX: number, fromY: number, toX: number, toY: number): string => {
@@ -69,7 +74,7 @@ export const LilaPathAnimation = ({ boardType, fromCell, toCell, type }: LilaPat
 
   return (
     <svg className="absolute inset-0 h-full w-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-      <path
+      <motion.path
         d={path}
         fill="none"
         stroke={color}
@@ -78,13 +83,28 @@ export const LilaPathAnimation = ({ boardType, fromCell, toCell, type }: LilaPat
         strokeLinejoin="round"
         pathLength={100}
         strokeDasharray={100}
-        strokeDashoffset={drawn ? 0 : 100}
+        strokeDashoffset={100}
+        initial={{ strokeDashoffset: 100, opacity: 0.52 }}
+        animate={{ strokeDashoffset: drawn ? 0 : 100, opacity: drawn ? 0.96 : 0.52 }}
+        transition={pathDrawTransition}
         style={{
           filter: `drop-shadow(0 0 8px ${shadowColor})`,
-          transition: `stroke-dashoffset ${DRAW_DURATION_MS}ms ease-out, opacity 300ms ease-out`,
-          opacity: drawn ? 0.96 : 0.52,
         }}
         data-testid={`lila-path-${type}`}
+      />
+
+      <motion.circle
+        cx={from.xPercent}
+        cy={from.yPercent}
+        r={1.1}
+        fill={type === 'arrow' ? '#6AE4D5' : '#F0BA6D'}
+        initial={{ opacity: 0 }}
+        animate={{
+          cx: drawn ? to.xPercent : from.xPercent,
+          cy: drawn ? to.yPercent : from.yPercent,
+          opacity: drawn ? [0, 0.95, 0.15] : 0,
+        }}
+        transition={pathGlideTransition}
       />
 
       <image
@@ -101,12 +121,14 @@ export const LilaPathAnimation = ({ boardType, fromCell, toCell, type }: LilaPat
       />
 
       {type === 'arrow' && (
-        <circle
+        <motion.circle
           cx={to.xPercent}
           cy={to.yPercent}
           r={1.2}
           fill={color}
-          style={{ opacity: drawn ? 1 : 0, transition: 'opacity 220ms ease-out' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: drawn ? 1 : 0 }}
+          transition={{ duration: PATH_DRAW_DURATION_MS / 1000 }}
         />
       )}
     </svg>

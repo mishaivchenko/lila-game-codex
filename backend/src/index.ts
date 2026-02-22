@@ -4,7 +4,11 @@ import { eventsRouter } from './routes/events.js';
 
 export const createApp = (): express.Express => {
   const app = express();
-  app.use(cors({ origin: ['http://localhost:5173'] }));
+  app.use(
+    cors({
+      origin: true,
+    }),
+  );
   app.use(express.json());
 
   app.get('/health', (_req, res) => {
