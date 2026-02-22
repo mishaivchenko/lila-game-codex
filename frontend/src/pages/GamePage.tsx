@@ -34,6 +34,27 @@ interface SimplePlayerState {
   finished: boolean;
 }
 
+interface SimplePlayerHistoryEntry {
+  fromCell: number;
+  toCell: number;
+  dice: number;
+  snakeOrArrow: 'snake' | 'arrow' | null;
+  createdAt: string;
+}
+
+interface SimpleMultiplayerPayload {
+  players: Array<{
+    id: string;
+    name: string;
+    request: string;
+    color: string;
+    currentCell: number;
+    hasEnteredGame: boolean;
+    finished: boolean;
+  }>;
+  historyByPlayer: Record<string, SimplePlayerHistoryEntry[]>;
+}
+
 export const GamePage = () => {
   const navigate = useNavigate();
   const { currentSession, performMove, saveInsight, updateSessionRequest, error } = useGameContext();
@@ -51,7 +72,18 @@ export const GamePage = () => {
   const pendingModalCellRef = useRef<number | undefined>(undefined);
   const pendingEntryMoveIdRef = useRef<string | undefined>(undefined);
   const pendingEntryResultRef = useRef<'retry' | 'entered' | undefined>(undefined);
-  const pendingSimpleMoveRef = useRef<{ moveId: string; playerId: string; toCell: number; finished: boolean; hasEnteredGame: boolean } | undefined>(undefined);
+  const pendingSimpleMoveRef = useRef<{
+    moveId: string;
+    playerId: string;
+    fromCell: number;
+    toCell: number;
+    dice: number;
+    snakeOrArrow: 'snake' | 'arrow' | null;
+    finished: boolean;
+    hasEnteredGame: boolean;
+    createdAt: string;
+  } | undefined>(undefined);
+  const simpleHistoryByPlayerRef = useRef<Record<string, SimplePlayerHistoryEntry[]>>({});
 
   const currentChakra = useMemo(() => {
     if (!currentSession) {
@@ -65,34 +97,44 @@ export const GamePage = () => {
   useEffect(() => {
     if (!currentSession) {
       setSimplePlayers([]);
+      simpleHistoryByPlayerRef.current = {};
       return;
     }
     if (currentSession.request.isDeepEntry) {
       setSimplePlayers([]);
+      simpleHistoryByPlayerRef.current = {};
       return;
     }
 
     try {
       const parsed = JSON.parse(currentSession.request.question ?? '[]');
-      if (!Array.isArray(parsed)) {
+      const parsedPlayers = Array.isArray(parsed) ? parsed : parsed?.players;
+      if (!Array.isArray(parsedPlayers)) {
         setSimplePlayers([]);
+        simpleHistoryByPlayerRef.current = {};
         return;
       }
-      const players = parsed
+      const players = parsedPlayers
         .map((item) => ({
           id: String(item.id ?? `simple-${Date.now()}-${Math.random()}`),
           name: String(item.name ?? 'Учасник'),
           request: String(item.request ?? ''),
           color: String(item.color ?? 'синій'),
-          currentCell: 1,
-          hasEnteredGame: true,
-          finished: false,
+          currentCell: Number(item.currentCell ?? 1),
+          hasEnteredGame: Boolean(item.hasEnteredGame ?? true),
+          finished: Boolean(item.finished ?? false),
         }))
         .slice(0, 4);
+      const parsedHistory =
+        parsed && !Array.isArray(parsed) && typeof parsed === 'object' && parsed.historyByPlayer
+          ? (parsed.historyByPlayer as Record<string, SimplePlayerHistoryEntry[]>)
+          : {};
       setSimplePlayers(players);
+      simpleHistoryByPlayerRef.current = parsedHistory;
       setActiveSimplePlayerIndex(0);
     } catch {
       setSimplePlayers([]);
+      simpleHistoryByPlayerRef.current = {};
     }
   }, [currentSession]);
 
@@ -124,6 +166,7 @@ export const GamePage = () => {
     if (pendingSimpleMoveRef.current && pendingSimpleMoveRef.current.moveId === moveId) {
       const pending = pendingSimpleMoveRef.current;
       let nextIndex = activeSimplePlayerIndex;
+      let nextPlayersSnapshot: SimplePlayerState[] = [];
       setSimplePlayers((prev) => {
         const nextPlayers = prev.map((player) =>
           player.id === pending.playerId
@@ -135,6 +178,7 @@ export const GamePage = () => {
               }
             : player,
         );
+        nextPlayersSnapshot = nextPlayers;
         const unfinished = nextPlayers
           .map((player, index) => ({ player, index }))
           .filter((entry) => !entry.player.finished);
@@ -148,6 +192,37 @@ export const GamePage = () => {
         return nextPlayers;
       });
       setActiveSimplePlayerIndex(nextIndex);
+      {
+        const prev = simpleHistoryByPlayerRef.current;
+        const nextHistory: Record<string, SimplePlayerHistoryEntry[]> = {
+          ...prev,
+          [pending.playerId]: [
+            ...(prev[pending.playerId] ?? []),
+            {
+              fromCell: pending.fromCell,
+              toCell: pending.toCell,
+              dice: pending.dice,
+              snakeOrArrow: pending.snakeOrArrow,
+              createdAt: pending.createdAt,
+            },
+          ],
+        };
+        simpleHistoryByPlayerRef.current = nextHistory;
+
+        const payload: SimpleMultiplayerPayload = {
+          players: nextPlayersSnapshot.map((player) => ({
+            id: player.id,
+            name: player.name,
+            request: player.request,
+            color: player.color,
+            currentCell: player.currentCell,
+            hasEnteredGame: player.hasEnteredGame,
+            finished: player.finished,
+          })),
+          historyByPlayer: nextHistory,
+        };
+        void updateSessionRequest({ question: JSON.stringify(payload) });
+      }
       pendingSimpleMoveRef.current = undefined;
       setIsAnimatingMove(false);
       setAnimationMove(undefined);
@@ -173,7 +248,7 @@ export const GamePage = () => {
     setIsAnimatingMove(false);
     setShowCoach(true);
     setAnimationMove(undefined);
-  }, [activeSimplePlayerIndex]);
+  }, [activeSimplePlayerIndex, updateSessionRequest]);
 
   useEffect(() => {
     setDeepRequestDraft(currentSession?.request.simpleRequest ?? '');
@@ -221,9 +296,13 @@ export const GamePage = () => {
       pendingSimpleMoveRef.current = {
         moveId,
         playerId: activeSimplePlayer.id,
+        fromCell: computed.fromCell,
         toCell: computed.toCell,
+        dice: computed.dice,
+        snakeOrArrow: computed.snakeOrArrow,
         finished: computed.finished,
         hasEnteredGame: computed.hasEnteredGame,
+        createdAt: new Date().toISOString(),
       };
       setAnimationMove({
         id: moveId,

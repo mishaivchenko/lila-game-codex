@@ -74,7 +74,7 @@ export interface GameContextValue extends GameState {
   resumeLastSession: () => Promise<void>;
   performMove: () => Promise<GameMove | undefined>;
   saveInsight: (cellNumber: number, text: string, voiceNoteId?: string) => Promise<void>;
-  updateSessionRequest: (simpleRequest: string) => Promise<void>;
+  updateSessionRequest: (patch: string | Partial<GameRequest>) => Promise<void>;
 }
 
 const GameContext = createContext<GameContextValue | undefined>(undefined);
@@ -255,15 +255,20 @@ export const GameProvider = ({
   );
 
   const updateSessionRequest = useCallback<GameContextValue['updateSessionRequest']>(
-    async (simpleRequest) => {
+    async (patch) => {
       if (!state.currentSession) {
         dispatch({ type: 'SET_ERROR', payload: 'Немає активної сесії.' });
         return;
       }
 
+      const requestPatch =
+        typeof patch === 'string'
+          ? { simpleRequest: patch }
+          : patch;
+
       const nextRequest = {
         ...state.currentSession.request,
-        simpleRequest,
+        ...requestPatch,
       };
 
       try {

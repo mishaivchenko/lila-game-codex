@@ -101,14 +101,24 @@ export const JourneySetupHub = () => {
       name: player.name,
       request: player.request,
       color: player.color,
+      currentCell: 1,
+      hasEnteredGame: true,
+      finished: false,
     }));
+    const multiplayerPayload = {
+      players: playersPayload,
+      historyByPlayer: {} as Record<
+        string,
+        { fromCell: number; toCell: number; dice: number; snakeOrArrow: 'snake' | 'arrow' | null; createdAt: string }[]
+      >,
+    };
 
     await startNewSession(
       'full',
       {
         isDeepEntry: false,
         simpleRequest: `Групова гра (${activePlayers.length} учасн.)`,
-        question: JSON.stringify(playersPayload),
+        question: JSON.stringify(multiplayerPayload),
         need: summary,
       },
       { speed: 'normal', depth: 'standard' },
