@@ -4,11 +4,32 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GamePage } from './GamePage';
 import type { GameSession, GameMove } from '../domain/types';
 import { PATH_DRAW_DURATION_MS, TOKEN_MOVE_DURATION_MS } from '../lib/animations/lilaMotion';
+import { useEffect } from 'react';
 
 const mockUseGameContext = vi.fn();
 
 vi.mock('../context/GameContext', () => ({
   useGameContext: () => mockUseGameContext(),
+}));
+
+vi.mock('../components/dice3d/Dice3D', () => ({
+  Dice3D: ({
+    rollToken,
+    onResult,
+    onFinished,
+  }: {
+    rollToken: number;
+    onResult: (value: number) => void;
+    onFinished?: () => void;
+  }) => {
+    useEffect(() => {
+      if (rollToken > 0) {
+        onResult(4);
+        onFinished?.();
+      }
+    }, [onFinished, onResult, rollToken]);
+    return null;
+  },
 }));
 
 const baseSession: GameSession = {

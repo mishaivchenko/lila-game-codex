@@ -72,7 +72,7 @@ export interface GameContextValue extends GameState {
     settings: { speed: SpeedSetting; depth: DepthSetting },
   ) => Promise<void>;
   resumeLastSession: () => Promise<void>;
-  performMove: () => Promise<GameMove | undefined>;
+  performMove: (forcedDice?: number) => Promise<GameMove | undefined>;
   saveInsight: (cellNumber: number, text: string, voiceNoteId?: string) => Promise<void>;
   updateSessionRequest: (patch: string | Partial<GameRequest>) => Promise<void>;
 }
@@ -149,7 +149,7 @@ export const GameProvider = ({
     }
   }, [repositories.sessionsRepository]);
 
-  const performMove = useCallback(async () => {
+  const performMove = useCallback(async (forcedDice?: number) => {
     if (!state.currentSession) {
       dispatch({ type: 'SET_ERROR', payload: 'Спочатку розпочніть сесію.' });
       return undefined;
@@ -157,7 +157,7 @@ export const GameProvider = ({
 
     try {
       const normalizedSession = normalizeSession(state.currentSession);
-      const dice = rollDice(diceRng);
+      const dice = typeof forcedDice === 'number' ? Math.min(6, Math.max(1, Math.round(forcedDice))) : rollDice(diceRng);
       const board = BOARD_DEFINITIONS[normalizedSession.boardType];
       const deepEntryGate =
         normalizedSession.request.isDeepEntry && !normalizedSession.hasEnteredGame;
