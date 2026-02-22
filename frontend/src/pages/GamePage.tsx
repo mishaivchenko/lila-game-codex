@@ -8,7 +8,7 @@ import { CellCoachModal } from '../components/CellCoachModal';
 import { FinalScreen } from '../components/FinalScreen';
 import type { ChakraInfo, GameMove } from '../domain/types';
 import { Link, useNavigate } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 const chakras = chakrasRaw as ChakraInfo[];
 
@@ -17,7 +17,10 @@ export const GamePage = () => {
   const { currentSession, performMove, saveInsight, error } = useGameContext();
   const [lastMove, setLastMove] = useState<GameMove | undefined>();
   const [showCoach, setShowCoach] = useState(false);
-  const [transition, setTransition] = useState<LilaTransition | undefined>();
+  const [isAnimatingMove, setIsAnimatingMove] = useState(false);
+  const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>();
+  const pendingMoveIdRef = useRef<string | undefined>(undefined);
+  const pendingModalCellRef = useRef<number | undefined>(undefined);
 
   const currentChakra = useMemo(() => {
     if (!currentSession) {
@@ -38,27 +41,43 @@ export const GamePage = () => {
   }
 
   const board = BOARD_DEFINITIONS[currentSession.boardType];
-  const cellContent = board.cells[currentSession.currentCell - 1];
+  const modalCellNumber = pendingModalCellRef.current ?? currentSession.currentCell;
+  const cellContent = board.cells[modalCellNumber - 1];
+
+  const onMoveAnimationComplete = useCallback((moveId: string) => {
+    if (pendingMoveIdRef.current !== moveId) {
+      return;
+    }
+
+    setIsAnimatingMove(false);
+    setShowCoach(true);
+    setAnimationMove(undefined);
+  }, []);
 
   const onRoll = async (): Promise<void> => {
+    if (isAnimatingMove) {
+      return;
+    }
+
+    setShowCoach(false);
+
     const move = await performMove();
     if (!move) {
       return;
     }
+
     setLastMove(move);
+    setIsAnimatingMove(true);
 
-    if (move.snakeOrArrow) {
-      setTransition({
-        id: move.id,
-        fromCell: move.fromCell,
-        toCell: move.toCell,
-        type: move.snakeOrArrow,
-      });
-    } else {
-      setTransition(undefined);
-    }
+    pendingMoveIdRef.current = move.id;
+    pendingModalCellRef.current = move.toCell;
 
-    setShowCoach(true);
+    setAnimationMove({
+      id: move.id,
+      fromCell: move.fromCell,
+      toCell: move.toCell,
+      type: move.snakeOrArrow ?? null,
+    });
   };
 
   if (currentSession.finished) {
@@ -80,7 +99,12 @@ export const GamePage = () => {
         </div>
       </header>
 
-      <LilaBoard board={board} currentCell={currentSession.currentCell} transition={transition} />
+      <LilaBoard
+        board={board}
+        currentCell={currentSession.currentCell}
+        animationMove={animationMove}
+        onMoveAnimationComplete={onMoveAnimationComplete}
+      />
 
       <section className="mt-4 rounded-3xl bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
@@ -90,7 +114,14 @@ export const GamePage = () => {
             {error && <p className="text-red-600">{error}</p>}
           </div>
         </div>
-        <button onClick={() => { void onRoll(); }} type="button" className="w-full rounded-xl bg-emerald-600 px-4 py-4 text-base font-semibold text-white">
+        <button
+          onClick={() => {
+            void onRoll();
+          }}
+          type="button"
+          disabled={isAnimatingMove}
+          className="w-full rounded-xl bg-emerald-600 px-4 py-4 text-base font-semibold text-white disabled:opacity-70"
+        >
           Кинути кубик
         </button>
         <div className="mt-3 flex items-center justify-between text-xs text-stone-600">
@@ -102,11 +133,11 @@ export const GamePage = () => {
 
       {showCoach && (
         <CellCoachModal
-          cellNumber={currentSession.currentCell}
+          cellNumber={modalCellNumber}
           cellContent={cellContent}
           depth={currentSession.settings.depth}
           onSave={(text) => {
-            void saveInsight(currentSession.currentCell, text).then(() => setShowCoach(false));
+            void saveInsight(modalCellNumber, text).then(() => setShowCoach(false));
           }}
           onSkip={() => setShowCoach(false)}
           onClose={() => setShowCoach(false)}

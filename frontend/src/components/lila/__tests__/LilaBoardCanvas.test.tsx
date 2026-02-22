@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { LilaBoardCanvas } from '../LilaBoardCanvas';
 
 describe('LilaBoardCanvas', () => {
@@ -22,15 +22,32 @@ describe('LilaBoardCanvas', () => {
     expect(image.getAttribute('src')).toContain('lila-board-short.png');
   });
 
-  it('renders animated transition path overlay for snake/arrow', () => {
+  it('renders animated path and calls onMoveAnimationComplete after timing', () => {
+    vi.useFakeTimers();
+    const onComplete = vi.fn();
+
     render(
       <LilaBoardCanvas
         boardType="full"
         currentCell={14}
-        transition={{ id: 'm1', fromCell: 4, toCell: 14, type: 'arrow' }}
+        animationMove={{ id: 'm1', fromCell: 4, toCell: 14, type: 'arrow' }}
+        onMoveAnimationComplete={onComplete}
       />,
     );
 
     expect(screen.getByTestId('lila-path-arrow')).not.toBeNull();
+    expect(onComplete).not.toHaveBeenCalled();
+
+    act(() => {
+      vi.advanceTimersByTime(1059);
+    });
+    expect(onComplete).not.toHaveBeenCalled();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(onComplete).toHaveBeenCalledWith('m1');
+
+    vi.useRealTimers();
   });
 });

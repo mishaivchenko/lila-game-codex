@@ -31,15 +31,19 @@ export const CellCoachModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/45 sm:items-center sm:justify-center">
-      <div className="max-h-[90vh] w-full overflow-auto rounded-t-3xl bg-white p-4 sm:max-w-xl sm:rounded-3xl">
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white p-4 sm:max-h-[86vh] sm:max-w-xl sm:rounded-3xl">
         <button className="mb-2 text-sm text-stone-500" onClick={onClose} type="button">
           Закрити
         </button>
-        <img
-          src={getCardImagePath(cellNumber)}
-          alt={`Картка ${cellNumber}`}
-          className="mb-3 h-40 w-full rounded-2xl object-cover"
-        />
+
+        <div className="mb-3 w-full overflow-hidden rounded-2xl border border-stone-200 bg-stone-50">
+          <img
+            src={getCardImagePath(cellNumber)}
+            alt={`Картка ${cellNumber}`}
+            className="max-h-64 w-full object-contain sm:max-h-72"
+          />
+        </div>
+
         <h3 className="text-lg font-semibold text-stone-900">{cellContent.title}</h3>
         <p className="mt-2 text-sm text-stone-700">
           {depth === 'light' ? cellContent.shortText : cellContent.fullText}

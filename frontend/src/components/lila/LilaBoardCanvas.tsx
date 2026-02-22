@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BoardType } from '../../domain/types';
 import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
 import type { LilaTransition } from './LilaBoard';
@@ -7,7 +7,8 @@ import { LilaPathAnimation } from './LilaPathAnimation';
 interface LilaBoardCanvasProps {
   boardType: BoardType;
   currentCell: number;
-  transition?: LilaTransition;
+  animationMove?: LilaTransition;
+  onMoveAnimationComplete?: (moveId: string) => void;
 }
 
 const PULSE_DURATION_MS = 260;
@@ -20,28 +21,60 @@ const SHORT_BOARD_IMAGE = '/field/lila-board-short.png';
 const getBoardImage = (boardType: BoardType): string =>
   boardType === 'full' ? FULL_BOARD_IMAGE : SHORT_BOARD_IMAGE;
 
-export const LilaBoardCanvas = ({ boardType, currentCell, transition }: LilaBoardCanvasProps) => {
+export const LilaBoardCanvas = ({
+  boardType,
+  currentCell,
+  animationMove,
+  onMoveAnimationComplete,
+}: LilaBoardCanvasProps) => {
   const [tokenCell, setTokenCell] = useState(currentCell);
   const [pulseCell, setPulseCell] = useState<number | null>(null);
   const [aspectRatio, setAspectRatio] = useState(0.64);
+  const [activePath, setActivePath] = useState<LilaTransition | undefined>();
+  const timersRef = useRef<number[]>([]);
 
   useEffect(() => {
-    if (!transition) {
+    if (!animationMove) {
       setTokenCell(currentCell);
+      setActivePath(undefined);
       return;
     }
 
-    setPulseCell(transition.fromCell);
-    setTokenCell(transition.fromCell);
+    timersRef.current.forEach((timer) => window.clearTimeout(timer));
+    timersRef.current = [];
 
-    const pulseTimer = window.setTimeout(() => setPulseCell(null), PULSE_DURATION_MS);
-    const moveTimer = window.setTimeout(() => setTokenCell(transition.toCell), PATH_DURATION_MS);
+    setPulseCell(animationMove.fromCell);
+    setTokenCell(animationMove.fromCell);
 
+    if (animationMove.type) {
+      setActivePath(animationMove);
+      const pulseTimer = window.setTimeout(() => setPulseCell(null), PULSE_DURATION_MS);
+      const moveTimer = window.setTimeout(() => setTokenCell(animationMove.toCell), PATH_DURATION_MS);
+      const completeTimer = window.setTimeout(() => {
+        setActivePath(undefined);
+        onMoveAnimationComplete?.(animationMove.id);
+      }, PATH_DURATION_MS + TOKEN_DURATION_MS);
+
+      timersRef.current.push(pulseTimer, moveTimer, completeTimer);
+      return;
+    }
+
+    setPulseCell(null);
+    setActivePath(undefined);
+    const moveTimer = window.setTimeout(() => setTokenCell(animationMove.toCell), 0);
+    const completeTimer = window.setTimeout(() => {
+      onMoveAnimationComplete?.(animationMove.id);
+    }, TOKEN_DURATION_MS);
+
+    timersRef.current.push(moveTimer, completeTimer);
+  }, [animationMove, currentCell, onMoveAnimationComplete]);
+
+  useEffect(() => {
     return () => {
-      window.clearTimeout(pulseTimer);
-      window.clearTimeout(moveTimer);
+      timersRef.current.forEach((timer) => window.clearTimeout(timer));
+      timersRef.current = [];
     };
-  }, [currentCell, transition]);
+  }, []);
 
   const tokenPosition = useMemo(
     () => mapCellToBoardPosition(boardType, tokenCell),
@@ -65,13 +98,13 @@ export const LilaBoardCanvas = ({ boardType, currentCell, transition }: LilaBoar
           }}
         />
 
-        {transition && (
+        {activePath?.type && (
           <LilaPathAnimation
-            key={`${transition.id}-${boardType}`}
+            key={`${activePath.id}-${boardType}`}
             boardType={boardType}
-            fromCell={transition.fromCell}
-            toCell={transition.toCell}
-            type={transition.type}
+            fromCell={activePath.fromCell}
+            toCell={activePath.toCell}
+            type={activePath.type}
           />
         )}
 
@@ -82,11 +115,11 @@ export const LilaBoardCanvas = ({ boardType, currentCell, transition }: LilaBoar
               left: `${pulsePosition.xPercent}%`,
               top: `${pulsePosition.yPercent}%`,
               backgroundColor:
-                transition?.type === 'arrow'
+                activePath?.type === 'arrow'
                   ? 'rgba(44,191,175,0.22)'
                   : 'rgba(209,138,67,0.24)',
               border:
-                transition?.type === 'arrow'
+                activePath?.type === 'arrow'
                   ? '1px solid rgba(44,191,175,0.42)'
                   : '1px solid rgba(209,138,67,0.46)',
               animation: 'lila-soft-pulse 260ms ease-out 1',
@@ -101,9 +134,9 @@ export const LilaBoardCanvas = ({ boardType, currentCell, transition }: LilaBoar
             top: `${tokenPosition.yPercent}%`,
             transition: `left ${TOKEN_DURATION_MS}ms ease-in-out, top ${TOKEN_DURATION_MS}ms ease-in-out`,
             boxShadow:
-              transition?.type === 'arrow'
+              activePath?.type === 'arrow'
                 ? '0 0 14px rgba(44,191,175,0.36)'
-                : transition?.type === 'snake'
+                : activePath?.type === 'snake'
                   ? '0 0 14px rgba(209,138,67,0.36)'
                   : undefined,
           }}
