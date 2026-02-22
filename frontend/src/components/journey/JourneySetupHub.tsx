@@ -96,13 +96,20 @@ export const JourneySetupHub = () => {
           `${index + 1}) ${player.name || 'Учасник'} — ${player.request || 'Запит уточнюється'} (колір: ${player.color})`,
       )
       .join('\n');
+    const playersPayload = activePlayers.map((player) => ({
+      id: player.id,
+      name: player.name,
+      request: player.request,
+      color: player.color,
+    }));
 
     await startNewSession(
       'full',
       {
         isDeepEntry: false,
         simpleRequest: `Групова гра (${activePlayers.length} учасн.)`,
-        question: summary,
+        question: JSON.stringify(playersPayload),
+        need: summary,
       },
       { speed: 'normal', depth: 'standard' },
     );

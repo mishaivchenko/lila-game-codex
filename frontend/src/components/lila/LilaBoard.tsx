@@ -12,6 +12,8 @@ export interface LilaTransition {
 interface LilaBoardProps {
   board: BoardDefinition;
   currentCell: number;
+  tokenColor?: string;
+  otherTokens?: { id: string; cell: number; color: string }[];
   animationMove?: LilaTransition;
   onMoveAnimationComplete?: (moveId: string) => void;
 }
@@ -19,6 +21,8 @@ interface LilaBoardProps {
 export const LilaBoard = ({
   board,
   currentCell,
+  tokenColor,
+  otherTokens,
   animationMove,
   onMoveAnimationComplete,
 }: LilaBoardProps) => {
@@ -32,6 +36,8 @@ export const LilaBoard = ({
       <LilaBoardCanvas
         boardType={board.id}
         currentCell={currentCell}
+        tokenColor={tokenColor}
+        otherTokens={otherTokens}
         animationMove={animationMove}
         onMoveAnimationComplete={onMoveAnimationComplete}
       />

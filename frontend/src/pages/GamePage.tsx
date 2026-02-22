@@ -6,6 +6,7 @@ import { Dice } from '../components/Dice';
 import { ChakraNotification } from '../components/ChakraNotification';
 import { CellCoachModal } from '../components/CellCoachModal';
 import { FinalScreen } from '../components/FinalScreen';
+import { computeNextPosition, rollDice } from '../domain/gameEngine';
 import type { ChakraInfo, GameMove } from '../domain/types';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -13,6 +14,25 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { buttonHoverScale, buttonTapScale } from '../lib/animations/lilaMotion';
 
 const chakras = chakrasRaw as ChakraInfo[];
+const SIMPLE_COLOR_HEX: Record<string, string> = {
+  червоний: '#ef4444',
+  помаранчевий: '#f97316',
+  жовтий: '#eab308',
+  зелений: '#10b981',
+  синій: '#3b82f6',
+  фіолетовий: '#8b5cf6',
+  рожевий: '#ec4899',
+};
+
+interface SimplePlayerState {
+  id: string;
+  name: string;
+  request: string;
+  color: string;
+  currentCell: number;
+  hasEnteredGame: boolean;
+  finished: boolean;
+}
 
 export const GamePage = () => {
   const navigate = useNavigate();
@@ -23,12 +43,15 @@ export const GamePage = () => {
   const [deepRequestDraft, setDeepRequestDraft] = useState('');
   const [showHintInfo, setShowHintInfo] = useState(false);
   const [entryHint, setEntryHint] = useState<string | undefined>(undefined);
+  const [simplePlayers, setSimplePlayers] = useState<SimplePlayerState[]>([]);
+  const [activeSimplePlayerIndex, setActiveSimplePlayerIndex] = useState(0);
   const [isAnimatingMove, setIsAnimatingMove] = useState(false);
   const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>();
   const pendingMoveIdRef = useRef<string | undefined>(undefined);
   const pendingModalCellRef = useRef<number | undefined>(undefined);
   const pendingEntryMoveIdRef = useRef<string | undefined>(undefined);
   const pendingEntryResultRef = useRef<'retry' | 'entered' | undefined>(undefined);
+  const pendingSimpleMoveRef = useRef<{ moveId: string; playerId: string; toCell: number; finished: boolean; hasEnteredGame: boolean } | undefined>(undefined);
 
   const currentChakra = useMemo(() => {
     if (!currentSession) {
@@ -39,19 +62,50 @@ export const GamePage = () => {
     );
   }, [currentSession]);
 
-  if (!currentSession) {
-    return (
-      <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-6">
-        <p className="text-sm text-stone-700">Немає активної сесії. Поверніться в налаштування.</p>
-        <Link to="/setup" className="mt-3 inline-block text-sm text-emerald-700">До налаштувань</Link>
-      </main>
-    );
-  }
+  useEffect(() => {
+    if (!currentSession) {
+      setSimplePlayers([]);
+      return;
+    }
+    if (currentSession.request.isDeepEntry) {
+      setSimplePlayers([]);
+      return;
+    }
 
+    try {
+      const parsed = JSON.parse(currentSession.request.question ?? '[]');
+      if (!Array.isArray(parsed)) {
+        setSimplePlayers([]);
+        return;
+      }
+      const players = parsed
+        .map((item) => ({
+          id: String(item.id ?? `simple-${Date.now()}-${Math.random()}`),
+          name: String(item.name ?? 'Учасник'),
+          request: String(item.request ?? ''),
+          color: String(item.color ?? 'синій'),
+          currentCell: 1,
+          hasEnteredGame: true,
+          finished: false,
+        }))
+        .slice(0, 4);
+      setSimplePlayers(players);
+      setActiveSimplePlayerIndex(0);
+    } catch {
+      setSimplePlayers([]);
+    }
+  }, [currentSession]);
+
+  const isSimpleMultiplayer = Boolean(currentSession && !currentSession.request.isDeepEntry && simplePlayers.length > 1);
+  const activeSimplePlayer = isSimpleMultiplayer ? simplePlayers[activeSimplePlayerIndex] : undefined;
   const board =
-    BOARD_DEFINITIONS[currentSession.boardType] ?? BOARD_DEFINITIONS.full;
+    currentSession
+      ? (BOARD_DEFINITIONS[currentSession.boardType] ?? BOARD_DEFINITIONS.full)
+      : BOARD_DEFINITIONS.full;
+  const displayCurrentCell = activeSimplePlayer?.currentCell ?? currentSession?.currentCell ?? 1;
+
   const safeCurrentCell = Math.min(
-    Math.max(currentSession.currentCell || 1, 1),
+    Math.max(displayCurrentCell || 1, 1),
     board.maxCell,
   );
   const modalCellNumber = Math.min(
@@ -62,6 +116,39 @@ export const GamePage = () => {
 
   const onMoveAnimationComplete = useCallback((moveId: string) => {
     if (pendingMoveIdRef.current !== moveId) {
+      return;
+    }
+
+    if (pendingSimpleMoveRef.current && pendingSimpleMoveRef.current.moveId === moveId) {
+      const pending = pendingSimpleMoveRef.current;
+      let nextIndex = activeSimplePlayerIndex;
+      setSimplePlayers((prev) => {
+        const nextPlayers = prev.map((player) =>
+          player.id === pending.playerId
+            ? {
+                ...player,
+                currentCell: pending.toCell,
+                finished: pending.finished,
+                hasEnteredGame: pending.hasEnteredGame,
+              }
+            : player,
+        );
+        const unfinished = nextPlayers
+          .map((player, index) => ({ player, index }))
+          .filter((entry) => !entry.player.finished);
+        if (unfinished.length === 0) {
+          nextIndex = activeSimplePlayerIndex;
+        } else {
+          const currentPos = unfinished.findIndex((entry) => entry.index === activeSimplePlayerIndex);
+          nextIndex =
+            currentPos === -1 ? unfinished[0].index : unfinished[(currentPos + 1) % unfinished.length].index;
+        }
+        return nextPlayers;
+      });
+      setActiveSimplePlayerIndex(nextIndex);
+      pendingSimpleMoveRef.current = undefined;
+      setIsAnimatingMove(false);
+      setAnimationMove(undefined);
       return;
     }
 
@@ -84,11 +171,20 @@ export const GamePage = () => {
     setIsAnimatingMove(false);
     setShowCoach(true);
     setAnimationMove(undefined);
-  }, []);
+  }, [activeSimplePlayerIndex]);
 
   useEffect(() => {
-    setDeepRequestDraft(currentSession.request.simpleRequest ?? '');
-  }, [currentSession.request.simpleRequest]);
+    setDeepRequestDraft(currentSession?.request.simpleRequest ?? '');
+  }, [currentSession]);
+
+  if (!currentSession) {
+    return (
+      <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-6">
+        <p className="text-sm text-stone-700">Немає активної сесії. Поверніться в налаштування.</p>
+        <Link to="/setup" className="mt-3 inline-block text-sm text-emerald-700">До налаштувань</Link>
+      </main>
+    );
+  }
 
   const onRoll = async (): Promise<void> => {
     if (isAnimatingMove) {
@@ -98,6 +194,43 @@ export const GamePage = () => {
     setShowCoach(false);
     setShowDeepRequestModal(false);
     setEntryHint(undefined);
+
+    if (isSimpleMultiplayer && activeSimplePlayer) {
+      const dice = rollDice();
+      const computed = computeNextPosition(
+        activeSimplePlayer.currentCell,
+        dice,
+        board,
+        activeSimplePlayer.hasEnteredGame,
+      );
+      const moveId = `simple-${activeSimplePlayer.id}-${Date.now()}`;
+      setLastMove({
+        id: moveId,
+        sessionId: currentSession.id,
+        moveNumber: 0,
+        fromCell: computed.fromCell,
+        toCell: computed.toCell,
+        dice: computed.dice,
+        snakeOrArrow: computed.snakeOrArrow,
+        createdAt: new Date().toISOString(),
+      });
+      setIsAnimatingMove(true);
+      pendingMoveIdRef.current = moveId;
+      pendingSimpleMoveRef.current = {
+        moveId,
+        playerId: activeSimplePlayer.id,
+        toCell: computed.toCell,
+        finished: computed.finished,
+        hasEnteredGame: computed.hasEnteredGame,
+      };
+      setAnimationMove({
+        id: moveId,
+        fromCell: computed.fromCell,
+        toCell: computed.toCell,
+        type: computed.snakeOrArrow ?? null,
+      });
+      return;
+    }
 
     const move = await performMove();
     if (!move) {
@@ -126,7 +259,7 @@ export const GamePage = () => {
     });
   };
 
-  if (currentSession.finished) {
+  if (!isSimpleMultiplayer && currentSession.finished) {
     return (
       <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-6">
         <FinalScreen onViewPath={() => navigate('/history')} onStartNew={() => navigate('/setup')} />
@@ -138,7 +271,11 @@ export const GamePage = () => {
     <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-5">
       <header className="mb-3 rounded-3xl bg-white p-4 shadow-sm">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-sm text-stone-800">Ви зараз на клітині {safeCurrentCell}</p>
+          <p className="text-sm text-stone-800">
+            {isSimpleMultiplayer
+              ? `Хід: ${activeSimplePlayer?.name ?? 'Учасник'} · клітина ${safeCurrentCell}`
+              : `Ви зараз на клітині ${safeCurrentCell}`}
+          </p>
           <button
             type="button"
             onClick={() => setShowHintInfo((prev) => !prev)}
@@ -149,6 +286,24 @@ export const GamePage = () => {
           </button>
         </div>
         <h1 className="mt-1 text-base font-semibold text-stone-900">{currentChakra?.name ?? 'Шлях триває'}</h1>
+        {isSimpleMultiplayer && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {simplePlayers.map((player, index) => (
+              <span
+                key={player.id}
+                className={`rounded-full border px-2 py-1 text-xs ${
+                  index === activeSimplePlayerIndex ? 'border-stone-400 bg-stone-100' : 'border-stone-200 bg-white'
+                }`}
+              >
+                <span
+                  className="mr-1 inline-block h-2.5 w-2.5 rounded-full align-middle"
+                  style={{ backgroundColor: SIMPLE_COLOR_HEX[player.color] ?? '#1f2937' }}
+                />
+                {player.name || `Учасник ${index + 1}`} · {player.currentCell}
+              </span>
+            ))}
+          </div>
+        )}
         {currentChakra && <p className="mt-1 text-xs text-stone-600">{currentChakra.description}</p>}
         {currentSession.request.isDeepEntry && !currentSession.hasEnteredGame && (
           <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
@@ -169,6 +324,18 @@ export const GamePage = () => {
       <LilaBoard
         board={board}
         currentCell={safeCurrentCell}
+        tokenColor={activeSimplePlayer ? SIMPLE_COLOR_HEX[activeSimplePlayer.color] ?? '#1f2937' : undefined}
+        otherTokens={
+          isSimpleMultiplayer
+            ? simplePlayers
+                .filter((player) => player.id !== activeSimplePlayer?.id)
+                .map((player) => ({
+                  id: player.id,
+                  cell: player.currentCell,
+                  color: SIMPLE_COLOR_HEX[player.color] ?? '#6b7280',
+                }))
+            : undefined
+        }
         animationMove={animationMove}
         onMoveAnimationComplete={onMoveAnimationComplete}
       />
@@ -177,7 +344,7 @@ export const GamePage = () => {
         <div className="mb-3 flex items-center justify-between">
           <Dice value={lastMove?.dice} />
           <div className="text-right text-xs text-stone-600">
-            <p>Можна зробити паузу будь-коли.</p>
+            <p>{isSimpleMultiplayer ? 'Гравці ходять по черзі.' : 'Можна зробити паузу будь-коли.'}</p>
             {error && <p className="text-red-600">{error}</p>}
           </div>
         </div>
