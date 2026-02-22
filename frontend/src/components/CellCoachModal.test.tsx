@@ -55,4 +55,26 @@ describe('CellCoachModal image layout', () => {
     const modalShell = screen.getByTestId('cell-coach-modal-shell');
     expect(modalShell.className).toContain('sm:max-w-4xl');
   });
+
+  it('shows per-cell text from Lila master content map', () => {
+    render(
+      <CellCoachModal
+        cellNumber={4}
+        depth="standard"
+        cellContent={{
+          title: 'Fallback',
+          shortText: 'fallback short',
+          fullText: 'fallback full',
+          questions: ['fallback question'],
+        }}
+        onSave={() => {}}
+        onSkip={() => {}}
+        onClose={() => {}}
+      />,
+    );
+
+    expect(screen.getByText('Бажання')).not.toBeNull();
+    expect(screen.getByText(/Є бажання \"хибні\"/i)).not.toBeNull();
+    expect(screen.getByText(/Яке твоє головне бажання/i)).not.toBeNull();
+  });
 });

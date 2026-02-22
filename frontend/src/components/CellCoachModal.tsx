@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getCardImagePath } from '../content/cardAssets';
 import type { CellContent, DepthSetting } from '../domain/types';
+import { getLilaCellContent } from '../lib/lila/cellContent';
 
 interface CellCoachModalProps {
   cellNumber: number;
@@ -24,6 +25,11 @@ export const CellCoachModal = ({
   onClose,
 }: CellCoachModalProps) => {
   const [text, setText] = useState(initialText);
+  const lilaContent = getLilaCellContent(cellNumber);
+  const displayedDescription =
+    lilaContent.description || (depth === 'light' ? cellContent.shortText : cellContent.fullText);
+  const displayedQuestions =
+    lilaContent.questions.length > 0 ? lilaContent.questions : cellContent.questions;
 
   useEffect(() => {
     setText(initialText);
@@ -47,12 +53,12 @@ export const CellCoachModal = ({
           </section>
 
           <section className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
-            <h3 className="text-xl font-semibold text-stone-900">{cellContent.title}</h3>
+            <h3 className="text-xl font-semibold text-stone-900">{lilaContent.title}</h3>
             <p className="mt-3 text-sm leading-relaxed text-stone-700">
-              {depth === 'light' ? cellContent.shortText : cellContent.fullText}
+              {displayedDescription}
             </p>
             <ul className="mt-4 space-y-2 text-sm text-stone-700">
-              {cellContent.questions.map((question) => (
+              {displayedQuestions.map((question) => (
                 <li key={question}>• {question}</li>
               ))}
             </ul>
