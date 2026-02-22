@@ -186,6 +186,12 @@ export const GameProvider = ({
         fromCell: next.fromCell,
         toCell: next.toCell,
         dice: next.dice,
+        moveType:
+          next.snakeOrArrow === 'snake'
+            ? 'snake'
+            : next.snakeOrArrow === 'arrow'
+              ? 'ladder'
+              : 'normal',
         snakeOrArrow: next.snakeOrArrow,
         createdAt: now,
       };

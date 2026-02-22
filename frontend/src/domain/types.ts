@@ -51,6 +51,7 @@ export interface GameMove {
   fromCell: number;
   toCell: number;
   dice: number;
+  moveType?: 'normal' | 'snake' | 'ladder';
   snakeOrArrow?: 'snake' | 'arrow' | null;
   createdAt: string;
 }

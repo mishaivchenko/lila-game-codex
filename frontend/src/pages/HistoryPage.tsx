@@ -14,6 +14,7 @@ interface MultiplayerHistoryEntry {
   fromCell: number;
   toCell: number;
   dice: number;
+  moveType?: 'normal' | 'snake' | 'ladder';
   snakeOrArrow: 'snake' | 'arrow' | null;
   createdAt: string;
 }
@@ -38,6 +39,7 @@ export const HistoryPage = () => {
   const [insights, setInsights] = useState<CellInsight[]>([]);
   const [filter, setFilter] = useState<Filter>('all');
   const [selectedCell, setSelectedCell] = useState<number | undefined>();
+  const [selectedMoveId, setSelectedMoveId] = useState<string | undefined>();
   const [multiplayerPayload, setMultiplayerPayload] = useState<MultiplayerHistoryPayload | undefined>();
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | undefined>();
 
@@ -74,6 +76,13 @@ export const HistoryPage = () => {
         fromCell: entry.fromCell,
         toCell: entry.toCell,
         dice: entry.dice,
+        moveType:
+          entry.moveType ??
+          (entry.snakeOrArrow === 'snake'
+            ? 'snake'
+            : entry.snakeOrArrow === 'arrow'
+              ? 'ladder'
+              : 'normal'),
         snakeOrArrow: entry.snakeOrArrow,
         createdAt: entry.createdAt,
       }));
@@ -113,8 +122,32 @@ export const HistoryPage = () => {
     });
   }, [filter, insights, moves]);
 
+  const resolveMoveType = (move: GameMove): 'normal' | 'snake' | 'ladder' => {
+    if (move.moveType) {
+      return move.moveType;
+    }
+    if (move.snakeOrArrow === 'snake') {
+      return 'snake';
+    }
+    if (move.snakeOrArrow === 'arrow') {
+      return 'ladder';
+    }
+    return 'normal';
+  };
+
+  const getMoveSymbol = (moveType: 'normal' | 'snake' | 'ladder'): string => {
+    if (moveType === 'ladder') {
+      return '⇧';
+    }
+    if (moveType === 'snake') {
+      return '⇩';
+    }
+    return '→';
+  };
+
   const selectedContent = selectedCell ? board.cells[selectedCell - 1] : undefined;
   const selectedInsight = insights.find((insight) => insight.cellNumber === selectedCell)?.text;
+  const selectedMove = selectedMoveId ? rows.find((move) => move.id === selectedMoveId) : undefined;
 
   return (
     <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-5">
@@ -162,16 +195,24 @@ export const HistoryPage = () => {
         {rows.map((move) => {
           const content = board.cells[move.toCell - 1];
           const hasInsight = insights.some((insight) => insight.cellNumber === move.toCell);
+          const moveType = resolveMoveType(move);
+          const symbol = getMoveSymbol(moveType);
           return (
             <button
               key={move.id}
               type="button"
-              onClick={() => setSelectedCell(move.toCell)}
+              onClick={() => {
+                setSelectedCell(move.toCell);
+                setSelectedMoveId(move.id);
+              }}
               className="flex w-full items-center justify-between rounded-xl bg-white p-3 text-left shadow-sm"
             >
               <div>
                 <p className="text-xs text-stone-500">Клітина {move.toCell}</p>
                 <p className="text-sm font-medium text-stone-900">{content.title}</p>
+                <p className="mt-1 text-xs text-stone-500">
+                  Хід: {move.fromCell} {symbol} {move.toCell}
+                </p>
               </div>
               <span className={`rounded-full px-2 py-1 text-xs ${hasInsight ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-600'}`}>
                 {hasInsight ? 'є нотатка' : 'без нотатки'}
@@ -187,12 +228,30 @@ export const HistoryPage = () => {
           cellNumber={selectedCell}
           cellContent={selectedContent}
           depth={currentSession.settings.depth}
+          moveContext={
+            selectedMove
+              ? {
+                  fromCell: selectedMove.fromCell,
+                  toCell: selectedMove.toCell,
+                  type: resolveMoveType(selectedMove),
+                }
+              : undefined
+          }
           initialText={selectedInsight}
           onSave={(text) => {
-            void saveInsight(selectedCell, text).then(() => setSelectedCell(undefined));
+            void saveInsight(selectedCell, text).then(() => {
+              setSelectedCell(undefined);
+              setSelectedMoveId(undefined);
+            });
           }}
-          onSkip={() => setSelectedCell(undefined)}
-          onClose={() => setSelectedCell(undefined)}
+          onSkip={() => {
+            setSelectedCell(undefined);
+            setSelectedMoveId(undefined);
+          }}
+          onClose={() => {
+            setSelectedCell(undefined);
+            setSelectedMoveId(undefined);
+          }}
         />
       )}
     </main>

@@ -1,8 +1,8 @@
 import type { Transition, Variants } from 'framer-motion';
 
-export const TOKEN_MOVE_DURATION_MS = 620;
-export const PATH_DRAW_DURATION_MS = 420;
-export const PATH_GLIDE_DURATION_MS = 640;
+export const TOKEN_MOVE_DURATION_MS = 1080;
+export const PATH_DRAW_DURATION_MS = 560;
+export const PATH_GLIDE_DURATION_MS = 900;
 export const PULSE_DURATION_MS = 260;
 
 const easingCalm: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -25,8 +25,8 @@ export const pathGlideTransition: Transition = {
 
 export const modalBackdropVariants: Variants = {
   initial: { opacity: 0 },
-  animate: { opacity: 1, transition: { duration: 0.24, ease: easingSoft } },
-  exit: { opacity: 0, transition: { duration: 0.2, ease: easingSoft } },
+  animate: { opacity: 1, transition: { duration: 0.28, ease: easingSoft } },
+  exit: { opacity: 0, transition: { duration: 0.24, ease: easingSoft } },
 };
 
 export const modalPanelVariants: Variants = {
@@ -35,13 +35,13 @@ export const modalPanelVariants: Variants = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { duration: 0.34, ease: easingCalm },
+    transition: { duration: 0.3, ease: easingCalm },
   },
   exit: {
     opacity: 0,
     y: 12,
-    scale: 0.992,
-    transition: { duration: 0.24, ease: easingSoft },
+    scale: 0.988,
+    transition: { duration: 0.26, ease: easingSoft },
   },
 };
 

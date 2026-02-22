@@ -1,6 +1,7 @@
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { RoundedBox } from '@react-three/drei';
 import {
   DICE_FADE_MS,
   DICE_FALL_MS,
@@ -43,6 +44,7 @@ const PIP_LAYOUTS: Record<number, Array<[number, number]>> = {
 
 const DiceBody = ({ targetValue, rolling }: DiceSceneProps) => {
   const groupRef = useRef<THREE.Group>(null);
+  const bodyRef = useRef<THREE.Group>(null);
   const startTimeRef = useRef(0);
   const spinRef = useRef<[number, number, number]>([0, 0, 0]);
   const initialRotationRef = useRef<[number, number, number]>([0, 0, 0]);
@@ -64,9 +66,9 @@ const DiceBody = ({ targetValue, rolling }: DiceSceneProps) => {
 
     startTimeRef.current = performance.now();
     spinRef.current = [
-      (Math.random() * 7 + 7) * (Math.random() > 0.5 ? 1 : -1),
-      (Math.random() * 7 + 8) * (Math.random() > 0.5 ? 1 : -1),
-      (Math.random() * 7 + 7) * (Math.random() > 0.5 ? 1 : -1),
+      (Math.random() * 8 + 9) * (Math.random() > 0.5 ? 1 : -1),
+      (Math.random() * 8 + 10) * (Math.random() > 0.5 ? 1 : -1),
+      (Math.random() * 8 + 9) * (Math.random() > 0.5 ? 1 : -1),
     ];
     initialRotationRef.current = [
       Math.random() * Math.PI,
@@ -99,7 +101,7 @@ const DiceBody = ({ targetValue, rolling }: DiceSceneProps) => {
 
     if (elapsed <= DICE_FALL_MS) {
       const t = elapsed / DICE_FALL_MS;
-      const eased = 1 - (1 - t) ** 3;
+      const eased = 1 - (1 - t) ** 4;
       group.position.y = 2.8 - 2.8 * eased;
       group.rotation.set(
         initialRotationRef.current[0] + spinRef.current[0] * t,
@@ -114,6 +116,11 @@ const DiceBody = ({ targetValue, rolling }: DiceSceneProps) => {
 
     const bounce = Math.cos(settleT * Math.PI * 2.6) * Math.exp(-4.5 * settleT);
     group.position.y = Math.max(0, bounce * 0.18);
+    if (bodyRef.current) {
+      const squash = 1 - Math.max(0, -bounce) * 0.16;
+      const stretch = 1 + Math.max(0, -bounce) * 0.1;
+      bodyRef.current.scale.set(stretch, squash, stretch);
+    }
 
     const lerp = 1 - Math.exp(-8 * delta);
     group.rotation.x += (targetRotation[0] - group.rotation.x) * lerp;
@@ -123,15 +130,21 @@ const DiceBody = ({ targetValue, rolling }: DiceSceneProps) => {
     if (settleElapsed >= DICE_SETTLE_MS) {
       group.position.y = 0;
       group.rotation.set(targetRotation[0], targetRotation[1], targetRotation[2]);
+      bodyRef.current?.scale.set(1, 1, 1);
     }
   });
 
   return (
     <group ref={groupRef}>
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="#f8f8f5" roughness={0.34} metalness={0.05} />
-      </mesh>
+      <group ref={bodyRef}>
+        <RoundedBox args={[1, 1, 1]} radius={0.17} smoothness={6} castShadow receiveShadow>
+          <meshStandardMaterial color="#1f242d" roughness={0.4} metalness={0.2} />
+        </RoundedBox>
+        <mesh position={[0.02, 0.03, 0.03]}>
+          <boxGeometry args={[0.96, 0.96, 0.96]} />
+          <meshStandardMaterial color="#2b313b" roughness={0.5} metalness={0.15} transparent opacity={0.2} />
+        </mesh>
+      </group>
 
       {Object.entries(FACE_MAP).map(([face, transform]) => {
         const faceValue = Number(face);
@@ -145,7 +158,7 @@ const DiceBody = ({ targetValue, rolling }: DiceSceneProps) => {
             {pips.map(([x, y], index) => (
               <mesh key={`${faceValue}-${index}`} position={[x, y, 0.014]}>
                 <sphereGeometry args={[0.055, 18, 18]} />
-                <meshStandardMaterial color="#1f2937" roughness={0.45} metalness={0.08} />
+                <meshStandardMaterial color="#f3f4f6" roughness={0.2} metalness={0.1} />
               </mesh>
             ))}
           </group>
@@ -213,15 +226,16 @@ export const Dice3D = ({ rollToken, requestedValue, onResult, onFinished, classN
   return (
     <div className={`pointer-events-none fixed inset-0 z-[60] flex items-start justify-center ${className ?? ''}`}>
       <div
-        className={`pointer-events-auto mt-4 h-52 w-52 transition-opacity duration-300 sm:mt-8 sm:h-60 sm:w-60 ${
+        className={`pointer-events-auto mt-4 h-52 w-52 transition-opacity duration-500 sm:mt-8 sm:h-60 sm:w-60 ${
           fading ? 'opacity-0' : 'opacity-100'
         }`}
       >
-        <Canvas shadows camera={{ position: [2.4, 2.3, 3.1], fov: 42 }}>
-          <ambientLight intensity={0.6} />
+      <Canvas shadows camera={{ position: [2.4, 2.3, 3.1], fov: 42 }}>
+          <ambientLight intensity={0.55} />
+          <hemisphereLight intensity={0.35} color="#eef2ff" groundColor="#111827" />
           <directionalLight
             castShadow
-            intensity={1.1}
+            intensity={1.15}
             position={[3.2, 4.2, 3]}
             shadow-mapSize-width={1024}
             shadow-mapSize-height={1024}
