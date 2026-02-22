@@ -124,6 +124,28 @@ jobs:
             --exclude "backend/node_modules" \
             ./ hf-space/
 
+          # Hugging Face free Spaces rejects files >10 MiB.
+          # Downscale oversized board PNGs in deployment copy only.
+          python -m pip install --quiet pillow
+          python - <<'PY'
+from pathlib import Path
+from PIL import Image
+
+MAX_BYTES = 9_500_000
+MAX_DIM = 2048
+field_dir = Path("hf-space/field")
+if field_dir.exists():
+    for image_path in field_dir.glob("*.png"):
+        if image_path.stat().st_size <= MAX_BYTES:
+            continue
+        with Image.open(image_path) as img:
+            width, height = img.size
+            scale = min(1.0, MAX_DIM / max(width, height))
+            if scale < 1.0:
+                img = img.resize((int(width * scale), int(height * scale)), Image.Resampling.LANCZOS)
+            img.save(image_path, format="PNG", optimize=True, compress_level=9)
+PY
+
           cd hf-space
           if [ -n "$(git status --porcelain)" ]; then
             git add -A
