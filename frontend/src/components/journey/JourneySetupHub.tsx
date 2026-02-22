@@ -51,6 +51,7 @@ export const JourneySetupHub = () => {
   const [activeTab, setActiveTab] = useState<TabId>('simple');
 
   const [players, setPlayers] = useState<PlayerDraft[]>([createPlayer(0)]);
+  const [simpleError, setSimpleError] = useState<string | undefined>(undefined);
 
   const [deepName, setDeepName] = useState('');
   const [deepRequest, setDeepRequest] = useState('');
@@ -74,14 +75,34 @@ export const JourneySetupHub = () => {
     });
   };
 
-  const startSimpleGame = async (player: PlayerDraft) => {
-    const summary = `Гравець: ${player.name || 'Учасник'}; Колір: ${player.color}; Запит: ${player.request || 'Без запиту'}`;
+  const startSimpleGame = async () => {
+    const activePlayers = players
+      .map((player) => ({
+        ...player,
+        name: player.name.trim(),
+        request: player.request.trim(),
+      }))
+      .filter((player) => player.name.length > 0 || player.request.length > 0);
+
+    if (activePlayers.length === 0) {
+      setSimpleError('Додайте хоча б одного учасника з імʼям або запитом.');
+      return;
+    }
+
+    setSimpleError(undefined);
+    const summary = activePlayers
+      .map(
+        (player, index) =>
+          `${index + 1}) ${player.name || 'Учасник'} — ${player.request || 'Запит уточнюється'} (колір: ${player.color})`,
+      )
+      .join('\n');
 
     await startNewSession(
       'full',
       {
         isDeepEntry: false,
-        simpleRequest: summary,
+        simpleRequest: `Групова гра (${activePlayers.length} учасн.)`,
+        question: summary,
       },
       { speed: 'normal', depth: 'standard' },
     );
@@ -180,17 +201,6 @@ export const JourneySetupHub = () => {
                   ))}
                 </div>
               </div>
-
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => {
-                  void startSimpleGame(player);
-                }}
-                className="mt-3 w-full rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-60"
-              >
-                Почати гру
-              </button>
             </article>
           ))}
 
@@ -201,6 +211,21 @@ export const JourneySetupHub = () => {
             className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-700 disabled:opacity-40"
           >
             Додати учасника
+          </button>
+
+          {simpleError && (
+            <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{simpleError}</p>
+          )}
+
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => {
+              void startSimpleGame();
+            }}
+            className="w-full rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-60"
+          >
+            Почати гру
           </button>
         </div>
       )}
@@ -275,11 +300,15 @@ export const JourneySetupHub = () => {
             Ліла — давній інструмент самопізнання, поєднаний із сучасною коучинговою практикою.
             Поле працює як дзеркало життя.
           </p>
+          <p className="mt-2 rounded-xl bg-emerald-50 p-3 text-emerald-900">
+            Якщо щось незрозуміло або емоційно непросто — це нормально. Ви в безпечному темпі, і кожен крок тут має цінність.
+          </p>
           <ul className="mt-3 space-y-1">
             <li>• Змії — це уроки, які повертають до глибшого усвідомлення.</li>
             <li>• Стріли — це ресурси, що піднімають вас вище.</li>
             <li>• Для входу в глибоку гру потрібно викинути 6.</li>
             <li>• Після входу рух іде за числом кубика, з урахуванням змій і стріл.</li>
+            <li>• Якщо в глибокому вході випало менше 6 — уточніть запит і киньте кубик знову.</li>
             <li>• Клітина 68 — стан реалізації та інтеграції досвіду.</li>
             <li>• Клітина 72 запрошує до підсумкової рефлексії та мʼякого завершення циклу.</li>
           </ul>
@@ -291,7 +320,9 @@ export const JourneySetupHub = () => {
               ))}
             </ul>
           </div>
-          <p className="mt-3 text-xs text-stone-500">Записуйте інсайти після ходів — це допомагає закріпити зміни.</p>
+          <p className="mt-3 text-xs text-stone-500">
+            Записуйте інсайти після ходів. Навіть кілька чесних рядків можуть стати потужною опорою після гри.
+          </p>
         </div>
       )}
     </section>
