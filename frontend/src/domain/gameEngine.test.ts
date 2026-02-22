@@ -12,8 +12,8 @@ describe('gameEngine', () => {
 
   it('applies arrows and snakes', () => {
     const board = BOARD_DEFINITIONS.full;
-    expect(computeNextPosition(1, 3, board, true).toCell).toBe(14);
-    expect(computeNextPosition(15, 2, board, true).toCell).toBe(7);
+    expect(computeNextPosition(7, 3, board, true).toCell).toBe(23);
+    expect(computeNextPosition(14, 2, board, true).toCell).toBe(4);
   });
 
   it('applies bounce from top row', () => {
