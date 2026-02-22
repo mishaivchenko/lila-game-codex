@@ -21,8 +21,11 @@ describe('GameSetupPage', () => {
     );
 
     const user = userEvent.setup();
-    await user.type(screen.getByPlaceholderText(/Наприклад:/i), 'Хочу зрозуміти свої емоції');
-    await user.click(screen.getByText('Виглядає добре'));
+    await user.type(
+      screen.getByPlaceholderText(/Що зараз болить або найбільше хвилює/i),
+      'Хочу зрозуміти свої емоції',
+    );
+    await user.click(screen.getByText('Почати подорож'));
 
     expect(await screen.findByText('GAME_PAGE')).not.toBeNull();
   });
