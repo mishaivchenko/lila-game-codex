@@ -10,21 +10,80 @@ const repositories = createRepositories();
 
 type Filter = 'all' | 'insights' | 'snakes' | 'arrows';
 
+interface MultiplayerHistoryEntry {
+  fromCell: number;
+  toCell: number;
+  dice: number;
+  snakeOrArrow: 'snake' | 'arrow' | null;
+  createdAt: string;
+}
+
+interface MultiplayerHistoryPayload {
+  players: Array<{ id: string; name: string; color: string }>;
+  historyByPlayer: Record<string, MultiplayerHistoryEntry[]>;
+}
+
+const isMultiplayerPayload = (value: unknown): value is MultiplayerHistoryPayload => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const maybe = value as MultiplayerHistoryPayload;
+  return Array.isArray(maybe.players) && typeof maybe.historyByPlayer === 'object' && !!maybe.historyByPlayer;
+};
+
 export const HistoryPage = () => {
   const { currentSession, saveInsight } = useGameContext();
   const [moves, setMoves] = useState<GameMove[]>([]);
   const [insights, setInsights] = useState<CellInsight[]>([]);
   const [filter, setFilter] = useState<Filter>('all');
   const [selectedCell, setSelectedCell] = useState<number | undefined>();
+  const [multiplayerPayload, setMultiplayerPayload] = useState<MultiplayerHistoryPayload | undefined>();
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | undefined>();
 
   useEffect(() => {
     if (!currentSession) {
       return;
     }
 
-    void repositories.movesRepository.getMovesBySession(currentSession.id).then(setMoves);
+    let parsedPayload: MultiplayerHistoryPayload | undefined;
+
+    if (!currentSession.request.isDeepEntry) {
+      try {
+        const parsed = JSON.parse(currentSession.request.question ?? '{}');
+        if (isMultiplayerPayload(parsed) && parsed.players.length > 1) {
+          parsedPayload = parsed;
+          setMultiplayerPayload(parsed);
+          setSelectedPlayerId((prev) => prev ?? parsed.players[0]?.id);
+        } else {
+          setMultiplayerPayload(undefined);
+          setSelectedPlayerId(undefined);
+        }
+      } catch {
+        setMultiplayerPayload(undefined);
+        setSelectedPlayerId(undefined);
+      }
+    }
+
+    if (parsedPayload && selectedPlayerId) {
+      const playerHistory = parsedPayload.historyByPlayer[selectedPlayerId] ?? [];
+      const mappedMoves: GameMove[] = playerHistory.map((entry, index) => ({
+        id: `multi-${selectedPlayerId}-${index}`,
+        sessionId: currentSession.id,
+        moveNumber: index + 1,
+        fromCell: entry.fromCell,
+        toCell: entry.toCell,
+        dice: entry.dice,
+        snakeOrArrow: entry.snakeOrArrow,
+        createdAt: entry.createdAt,
+      }));
+      setMoves(mappedMoves);
+    } else {
+      void repositories.movesRepository.getMovesBySession(currentSession.id).then(setMoves);
+    }
+
     void repositories.insightsRepository.getInsightsBySession(currentSession.id).then(setInsights);
-  }, [currentSession]);
+  }, [currentSession, selectedPlayerId]);
 
   if (!currentSession) {
     return (
@@ -64,6 +123,29 @@ export const HistoryPage = () => {
         <Link to="/game" className="text-sm text-stone-600">До гри</Link>
       </div>
 
+      {multiplayerPayload && (
+        <section className="mb-3 rounded-2xl border border-stone-200 bg-white p-3">
+          <label className="text-xs text-stone-500" htmlFor="history-player-select">
+            Історія гравця
+          </label>
+          <select
+            id="history-player-select"
+            value={selectedPlayerId}
+            onChange={(event) => setSelectedPlayerId(event.target.value)}
+            className="mt-1 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm"
+          >
+            {multiplayerPayload.players.map((player) => (
+              <option key={player.id} value={player.id}>
+                {player.name || 'Учасник'}
+              </option>
+            ))}
+          </select>
+          <p className="mt-2 text-xs text-stone-500">
+            Показано персональний шлях обраного гравця.
+          </p>
+        </section>
+      )}
+
       <div className="mb-3 flex gap-2 text-xs">
         <button type="button" onClick={() => setFilter('all')} className="rounded-full bg-stone-200 px-3 py-1">Усе</button>
         <button type="button" onClick={() => setFilter('insights')} className="rounded-full bg-stone-200 px-3 py-1">З нотатками</button>
@@ -72,6 +154,11 @@ export const HistoryPage = () => {
       </div>
 
       <section className="space-y-2">
+        {rows.length === 0 && (
+          <p className="rounded-xl bg-white p-3 text-sm text-stone-600 shadow-sm">
+            Для цього гравця поки немає ходів у журналі.
+          </p>
+        )}
         {rows.map((move) => {
           const content = board.cells[move.toCell - 1];
           const hasInsight = insights.some((insight) => insight.cellNumber === move.toCell);

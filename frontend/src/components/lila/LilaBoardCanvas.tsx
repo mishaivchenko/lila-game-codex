@@ -17,6 +17,8 @@ import { LilaPathAnimation } from './LilaPathAnimation';
 interface LilaBoardCanvasProps {
   boardType: BoardType;
   currentCell: number;
+  tokenColor?: string;
+  otherTokens?: { id: string; cell: number; color: string }[];
   animationMove?: LilaTransition;
   onMoveAnimationComplete?: (moveId: string) => void;
 }
@@ -32,6 +34,8 @@ const getBoardImage = (boardType: BoardType): string =>
 export const LilaBoardCanvas = ({
   boardType,
   currentCell,
+  tokenColor = '#1c1917',
+  otherTokens = [],
   animationMove,
   onMoveAnimationComplete,
 }: LilaBoardCanvasProps) => {
@@ -98,6 +102,11 @@ export const LilaBoardCanvas = ({
 
   const pulsePosition = pulseCell ? mapCellToBoardPosition(boardType, pulseCell) : undefined;
   const activeCellType = specialTransitions.get(currentCell);
+  const shouldAnimateToken = Boolean(animationMove);
+  const passiveTokens = otherTokens.map((token) => ({
+    ...token,
+    position: mapCellToBoardPosition(boardType, token.cell),
+  }));
 
   return (
     <div className="relative mx-auto w-full max-w-[520px] rounded-3xl bg-stone-200/70 p-2 shadow-inner">
@@ -168,6 +177,7 @@ export const LilaBoardCanvas = ({
           style={{
             left: `${tokenPosition.xPercent}%`,
             top: `${tokenPosition.yPercent}%`,
+            backgroundColor: tokenColor,
             boxShadow:
               activePath?.type === 'arrow'
                 ? '0 0 14px rgba(44,191,175,0.36)'
@@ -180,9 +190,23 @@ export const LilaBoardCanvas = ({
             top: `${tokenPosition.yPercent}%`,
             scale: activePath?.type ? [1, 1.08, 1] : 1,
           }}
-          transition={tokenMoveTransition}
+          transition={shouldAnimateToken ? tokenMoveTransition : { duration: 0 }}
           aria-label="token"
         />
+
+        {passiveTokens.map((token) => (
+          <div
+            key={token.id}
+            className="pointer-events-none absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/80 shadow-sm"
+            style={{
+              left: `${token.position.xPercent}%`,
+              top: `${token.position.yPercent}%`,
+              backgroundColor: token.color,
+              opacity: 0.9,
+            }}
+            aria-label={`token-${token.id}`}
+          />
+        ))}
       </div>
     </div>
   );

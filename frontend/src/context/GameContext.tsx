@@ -74,6 +74,7 @@ export interface GameContextValue extends GameState {
   resumeLastSession: () => Promise<void>;
   performMove: () => Promise<GameMove | undefined>;
   saveInsight: (cellNumber: number, text: string, voiceNoteId?: string) => Promise<void>;
+  updateSessionRequest: (patch: string | Partial<GameRequest>) => Promise<void>;
 }
 
 const GameContext = createContext<GameContextValue | undefined>(undefined);
@@ -158,12 +159,23 @@ export const GameProvider = ({
       const normalizedSession = normalizeSession(state.currentSession);
       const dice = rollDice(diceRng);
       const board = BOARD_DEFINITIONS[normalizedSession.boardType];
-      const next = computeNextPosition(
-        normalizedSession.currentCell,
-        dice,
-        board,
-        normalizedSession.hasEnteredGame,
-      );
+      const deepEntryGate =
+        normalizedSession.request.isDeepEntry && !normalizedSession.hasEnteredGame;
+      const next = deepEntryGate
+        ? {
+            fromCell: 1,
+            toCell: 1,
+            dice,
+            snakeOrArrow: null,
+            finished: false,
+            hasEnteredGame: dice === 6,
+          }
+        : computeNextPosition(
+            normalizedSession.currentCell,
+            dice,
+            board,
+            normalizedSession.hasEnteredGame,
+          );
       const now = new Date().toISOString();
       const nextMoveNumber = await repositories.movesRepository.getNextMoveNumber(normalizedSession.id);
 
@@ -242,6 +254,45 @@ export const GameProvider = ({
     [repositories.insightsRepository, state.currentSession],
   );
 
+  const updateSessionRequest = useCallback<GameContextValue['updateSessionRequest']>(
+    async (patch) => {
+      if (!state.currentSession) {
+        dispatch({ type: 'SET_ERROR', payload: 'Немає активної сесії.' });
+        return;
+      }
+
+      const requestPatch =
+        typeof patch === 'string'
+          ? { simpleRequest: patch }
+          : patch;
+
+      const nextRequest = {
+        ...state.currentSession.request,
+        ...requestPatch,
+      };
+
+      try {
+        const updatedSession = await repositories.sessionsRepository.updateSession(
+          state.currentSession.id,
+          { request: nextRequest },
+        );
+
+        if (!updatedSession) {
+          dispatch({ type: 'SET_ERROR', payload: 'Не вдалося оновити запит.' });
+          return;
+        }
+
+        dispatch({
+          type: updatedSession.finished ? 'SESSION_FINISHED' : 'MOVE_PERFORMED',
+          payload: updatedSession,
+        });
+      } catch {
+        dispatch({ type: 'SET_ERROR', payload: 'Не вдалося оновити запит.' });
+      }
+    },
+    [repositories.sessionsRepository, state.currentSession],
+  );
+
   const value = useMemo<GameContextValue>(
     () => ({
       ...state,
@@ -249,8 +300,9 @@ export const GameProvider = ({
       resumeLastSession,
       performMove,
       saveInsight,
+      updateSessionRequest,
     }),
-    [performMove, resumeLastSession, saveInsight, startNewSession, state],
+    [performMove, resumeLastSession, saveInsight, startNewSession, state, updateSessionRequest],
   );
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
