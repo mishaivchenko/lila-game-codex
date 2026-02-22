@@ -39,7 +39,7 @@ Image-size optimization in this setup:
 ## Docker Compose (local)
 - `docker compose up --build`
 
-## CI/CD (GitHub Actions + GHCR + Fly.io/Koyeb/Render)
+## CI/CD (GitHub Actions + GHCR + HF Spaces/Fly/Koyeb/Render)
 Workflow file: `.github/workflows/ci-cd.yml`
 
 On every push to `main`, pipeline:
@@ -48,6 +48,7 @@ On every push to `main`, pipeline:
    - `ghcr.io/<owner>/lila-game-codex:<commit-sha>`
    - `ghcr.io/<owner>/lila-game-codex:latest`
 3. Deploys automatically to:
+   - Hugging Face Spaces if `HF_TOKEN` and `HF_SPACE_ID` are configured (free/public), or
    - Fly.io if `FLY_API_TOKEN` and `FLY_APP_NAME` are configured, or
    - Koyeb if `KOYEB_API_TOKEN`, `KOYEB_APP_NAME`, and `KOYEB_SERVICE_NAME` are configured, or
    - Render if `RENDER_DEPLOY_HOOK_URL` is configured.
@@ -60,6 +61,8 @@ On every push to `main`, pipeline:
 - `KOYEB_APP_NAME` — Koyeb app name
 - `KOYEB_SERVICE_NAME` — Koyeb service name
 - `RENDER_DEPLOY_HOOK_URL` — Render deploy hook URL (fallback deploy target)
+- `HF_TOKEN` — Hugging Face User Access Token (write)
+- `HF_SPACE_ID` — Hugging Face space id in format `username/space-name`
 
 ### One-time Fly setup
 1. Install Fly CLI and log in.
@@ -82,3 +85,10 @@ After that, each push to `main` auto-deploys the latest image.
    - `KOYEB_APP_NAME`
    - `KOYEB_SERVICE_NAME`
 3. Push to `main`; workflow deploys `ghcr.io/<owner>/lila-game-codex:<sha>` to Koyeb automatically.
+
+### Truly free fallback: Hugging Face Spaces (Docker, public)
+1. Create a new public Space in Hugging Face with Docker SDK.
+2. Add GitHub repository secrets:
+   - `HF_TOKEN` (write token)
+   - `HF_SPACE_ID` (for example `yourname/lila-game`)
+3. Push to `main`; workflow will sync repository to the Space and trigger a redeploy.
