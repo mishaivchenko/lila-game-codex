@@ -113,6 +113,20 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
+          python -m pip install --quiet huggingface_hub pillow
+          python - <<'PY'
+from huggingface_hub import HfApi
+import os
+
+api = HfApi(token=os.environ["HF_TOKEN"])
+api.create_repo(
+    repo_id=os.environ["HF_SPACE_ID"],
+    repo_type="space",
+    space_sdk="docker",
+    exist_ok=True,
+)
+PY
+
           git clone "https://oauth2:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE_ID}" hf-space
 
           rsync -a --delete \
@@ -124,9 +138,39 @@ jobs:
             --exclude "backend/node_modules" \
             ./ hf-space/
 
+          # Ensure the Space is configured as Docker runtime.
+          python - <<'PY'
+from pathlib import Path
+import os
+
+readme = Path("hf-space/README.md")
+body = ""
+if readme.exists():
+    text = readme.read_text(encoding="utf-8")
+    if text.startswith("---\n"):
+        parts = text.split("---\n", 2)
+        if len(parts) == 3:
+            body = parts[2].lstrip()
+    else:
+        body = text
+
+header = """---
+title: Lila Game
+emoji: robot
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+app_port: 3001
+pinned: false
+---
+"""
+
+content = header + ("\n" + body if body else "\n")
+readme.write_text(content, encoding="utf-8")
+PY
+
           # Hugging Face free Spaces rejects files >10 MiB.
           # Downscale oversized board PNGs in deployment copy only.
-          python -m pip install --quiet pillow
           python - <<'PY'
 from pathlib import Path
 from PIL import Image
@@ -145,6 +189,7 @@ if field_dir.exists():
                 img = img.resize((int(width * scale), int(height * scale)), Image.Resampling.LANCZOS)
             img.save(image_path, format="PNG", optimize=True, compress_level=9)
 PY
+
 
           cd hf-space
           if [ -n "$(git status --porcelain)" ]; then
