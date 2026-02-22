@@ -113,19 +113,19 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-          python -m pip install --quiet huggingface_hub pillow
-          python - <<'PY'
-from huggingface_hub import HfApi
-import os
+          python3 -m pip install --quiet huggingface_hub pillow
+          python3 - <<'PY'
+          from huggingface_hub import HfApi
+          import os
 
-api = HfApi(token=os.environ["HF_TOKEN"])
-api.create_repo(
-    repo_id=os.environ["HF_SPACE_ID"],
-    repo_type="space",
-    space_sdk="docker",
-    exist_ok=True,
-)
-PY
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          api.create_repo(
+              repo_id=os.environ["HF_SPACE_ID"],
+              repo_type="space",
+              space_sdk="docker",
+              exist_ok=True,
+          )
+          PY
 
           git clone "https://oauth2:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE_ID}" hf-space
 
@@ -139,56 +139,56 @@ PY
             ./ hf-space/
 
           # Ensure the Space is configured as Docker runtime.
-          python - <<'PY'
-from pathlib import Path
-import os
+          python3 - <<'PY'
+          from pathlib import Path
 
-readme = Path("hf-space/README.md")
-body = ""
-if readme.exists():
-    text = readme.read_text(encoding="utf-8")
-    if text.startswith("---\n"):
-        parts = text.split("---\n", 2)
-        if len(parts) == 3:
-            body = parts[2].lstrip()
-    else:
-        body = text
+          readme = Path("hf-space/README.md")
+          body = ""
+          if readme.exists():
+              text = readme.read_text(encoding="utf-8")
+              if text.startswith("---\n"):
+                  parts = text.split("---\n", 2)
+                  if len(parts) == 3:
+                      body = parts[2].lstrip()
+              else:
+                  body = text
 
-header = """---
-title: Lila Game
-emoji: robot
-colorFrom: indigo
-colorTo: blue
-sdk: docker
-app_port: 3001
-pinned: false
----
-"""
+          header = (
+              "---\n"
+              "title: Lila Game\n"
+              "emoji: robot\n"
+              "colorFrom: indigo\n"
+              "colorTo: blue\n"
+              "sdk: docker\n"
+              "app_port: 3001\n"
+              "pinned: false\n"
+              "---\n"
+          )
 
-content = header + ("\n" + body if body else "\n")
-readme.write_text(content, encoding="utf-8")
-PY
+          content = header + ("\n" + body if body else "\n")
+          readme.write_text(content, encoding="utf-8")
+          PY
 
           # Hugging Face free Spaces rejects files >10 MiB.
           # Downscale oversized board PNGs in deployment copy only.
-          python - <<'PY'
-from pathlib import Path
-from PIL import Image
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
 
-MAX_BYTES = 9_500_000
-MAX_DIM = 2048
-field_dir = Path("hf-space/field")
-if field_dir.exists():
-    for image_path in field_dir.glob("*.png"):
-        if image_path.stat().st_size <= MAX_BYTES:
-            continue
-        with Image.open(image_path) as img:
-            width, height = img.size
-            scale = min(1.0, MAX_DIM / max(width, height))
-            if scale < 1.0:
-                img = img.resize((int(width * scale), int(height * scale)), Image.Resampling.LANCZOS)
-            img.save(image_path, format="PNG", optimize=True, compress_level=9)
-PY
+          MAX_BYTES = 9_500_000
+          MAX_DIM = 2048
+          field_dir = Path("hf-space/field")
+          if field_dir.exists():
+              for image_path in field_dir.glob("*.png"):
+                  if image_path.stat().st_size <= MAX_BYTES:
+                      continue
+                  with Image.open(image_path) as img:
+                      width, height = img.size
+                      scale = min(1.0, MAX_DIM / max(width, height))
+                      if scale < 1.0:
+                          img = img.resize((int(width * scale), int(height * scale)), Image.Resampling.LANCZOS)
+                      img.save(image_path, format="PNG", optimize=True, compress_level=9)
+          PY
 
 
           cd hf-space
