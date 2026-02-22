@@ -161,6 +161,16 @@ export const Dice3D = ({ rollToken, requestedValue, onResult, onFinished, classN
   const [targetValue, setTargetValue] = useState(1);
   const [rolling, setRolling] = useState(false);
   const latestTokenRef = useRef(0);
+  const onResultRef = useRef(onResult);
+  const onFinishedRef = useRef(onFinished);
+
+  useEffect(() => {
+    onResultRef.current = onResult;
+  }, [onResult]);
+
+  useEffect(() => {
+    onFinishedRef.current = onFinished;
+  }, [onFinished]);
 
   useEffect(() => {
     if (rollToken === 0 || rollToken === latestTokenRef.current) {
@@ -175,7 +185,7 @@ export const Dice3D = ({ rollToken, requestedValue, onResult, onFinished, classN
     setRolling(true);
 
     const resultTimer = window.setTimeout(() => {
-      onResult(value);
+      onResultRef.current(value);
     }, DICE_FALL_MS + DICE_SETTLE_MS);
 
     const fadeTimer = window.setTimeout(() => {
@@ -186,7 +196,7 @@ export const Dice3D = ({ rollToken, requestedValue, onResult, onFinished, classN
       setRolling(false);
       setVisible(false);
       setFading(false);
-      onFinished?.();
+      onFinishedRef.current?.();
     }, DICE_FALL_MS + DICE_SETTLE_MS + DICE_HOLD_MS + DICE_FADE_MS);
 
     return () => {
@@ -194,7 +204,7 @@ export const Dice3D = ({ rollToken, requestedValue, onResult, onFinished, classN
       window.clearTimeout(fadeTimer);
       window.clearTimeout(finishTimer);
     };
-  }, [onFinished, onResult, requestedValue, rollToken]);
+  }, [requestedValue, rollToken]);
 
   if (!visible) {
     return null;
