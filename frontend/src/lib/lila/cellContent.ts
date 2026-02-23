@@ -2,6 +2,8 @@ export interface LilaCellContent {
   title: string;
   description: string;
   questions: string[];
+  descriptionMarkdown?: string;
+  questionsMarkdown?: string;
 }
 
 export const LILA_CELL_CONTENT_BY_NUMBER: Record<number, LilaCellContent> = {
@@ -79,15 +81,64 @@ export const LILA_CELL_CONTENT_BY_NUMBER: Record<number, LilaCellContent> = {
   72: { title: "Енергія інерції (Тама Гуна)", description: "Енергія, що гальмує тебе.", questions: ["Картка каже, що ця 'важка' енергія тебе гальмує. Що *конкретно* тебе гальмує? Який 'якір' (страх, лінь, звичка) не дає тобі рухатися?"] },
 };
 
+const CELL_DESCRIPTION_MARKDOWN_OVERRIDES: Record<number, string> = {
+  1: `### Народження
+Ви вже входите в гру з досвідом, переконаннями та пам’яттю шляху.
+
+**М’який фокус:** що з минулого пора залишити, щоб рухатися легше?`,
+  8: `### Незадоволення
+Незадоволення може бути не ворогом, а точним індикатором напрямку.
+
+**Запрошення:** помітьте, де саме всередині звучить «так більше не можу».`,
+  22: `### Гармонія з природою
+Гармонія — це не контроль, а узгодженість із собою та ритмом життя.
+
+**Мікрокрок:** що сьогодні допоможе вам відчути більше природності?`,
+  59: `### Реальність (Сат’я Лока)
+Клітина істини запрошує побачити речі без прикрас і без самозвинувачення.
+
+**Опора:** правда спершу може лякати, але саме вона повертає силу.`,
+  68: `### Вища Свідомість (Вихід)
+Тут шлях інтегрується: ви не шукаєте відповідь зовні, а впізнаєте її в собі.
+
+**Пауза:** яке головне усвідомлення ви берете з собою далі?`,
+};
+
+const buildDescriptionMarkdown = (cellNumber: number, cell: LilaCellContent): string => {
+  if (CELL_DESCRIPTION_MARKDOWN_OVERRIDES[cellNumber]) {
+    return CELL_DESCRIPTION_MARKDOWN_OVERRIDES[cellNumber];
+  }
+
+  return `### ${cell.title}
+${cell.description}
+
+**Фокус рефлексії:** зупиніться на першому імпульсі, який відгукується найбільше.`;
+};
+
+const buildQuestionsMarkdown = (questions: string[]): string => {
+  const rows = questions.length > 0 ? questions : ['Що зараз найбільш важливе для мене?'];
+  return `### Питання для зупинки
+${rows.map((question) => `- ${question}`).join('\n')}`;
+};
+
 export function getLilaCellContent(cellNumber: number): LilaCellContent {
   const cell = LILA_CELL_CONTENT_BY_NUMBER[cellNumber];
   if (cell) {
-    return cell;
+    return {
+      ...cell,
+      descriptionMarkdown: buildDescriptionMarkdown(cellNumber, cell),
+      questionsMarkdown: buildQuestionsMarkdown(cell.questions),
+    };
   }
 
-  return {
+  const fallback = {
     title: `Клітина ${cellNumber}`,
     description: "Опишіть свої думки й емоції одним-двома реченнями.",
     questions: ["Що зараз найбільш важливе для мене?"],
+  };
+  return {
+    ...fallback,
+    descriptionMarkdown: buildDescriptionMarkdown(cellNumber, fallback),
+    questionsMarkdown: buildQuestionsMarkdown(fallback.questions),
   };
 }
