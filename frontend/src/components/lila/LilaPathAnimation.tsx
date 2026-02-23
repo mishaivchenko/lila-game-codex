@@ -38,6 +38,9 @@ export const LilaPathAnimation = ({
   const [phase, setPhase] = useState<'travel' | 'hold' | 'fade'>('travel');
   const travelIntervalRef = useRef<number | undefined>(undefined);
   const timersRef = useRef<number[]>([]);
+  const onProgressRef = useRef(onProgress);
+  const onTravelCompleteRef = useRef(onTravelComplete);
+  const onCompleteRef = useRef(onComplete);
 
   const from = useMemo(() => mapCellToBoardPosition(boardType, fromCell), [boardType, fromCell]);
   const to = useMemo(() => mapCellToBoardPosition(boardType, toCell), [boardType, toCell]);
@@ -54,6 +57,18 @@ export const LilaPathAnimation = ({
   );
 
   useEffect(() => {
+    onProgressRef.current = onProgress;
+  }, [onProgress]);
+
+  useEffect(() => {
+    onTravelCompleteRef.current = onTravelComplete;
+  }, [onTravelComplete]);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  useEffect(() => {
     setVisible(true);
     setProgress(0);
     setOpacity(1);
@@ -62,9 +77,11 @@ export const LilaPathAnimation = ({
     let elapsedMs = 0;
     const updateTravel = () => {
       elapsedMs += 16;
-      const nextProgress = Math.min(1, elapsedMs / TRANSITION_TRAVEL_MS);
+      const linear = Math.min(1, elapsedMs / TRANSITION_TRAVEL_MS);
+      const eased = 0.5 - Math.cos(Math.PI * linear) / 2;
+      const nextProgress = eased;
       setProgress(nextProgress);
-      onProgress?.(nextProgress, samplePathByProgress(pathPoints, nextProgress));
+      onProgressRef.current?.(nextProgress, samplePathByProgress(pathPoints, nextProgress));
 
       if (nextProgress < 1) {
         return;
@@ -76,7 +93,7 @@ export const LilaPathAnimation = ({
       }
 
       setPhase('hold');
-      onTravelComplete?.();
+      onTravelCompleteRef.current?.();
 
       const holdTimer = window.setTimeout(() => {
         setPhase('fade');
@@ -85,13 +102,13 @@ export const LilaPathAnimation = ({
 
       const doneTimer = window.setTimeout(() => {
         setVisible(false);
-        onComplete?.();
+        onCompleteRef.current?.();
       }, TRANSITION_POST_HOLD_MS + TRANSITION_FADE_OUT_MS);
 
       timersRef.current.push(holdTimer, doneTimer);
     };
 
-    onProgress?.(0, samplePathByProgress(pathPoints, 0));
+    onProgressRef.current?.(0, samplePathByProgress(pathPoints, 0));
     travelIntervalRef.current = window.setInterval(updateTravel, 16);
 
     return () => {
@@ -102,7 +119,7 @@ export const LilaPathAnimation = ({
       timersRef.current.forEach((timer) => window.clearTimeout(timer));
       timersRef.current = [];
     };
-  }, [boardType, fromCell, onComplete, onProgress, onTravelComplete, pathPoints, toCell, type]);
+  }, [boardType, fromCell, pathPoints, toCell, type]);
 
   if (!visible) {
     return null;

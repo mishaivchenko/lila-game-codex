@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
-import { buildSmoothPath, buildStepSamples } from './pathAnimationMath';
+import { buildSmoothPath, buildStepSamples, samplePathByProgress } from './pathAnimationMath';
 
 interface AnimationRendererLadderProps {
   points: BoardPathPoint[];
@@ -13,6 +13,7 @@ const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 export const AnimationRendererLadder = ({ points, progress, opacity }: AnimationRendererLadderProps) => {
   const path = useMemo(() => buildSmoothPath(points), [points]);
   const steps = useMemo(() => buildStepSamples(points), [points]);
+  const climber = useMemo(() => samplePathByProgress(points, progress), [points, progress]);
 
   return (
     <g style={{ opacity }} data-testid="lila-ladder-renderer">
@@ -37,6 +38,16 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
         pathLength={1}
         strokeDasharray={`${Math.max(0.0001, progress)} 1`}
         data-testid="lila-ladder-rail"
+      />
+      <path
+        d={path}
+        fill="none"
+        stroke="rgba(134,235,223,0.76)"
+        strokeWidth={0.72}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        pathLength={1}
+        strokeDasharray={`${Math.max(0.0001, progress)} 1`}
       />
 
       {steps.map((step, index) => {
@@ -64,6 +75,14 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
           </g>
         );
       })}
+
+      <circle
+        cx={climber.xPercent}
+        cy={climber.yPercent}
+        r={0.66}
+        fill="#B9FFF7"
+        opacity={0.85}
+      />
     </g>
   );
 };
