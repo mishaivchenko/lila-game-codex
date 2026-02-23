@@ -196,7 +196,7 @@ export const HistoryPage = () => {
                 <span className={`rounded-full px-2 py-1 text-xs font-medium ${presentation.badgeClassName}`}>
                   {presentation.icon} {presentation.label} {presentation.symbol}
                 </span>
-                <span className={`rounded-full px-2 py-1 text-xs ${hasInsight ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-600'}`}>
+                <span className={`rounded-full px-2 py-1 text-xs ${hasInsight ? 'bg-[#f4e6dc] text-[#7b5d4f]' : 'bg-stone-100 text-stone-600'}`}>
                   {hasInsight ? 'є нотатка' : 'без нотатки'}
                 </span>
               </div>

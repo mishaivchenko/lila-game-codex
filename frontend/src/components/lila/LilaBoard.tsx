@@ -49,7 +49,7 @@ export const LilaBoard = ({
         <motion.div
           className={`mt-3 rounded-full px-3 py-1 text-center text-[11px] font-medium ${
             animationMove.type === 'arrow'
-              ? 'bg-emerald-50 text-emerald-700'
+              ? 'bg-[#f4e6dc] text-[#7b5d4f]'
               : 'bg-amber-50 text-amber-700'
           }`}
           initial={{ opacity: 0, y: 6 }}

@@ -12,7 +12,7 @@ describe('DeepModeWall', () => {
     render(<DeepModeWall open onClose={() => {}} />);
 
     expect(screen.getByTestId('deep-mode-wall')).not.toBeNull();
-    expect(screen.getByText('Deep Game (AI)')).not.toBeNull();
+    expect(screen.getByText('Глибока гра')).not.toBeNull();
     expect(screen.getByText('Coming Soon — AI Journey')).not.toBeNull();
     expect(screen.getByText('Unlock Soon')).not.toBeNull();
   });

@@ -17,7 +17,7 @@ describe('DeepModeCard', () => {
 
     expect(screen.getByText('Нова секція: Coming Soon')).not.toBeNull();
 
-    await user.click(screen.getByRole('link', { name: 'Deep Game' }));
+    await user.click(screen.getByRole('link', { name: 'Глибока гра' }));
     rerender(
       <MemoryRouter>
         <DeepModeCard />

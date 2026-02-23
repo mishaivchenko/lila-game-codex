@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { DeepModePage } from './DeepModePage';
 
 describe('DeepModePage', () => {
-  it('navigates back to home on close', async () => {
+  it('closes local overlay on close', async () => {
     const user = userEvent.setup();
 
     render(
@@ -17,8 +17,10 @@ describe('DeepModePage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Deep Game (AI)')).not.toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: 'Глибока гра' })).not.toBeNull();
+    expect(screen.getByTestId('deep-mode-wall')).not.toBeNull();
     await user.click(screen.getByRole('button', { name: 'Закрити' }));
-    expect(screen.getByText('home')).not.toBeNull();
+    expect(screen.queryByTestId('deep-mode-wall')).toBeNull();
+    expect(screen.getByTestId('deep-mode-settings-panel')).not.toBeNull();
   });
 });

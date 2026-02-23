@@ -6,7 +6,7 @@ const colors = [
   { id: 'червоний', className: 'bg-red-500' },
   { id: 'помаранчевий', className: 'bg-orange-500' },
   { id: 'жовтий', className: 'bg-yellow-400' },
-  { id: 'зелений', className: 'bg-emerald-500' },
+  { id: 'зелений', className: 'bg-[#f4e6dc]0' },
   { id: 'синій', className: 'bg-blue-500' },
   { id: 'фіолетовий', className: 'bg-violet-500' },
   { id: 'рожевий', className: 'bg-pink-500' },
@@ -150,13 +150,13 @@ export const JourneySetupHub = () => {
   };
 
   return (
-    <section className="mt-5 rounded-3xl border border-emerald-100/70 bg-white/90 p-3 shadow-[0_18px_40px_rgba(23,46,35,0.08)] backdrop-blur sm:p-4">
-      <div className="grid grid-cols-3 gap-2 rounded-2xl bg-stone-100/80 p-1">
+    <section className="mt-5 rounded-3xl border border-[#ead9cc] bg-[var(--lila-surface)]/92 p-3 shadow-[0_18px_40px_rgba(98,76,62,0.12)] backdrop-blur sm:p-4">
+      <div className="grid grid-cols-3 gap-2 rounded-2xl bg-[#f3e9de]/80 p-1">
         <button
           type="button"
           onClick={() => setActiveTab('simple')}
           className={`rounded-xl px-2 py-2 text-xs sm:text-sm ${
-            activeTab === 'simple' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'
+            activeTab === 'simple' ? 'bg-white text-[#3a2b24] shadow-sm' : 'text-[#7d6a5e]'
           }`}
         >
           Проста гра
@@ -165,7 +165,7 @@ export const JourneySetupHub = () => {
           type="button"
           onClick={() => setActiveTab('deep')}
           className={`rounded-xl px-2 py-2 text-xs sm:text-sm ${
-            activeTab === 'deep' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'
+            activeTab === 'deep' ? 'bg-white text-[#3a2b24] shadow-sm' : 'text-[#7d6a5e]'
           }`}
         >
           Глибока гра
@@ -174,7 +174,7 @@ export const JourneySetupHub = () => {
           type="button"
           onClick={() => setActiveTab('rules')}
           className={`rounded-xl px-2 py-2 text-xs sm:text-sm ${
-            activeTab === 'rules' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'
+            activeTab === 'rules' ? 'bg-white text-[#3a2b24] shadow-sm' : 'text-[#7d6a5e]'
           }`}
         >
           Правила гри
@@ -196,7 +196,7 @@ export const JourneySetupHub = () => {
                 <input
                   value={player.name}
                   onChange={(event) => updatePlayer(player.id, { name: event.target.value })}
-                  className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-emerald-300"
+                  className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#d6b29c]"
                 />
               </label>
 
@@ -205,7 +205,7 @@ export const JourneySetupHub = () => {
                 <textarea
                   value={player.request}
                   onChange={(event) => updatePlayer(player.id, { request: event.target.value })}
-                  className="mt-1 min-h-20 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-emerald-300"
+                  className="mt-1 min-h-20 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#d6b29c]"
                 />
               </label>
 
@@ -247,7 +247,7 @@ export const JourneySetupHub = () => {
             onClick={() => {
               void startSimpleGame();
             }}
-            className="w-full rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-60"
+            className="w-full rounded-xl bg-[#c57b5d] px-3 py-2.5 text-sm font-medium text-white transition hover:bg-[#b96d50] disabled:opacity-60"
           >
             Почати гру
           </button>
@@ -256,7 +256,7 @@ export const JourneySetupHub = () => {
 
       {activeTab === 'deep' && (
         <div className="mt-4 space-y-3">
-          <article className="rounded-2xl border border-emerald-100 bg-gradient-to-b from-emerald-50 to-white p-4">
+          <article className="rounded-2xl border border-[#ead9cc] bg-gradient-to-b from-[#fbf2e9] to-white p-4">
             <h3 className="text-base font-semibold text-stone-900">Глибока гра</h3>
             <p className="mt-1 text-sm text-stone-600">Індивідуальний простір трансформаційної роботи.</p>
 
@@ -265,7 +265,7 @@ export const JourneySetupHub = () => {
               <input
                 value={deepName}
                 onChange={(event) => setDeepName(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-emerald-300"
+                className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#d6b29c]"
               />
             </label>
 
@@ -274,7 +274,7 @@ export const JourneySetupHub = () => {
               <textarea
                 value={deepRequest}
                 onChange={(event) => setDeepRequest(event.target.value)}
-                className="mt-1 min-h-24 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-emerald-300"
+                className="mt-1 min-h-24 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#d6b29c]"
                 placeholder="Що в мені заважає…? Який мій урок…? Де мій ресурс…?"
               />
             </label>
@@ -290,7 +290,7 @@ export const JourneySetupHub = () => {
               <select
                 value={deepOutcome}
                 onChange={(event) => setDeepOutcome(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-emerald-300"
+                className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#d6b29c]"
               >
                 {deepOutcomeOptions.map((outcome) => (
                   <option key={outcome} value={outcome}>
@@ -300,7 +300,7 @@ export const JourneySetupHub = () => {
               </select>
             </label>
 
-            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+            <div className="mt-3 rounded-xl border border-[#e2ccbe] bg-[#f4e6dc] p-3 text-sm text-[#6f4a3a]">
               {deepSummary}
             </div>
 
@@ -310,7 +310,7 @@ export const JourneySetupHub = () => {
               onClick={() => {
                 void startDeepGame();
               }}
-              className="mt-4 w-full rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-60"
+              className="mt-4 w-full rounded-xl bg-[#c57b5d] px-3 py-2.5 text-sm font-medium text-white transition hover:bg-[#b96d50] disabled:opacity-60"
             >
               Почати гру
             </button>
@@ -324,7 +324,7 @@ export const JourneySetupHub = () => {
             Ліла — давній інструмент самопізнання, поєднаний із сучасною коучинговою практикою.
             Поле працює як дзеркало життя.
           </p>
-          <p className="mt-2 rounded-xl bg-emerald-50 p-3 text-emerald-900">
+          <p className="mt-2 rounded-xl bg-[#f4e6dc] p-3 text-[#6f4a3a]">
             Якщо щось незрозуміло або емоційно непросто — це нормально. Ви в безпечному темпі, і кожен крок тут має цінність.
           </p>
           <ul className="mt-3 space-y-1">

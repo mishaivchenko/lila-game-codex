@@ -133,7 +133,7 @@ export const CellCoachModal = ({
 
             <div className="mt-5 flex gap-2">
               <motion.button
-                className="flex-1 rounded-xl bg-emerald-600 px-3 py-3 text-sm font-medium text-white disabled:opacity-50"
+                className="flex-1 rounded-xl bg-[#c57b5d] px-3 py-3 text-sm font-medium text-white disabled:opacity-50"
                 type="button"
                 onClick={handleSave}
                 disabled={readOnly && text.trim().length === 0}

@@ -11,83 +11,54 @@ export const DeepModeWall = ({ open, onClose }: DeepModeWallProps) => {
   }
 
   return (
-    <main className="relative min-h-screen overflow-y-auto bg-[#090c1b] text-slate-100" data-testid="deep-mode-wall">
-      <div className="pointer-events-none absolute inset-0 opacity-80">
-        <motion.div
-          className="absolute -left-24 top-12 h-72 w-72 rounded-full bg-cyan-400/25 blur-3xl"
-          animate={{ scale: [1, 1.08, 1], opacity: [0.36, 0.52, 0.36] }}
-          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute right-[-5rem] top-40 h-80 w-80 rounded-full bg-indigo-400/20 blur-3xl"
-          animate={{ scale: [1.04, 1, 1.04], opacity: [0.22, 0.38, 0.22] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,0.1),transparent_42%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(147,197,253,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(147,197,253,0.08)_1px,transparent_1px)] bg-[length:38px_38px]" />
-      </div>
+    <div className="absolute inset-0 z-20 rounded-3xl" data-testid="deep-mode-wall">
+      <div className="absolute inset-0 rounded-3xl bg-[#f7efe7]/88 backdrop-blur-[2px]" />
 
       <motion.section
-        initial={{ opacity: 0, y: 18 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative mx-auto flex min-h-screen w-full max-w-4xl flex-col px-4 py-8 sm:px-6"
+        transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+        className="relative mx-3 mt-3 rounded-3xl border border-[#e4d4c6] bg-[linear-gradient(135deg,#fff9f3,#f4e8dd)] p-4 text-[#332823] shadow-[0_18px_46px_rgba(100,74,56,0.22)] sm:mx-4 sm:mt-4 sm:p-5"
       >
-        <div className="flex items-center justify-between">
-          <span className="rounded-full border border-cyan-200/35 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-cyan-100 backdrop-blur-md">
-            Deep Layer
-          </span>
+        <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-[#f0d6c6]/55 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-10 left-8 h-24 w-24 rounded-full bg-[#e9c8b7]/45 blur-2xl" />
+
+        <div className="relative flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.16em] text-[#8f6d5b]">Locked Section</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Глибока гра</h2>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-white/25 bg-white/5 px-3 py-1.5 text-xs text-slate-200 backdrop-blur-sm transition hover:bg-white/10"
+            className="rounded-full border border-[#dbc5b6] bg-white/70 px-3 py-1.5 text-xs text-[#6c5548] transition hover:bg-white"
           >
             Закрити
           </button>
         </div>
 
-        <article className="mt-8 rounded-3xl border border-white/20 bg-white/10 p-6 shadow-[0_24px_80px_rgba(8,20,46,0.55)] backdrop-blur-xl sm:p-8">
-          <motion.div
-            className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-200/40 bg-cyan-300/10 text-xl"
-            animate={{ boxShadow: ['0 0 0 rgba(34,211,238,0.2)', '0 0 28px rgba(34,211,238,0.34)', '0 0 0 rgba(34,211,238,0.2)'] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+        <p className="relative mt-3 text-sm leading-6 text-[#6f5d53]">
+          Проникніть глибше. Побачте приховані зв’язки. Дослухайтесь до тихих сигналів вашої подорожі.
+        </p>
+
+        <ul className="relative mt-4 space-y-2 text-sm text-[#4f3f36]">
+          <li className="rounded-xl border border-[#e6d8cd] bg-white/65 px-3 py-2">Глибинні інтерпретації клітин</li>
+          <li className="rounded-xl border border-[#e6d8cd] bg-white/65 px-3 py-2">AI-провідник з RAG-пам’яттю</li>
+          <li className="rounded-xl border border-[#e6d8cd] bg-white/65 px-3 py-2">Патерни шляху та нові питання</li>
+        </ul>
+
+        <div className="relative mt-5 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="rounded-2xl bg-[#c57b5d] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(146,94,70,0.34)] transition hover:bg-[#b96d50]"
           >
-            ◎
-          </motion.div>
-
-          <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Deep Game (AI)</h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-200 sm:text-base">
-            Проникніть глибше. Побачте приховані зв’язки. Дослухайтесь до тихих сигналів вашої подорожі.
-          </p>
-
-          <ul className="mt-6 space-y-3 text-sm text-cyan-50/95">
-            <li className="rounded-xl border border-cyan-100/20 bg-cyan-100/5 px-4 py-3">Глибинні інтерпретації клітин</li>
-            <li className="rounded-xl border border-cyan-100/20 bg-cyan-100/5 px-4 py-3">AI-провідник з RAG-пам’яттю</li>
-            <li className="rounded-xl border border-cyan-100/20 bg-cyan-100/5 px-4 py-3">Патерни шляху та нові питання</li>
-          </ul>
-
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              className="rounded-2xl bg-gradient-to-r from-cyan-400 to-indigo-400 px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_12px_34px_rgba(45,212,191,0.38)] transition hover:brightness-110"
-            >
-              Coming Soon — AI Journey
-            </button>
-            <span className="rounded-full border border-white/30 bg-white/5 px-3 py-1 text-xs text-slate-200">
-              Unlock Soon
-            </span>
-          </div>
-        </article>
-
-        <section className="mt-6 grid gap-3 pb-10 text-xs text-slate-300 sm:grid-cols-2">
-          <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm">
-            Deep Mode відкриє персональні шари сенсу на основі вашого реального маршруту.
-          </div>
-          <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm">
-            Це не звичайні підказки: лише цільові спостереження, питання і сигнал вашого циклу.
-          </div>
-        </section>
+            Coming Soon — AI Journey
+          </button>
+          <span className="rounded-full border border-[#dcc8bc] bg-white/70 px-3 py-1 text-xs text-[#7a6458]">
+            Unlock Soon
+          </span>
+        </div>
       </motion.section>
-    </main>
+    </div>
   );
 };

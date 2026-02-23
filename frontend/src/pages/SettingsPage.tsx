@@ -25,8 +25,8 @@ export const SettingsPage = () => {
   };
 
   return (
-    <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-5">
-      <div className="rounded-3xl bg-white p-4 shadow-sm">
+    <main className="mx-auto min-h-screen max-w-lg bg-[var(--lila-bg-main)] px-4 py-5">
+      <div className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4 shadow-[0_12px_30px_rgba(98,76,62,0.1)]">
         <h1 className="text-xl font-semibold">Налаштування</h1>
         <p className="mt-2 text-sm text-stone-600">Глобальні параметри зберігаються локально в IndexedDB.</p>
         <div className="mt-4 space-y-2 text-sm text-stone-700">
@@ -55,7 +55,7 @@ export const SettingsPage = () => {
             />
           </label>
         </div>
-        <Link className="mt-4 inline-block text-sm text-emerald-700" to="/game">
+        <Link className="mt-4 inline-block text-sm text-[#9b6d57]" to="/game">
           Повернутися до гри
         </Link>
       </div>

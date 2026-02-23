@@ -16,7 +16,7 @@ import { buttonHoverScale, buttonTapScale } from '../lib/animations/lilaMotion';
 import { formatMovePath, getMovePresentation, resolveMoveType } from '../lib/lila/historyFormat';
 import { getBoardTransitionPath } from '../lib/lila/boardProfiles';
 import { resolveTransitionEntryCell } from '../lib/lila/moveVisualization';
-import { DEEP_MODE_ROUTE } from '../features/deep-mode';
+import { DeepModeCard } from '../features/deep-mode';
 
 const chakras = chakrasRaw as ChakraInfo[];
 const SIMPLE_COLOR_HEX: Record<string, string> = {
@@ -323,7 +323,7 @@ export const GamePage = () => {
             : 'Немає активної сесії. Поверніться в налаштування.'}
         </p>
         {!loading && (
-          <Link to="/setup" className="mt-3 inline-block text-sm text-emerald-700">До налаштувань</Link>
+          <Link to="/setup" className="mt-3 inline-block text-sm text-[#8d6b5a]">До налаштувань</Link>
         )}
       </main>
     );
@@ -462,8 +462,8 @@ export const GamePage = () => {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-5">
-      <header className="mb-3 rounded-3xl bg-white p-4 shadow-sm">
+    <main className="mx-auto min-h-screen max-w-lg bg-[var(--lila-bg-main)] px-4 py-5">
+      <header className="mb-3 rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4 shadow-[0_12px_30px_rgba(98,76,62,0.1)]">
         <div className="flex items-start justify-between gap-3">
           <p className="text-sm text-stone-800">
             {isSimpleMultiplayer
@@ -504,7 +504,7 @@ export const GamePage = () => {
             Щоб увійти в глибоку гру, потрібно викинути 6.
           </p>
         )}
-        {entryHint && <p className="mt-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-800">{entryHint}</p>}
+        {entryHint && <p className="mt-2 rounded-xl bg-[#f4e6dc] px-3 py-2 text-xs text-[#6f4a3a]">{entryHint}</p>}
         {showHintInfo && (
           <p className="mt-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-700">
             Змії — це уроки. Стріли — це ресурси.
@@ -534,7 +534,7 @@ export const GamePage = () => {
         onMoveAnimationComplete={onMoveAnimationComplete}
       />
 
-      <section className="mt-4 rounded-3xl bg-white p-4 shadow-sm">
+      <section className="mt-4 rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4 shadow-[0_12px_30px_rgba(98,76,62,0.1)]">
         <div className="mb-3 flex items-center justify-between">
           <Dice value={lastMove?.dice} />
           <div className="text-right text-xs text-stone-600">
@@ -553,7 +553,7 @@ export const GamePage = () => {
           }}
           type="button"
           disabled={turnState !== 'idle'}
-          className="w-full rounded-xl bg-emerald-600 px-4 py-4 text-base font-semibold text-white transition duration-300 ease-out disabled:opacity-70"
+          className="w-full rounded-xl bg-[var(--lila-accent)] px-4 py-4 text-base font-semibold text-white transition duration-300 ease-out hover:bg-[var(--lila-accent-hover)] disabled:opacity-70"
           whileTap={buttonTapScale}
           whileHover={buttonHoverScale}
         >
@@ -578,26 +578,8 @@ export const GamePage = () => {
         </div>
       </section>
 
-      <section className="mt-4 rounded-3xl border border-cyan-100 bg-gradient-to-br from-[#0b1022] via-[#182235] to-[#20223a] p-4 text-slate-100 shadow-[0_16px_44px_rgba(11,16,34,0.35)]">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-200/90">Deep Journey</p>
-            <h2 className="mt-1 text-base font-semibold">Deep Game (AI)</h2>
-            <p className="mt-1 text-xs text-slate-300">
-              Coming Soon: глибинні інсайти і патерни шляху на окремому AI-рівні.
-            </p>
-          </div>
-          <span className="rounded-full border border-cyan-200/35 bg-cyan-300/10 px-2.5 py-1 text-[10px] uppercase tracking-wide text-cyan-100">
-            locked
-          </span>
-        </div>
-
-        <Link
-          to={DEEP_MODE_ROUTE}
-          className="mt-4 inline-flex rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-200"
-        >
-          Open AI Wall
-        </Link>
+      <section className="mt-4">
+        <DeepModeCard />
       </section>
 
       <AnimatePresence>
@@ -624,7 +606,7 @@ export const GamePage = () => {
                   onClick={() => {
                     void finishSession().then(() => setShowFinishConfirm(false));
                   }}
-                  className="flex-1 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white"
+                  className="flex-1 rounded-xl bg-[var(--lila-accent)] px-3 py-2.5 text-sm font-medium text-white"
                 >
                   Так, завершити
                 </button>
@@ -662,7 +644,7 @@ export const GamePage = () => {
                 placeholder={
                   'Сформулюй його чітко за формулою:\nПотреба + Питання\n(“Хочу відчувати гармонію у стосунках” +\n“Що мені заважає це відчувати?”)'
                 }
-                className="mt-3 min-h-32 w-full rounded-2xl border border-stone-200 px-3 py-3 text-sm text-stone-700 outline-none focus:border-emerald-300"
+                className="mt-3 min-h-32 w-full rounded-2xl border border-stone-200 px-3 py-3 text-sm text-stone-700 outline-none focus:border-[#d6b29c]"
               />
               <div className="mt-3 flex gap-2">
                 <button
@@ -672,7 +654,7 @@ export const GamePage = () => {
                       setShowDeepRequestModal(false);
                     });
                   }}
-                  className="flex-1 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white"
+                  className="flex-1 rounded-xl bg-[var(--lila-accent)] px-3 py-2.5 text-sm font-medium text-white"
                 >
                   Зберегти намір
                 </button>
