@@ -4,6 +4,7 @@ export type MoveType = 'normal' | 'snake' | 'ladder';
 
 export interface MovePresentation {
   symbol: string;
+  icon: string;
   label: string;
   badgeClassName: string;
   rowClassName: string;
@@ -36,6 +37,7 @@ export const getMovePresentation = (moveType: MoveType): MovePresentation => {
   if (moveType === 'ladder') {
     return {
       symbol: '⇧',
+      icon: '🪜',
       label: 'Стріла',
       badgeClassName: 'bg-teal-100 text-teal-800',
       rowClassName: 'border border-teal-200 bg-teal-50/40',
@@ -45,6 +47,7 @@ export const getMovePresentation = (moveType: MoveType): MovePresentation => {
   if (moveType === 'snake') {
     return {
       symbol: '⇩',
+      icon: '🐍',
       label: 'Змія',
       badgeClassName: 'bg-amber-100 text-amber-800',
       rowClassName: 'border border-amber-200 bg-amber-50/40',
@@ -53,6 +56,7 @@ export const getMovePresentation = (moveType: MoveType): MovePresentation => {
 
   return {
     symbol: '→',
+    icon: '•',
     label: 'Хід',
     badgeClassName: 'bg-stone-100 text-stone-700',
     rowClassName: 'border border-stone-200 bg-white',

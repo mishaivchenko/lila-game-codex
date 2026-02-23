@@ -13,6 +13,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { buttonHoverScale, buttonTapScale } from '../lib/animations/lilaMotion';
+import { formatMovePath, getMovePresentation, resolveMoveType } from '../lib/lila/historyFormat';
 
 const chakras = chakrasRaw as ChakraInfo[];
 const SIMPLE_COLOR_HEX: Record<string, string> = {
@@ -200,6 +201,8 @@ export const GamePage = () => {
   );
   const cellContent = board.cells[modalCellNumber - 1] ?? board.cells[0];
   const isAnimatingMove = turnState === 'animating';
+  const lastMoveType = lastMove ? resolveMoveType(lastMove) : 'normal';
+  const lastMovePresentation = getMovePresentation(lastMoveType);
 
   const onMoveAnimationComplete = useCallback((moveId: string) => {
     if (pendingMoveIdRef.current !== moveId) {
@@ -510,6 +513,11 @@ export const GamePage = () => {
             {error && <p className="text-red-600">{error}</p>}
           </div>
         </div>
+        {lastMove && lastMoveType !== 'normal' && (
+          <p className={`mb-3 rounded-xl px-3 py-2 text-xs font-medium ${lastMovePresentation.badgeClassName}`}>
+            {lastMovePresentation.icon} Спецхід: {lastMovePresentation.label} · {formatMovePath(lastMove)}
+          </p>
+        )}
         <motion.button
           onClick={() => {
             triggerDiceRoll();

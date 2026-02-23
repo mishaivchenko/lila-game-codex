@@ -29,10 +29,12 @@ describe('historyFormat', () => {
 
     expect(ladder.label).toBe('Стріла');
     expect(ladder.symbol).toBe('⇧');
+    expect(ladder.icon).toBe('🪜');
     expect(ladder.badgeClassName).toContain('teal');
 
     expect(snake.label).toBe('Змія');
     expect(snake.symbol).toBe('⇩');
+    expect(snake.icon).toBe('🐍');
     expect(snake.badgeClassName).toContain('amber');
   });
 });
