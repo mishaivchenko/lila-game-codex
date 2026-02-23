@@ -101,7 +101,7 @@ export const CellCoachModal = ({
                 </p>
                 {movePresentation && moveContext.type !== 'normal' && (
                   <span className={`rounded-full px-2 py-1 text-xs font-medium ${movePresentation.badgeClassName}`}>
-                    {movePresentation.label} {movePresentation.symbol}
+                    {movePresentation.icon} {movePresentation.label} {movePresentation.symbol}
                   </span>
                 )}
               </div>
