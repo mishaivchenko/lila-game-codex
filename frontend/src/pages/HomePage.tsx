@@ -2,16 +2,23 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGameContext } from '../context/GameContext';
 import { JourneySetupHub } from '../components/journey/JourneySetupHub';
+import { TelegramRoomsPanel, useTelegramAuth } from '../features/telegram';
 
 export const HomePage = () => {
   const { resumeLastSession } = useGameContext();
   const navigate = useNavigate();
   const [showSetup, setShowSetup] = useState(false);
+  const { isTelegramMode, user } = useTelegramAuth();
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl bg-gradient-to-b from-[var(--lila-bg-start)] to-[var(--lila-bg-end)] px-4 py-6 sm:px-6">
       <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/90 p-6 shadow-[0_20px_48px_rgba(98,76,62,0.12)]">
         <h1 className="text-2xl font-semibold text-stone-900 sm:text-3xl">Привіт, люба душа, готова почати свій шлях?</h1>
+        {isTelegramMode && user && (
+          <p className="mt-2 text-xs uppercase tracking-[0.14em] text-[#8f6d5b]">
+            Telegram: {user.displayName}
+          </p>
+        )}
         <p className="mt-2 text-sm text-[var(--lila-text-muted)]">
           Це простір мʼякого самодослідження. Рухайся у власному темпі.
         </p>
@@ -43,6 +50,10 @@ export const HomePage = () => {
       </section>
 
       {showSetup && <JourneySetupHub />}
+
+      <div className="mt-5">
+        <TelegramRoomsPanel />
+      </div>
     </main>
   );
 };

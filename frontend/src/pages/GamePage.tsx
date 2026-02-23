@@ -23,6 +23,7 @@ import {
   saveAnimationTimings,
 } from '../lib/animations/animationTimingSettings';
 import { DeepModeCard } from '../features/deep-mode';
+import { TelegramRoomsPanel } from '../features/telegram';
 
 const chakras = chakrasRaw as ChakraInfo[];
 const SIMPLE_COLOR_HEX: Record<string, string> = {
@@ -637,6 +638,10 @@ export const GamePage = () => {
 
       <section className="mt-4">
         <DeepModeCard />
+      </section>
+
+      <section className="mt-4">
+        <TelegramRoomsPanel />
       </section>
 
       <AnimatePresence>

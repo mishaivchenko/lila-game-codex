@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { JourneySetupHub } from '../components/journey/JourneySetupHub';
+import { TelegramRoomsPanel } from '../features/telegram';
 
 export const GameSetupPage = () => {
   return (
@@ -15,6 +16,9 @@ export const GameSetupPage = () => {
       </header>
 
       <JourneySetupHub />
+      <div className="mt-5">
+        <TelegramRoomsPanel />
+      </div>
     </main>
   );
 };
