@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { getCardImagePath } from '../content/cardAssets';
 import type { CellContent, DepthSetting } from '../domain/types';
 import { getLilaCellContent } from '../lib/lila/cellContent';
+import { getMovePresentation } from '../lib/lila/historyFormat';
 import { getNoteValidationError } from '../lib/lila/noteValidation';
 import {
   buttonHoverScale,
@@ -45,6 +46,7 @@ export const CellCoachModal = ({
     lilaContent.description || (depth === 'light' ? cellContent.shortText : cellContent.fullText);
   const displayedQuestions =
     lilaContent.questions.length > 0 ? lilaContent.questions : cellContent.questions;
+  const movePresentation = moveContext ? getMovePresentation(moveContext.type) : undefined;
 
   useEffect(() => {
     setText(initialText);
@@ -93,12 +95,16 @@ export const CellCoachModal = ({
           <section className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
             <h3 className="text-xl font-semibold text-stone-900">{lilaContent.title}</h3>
             {moveContext && (
-              <p className="mt-2 rounded-lg bg-stone-100 px-2.5 py-1.5 text-xs text-stone-600">
-                Хід: {moveContext.fromCell}{' '}
-                {moveContext.type === 'ladder' ? '⇧' : moveContext.type === 'snake' ? '⇩' : '→'}{' '}
-                {moveContext.toCell}
-                {moveContext.type === 'snake' ? ' · Змія' : moveContext.type === 'ladder' ? ' · Стріла' : ''}
-              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <p className="rounded-lg bg-stone-100 px-2.5 py-1.5 text-xs text-stone-600">
+                  Хід: {moveContext.fromCell} {movePresentation?.symbol ?? '→'} {moveContext.toCell}
+                </p>
+                {movePresentation && moveContext.type !== 'normal' && (
+                  <span className={`rounded-full px-2 py-1 text-xs font-medium ${movePresentation.badgeClassName}`}>
+                    {movePresentation.label} {movePresentation.symbol}
+                  </span>
+                )}
+              </div>
             )}
             <p className="mt-3 text-sm leading-relaxed text-stone-700">
               {displayedDescription}
