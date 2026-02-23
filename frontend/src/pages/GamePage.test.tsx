@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GamePage } from './GamePage';
 import type { GameSession, GameMove } from '../domain/types';
 import { TOKEN_MOVE_DURATION_MS } from '../lib/animations/lilaMotion';
+import { TRANSITION_TOTAL_MS } from '../components/lila/transitionAnimationConfig';
 import { useEffect } from 'react';
 
 const mockUseGameContext = vi.fn();
@@ -131,13 +132,25 @@ describe('GamePage modal timing', () => {
     });
 
     act(() => {
-      vi.advanceTimersByTime(TOKEN_MOVE_DURATION_MS * 2 - 1);
+      vi.advanceTimersByTime(TOKEN_MOVE_DURATION_MS - 1);
     });
     expect(screen.queryByText('Зберегти і продовжити')).toBeNull();
 
     act(() => {
       vi.advanceTimersByTime(1);
     });
+    expect(screen.getByTestId('lila-transition-snake')).not.toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(TRANSITION_TOTAL_MS - 1);
+    });
+    expect(screen.queryByText('Зберегти і продовжити')).toBeNull();
+
+    for (let i = 0; i < 20 && !screen.queryByText('Зберегти і продовжити'); i += 1) {
+      act(() => {
+        vi.advanceTimersByTime(16);
+      });
+    }
     expect(screen.getByText('Зберегти і продовжити')).not.toBeNull();
   });
 });

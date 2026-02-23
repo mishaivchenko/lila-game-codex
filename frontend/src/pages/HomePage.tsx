@@ -9,10 +9,10 @@ export const HomePage = () => {
   const [showSetup, setShowSetup] = useState(false);
 
   return (
-    <main className="mx-auto min-h-screen max-w-3xl bg-gradient-to-b from-[#f8f6ef] via-[#f2f6ef] to-[#eef2f9] px-4 py-6 sm:px-6">
-      <section className="rounded-3xl border border-white/70 bg-white/85 p-6 shadow-[0_20px_48px_rgba(62,70,58,0.1)]">
+    <main className="mx-auto min-h-screen max-w-3xl bg-gradient-to-b from-[var(--lila-bg-start)] to-[var(--lila-bg-end)] px-4 py-6 sm:px-6">
+      <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/90 p-6 shadow-[0_20px_48px_rgba(98,76,62,0.12)]">
         <h1 className="text-2xl font-semibold text-stone-900 sm:text-3xl">Привіт, люба душа, готова почати свій шлях?</h1>
-        <p className="mt-2 text-sm text-stone-600">
+        <p className="mt-2 text-sm text-[var(--lila-text-muted)]">
           Це простір мʼякого самодослідження. Рухайся у власному темпі.
         </p>
 
@@ -20,7 +20,7 @@ export const HomePage = () => {
           <button
             type="button"
             onClick={() => setShowSetup((prev) => !prev)}
-            className="rounded-xl bg-emerald-600 px-4 py-3 text-center text-sm font-medium text-white transition hover:bg-emerald-500"
+            className="rounded-xl bg-[var(--lila-accent)] px-4 py-3 text-center text-sm font-medium text-white transition hover:bg-[var(--lila-accent-hover)]"
           >
             Почати нову гру
           </button>
@@ -29,7 +29,7 @@ export const HomePage = () => {
             onClick={() => {
               void resumeLastSession().then(() => navigate('/game'));
             }}
-            className="rounded-xl border border-stone-300 px-4 py-3 text-center text-sm text-stone-700 transition hover:bg-stone-50"
+            className="rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] px-4 py-3 text-center text-sm text-[var(--lila-text-primary)] transition hover:bg-[var(--lila-surface-muted)]"
           >
             Продовжити гру
           </button>

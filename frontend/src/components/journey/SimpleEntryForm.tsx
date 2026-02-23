@@ -16,7 +16,7 @@ export const SimpleEntryForm = ({
   onRequestChange,
 }: SimpleEntryFormProps) => {
   return (
-    <section className="space-y-7 rounded-3xl border border-white/70 bg-white/85 p-6 shadow-[0_14px_36px_rgba(76,70,58,0.1)] sm:p-7">
+    <section className="space-y-7 rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 p-6 shadow-[0_14px_36px_rgba(98,76,62,0.12)] sm:p-7">
       <div>
         <p className="text-sm text-stone-500">Один вдих. Один фокус.</p>
         <h2 className="mt-1 text-2xl font-semibold text-stone-900">Простий вхід</h2>
@@ -39,7 +39,7 @@ export const SimpleEntryForm = ({
           value={request}
           onChange={(event) => onRequestChange(event.target.value)}
           placeholder="Що зараз болить або найбільше хвилює?"
-          className="mt-2 min-h-32 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-700 shadow-inner outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+          className="mt-2 min-h-32 w-full rounded-2xl border border-[#e2d2c5] bg-white px-4 py-3 text-sm text-stone-700 shadow-inner outline-none transition focus:border-[#d6b29c] focus:ring-2 focus:ring-[#f3e4d9]"
         />
         <p className="mt-2 text-xs text-stone-400">Коротко. Одним-двома реченнями.</p>
       </label>
