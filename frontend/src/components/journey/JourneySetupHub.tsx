@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameContext } from '../../context/GameContext';
 
@@ -6,7 +6,7 @@ const colors = [
   { id: 'червоний', className: 'bg-red-500' },
   { id: 'помаранчевий', className: 'bg-orange-500' },
   { id: 'жовтий', className: 'bg-yellow-400' },
-  { id: 'зелений', className: 'bg-[#f4e6dc]0' },
+  { id: 'зелений', className: 'bg-green-500' },
   { id: 'синій', className: 'bg-blue-500' },
   { id: 'фіолетовий', className: 'bg-violet-500' },
   { id: 'рожевий', className: 'bg-pink-500' },
@@ -20,12 +20,6 @@ interface PlayerDraft {
   request: string;
   color: (typeof colors)[number]['id'];
 }
-
-const deepOutcomeOptions = [
-  'Почути свій головний урок',
-  'Побачити, що блокує рух',
-  'Відчути внутрішню опору',
-] as const;
 
 const chakraLevels = [
   'Муладхара — безпека, опора, довіра до життя.',
@@ -52,15 +46,6 @@ export const JourneySetupHub = () => {
 
   const [players, setPlayers] = useState<PlayerDraft[]>([createPlayer(0)]);
   const [simpleError, setSimpleError] = useState<string | undefined>(undefined);
-
-  const [deepName, setDeepName] = useState('');
-  const [deepRequest, setDeepRequest] = useState('');
-  const [deepOutcome, setDeepOutcome] = useState<string>(deepOutcomeOptions[0]);
-
-  const deepSummary = useMemo(() => {
-    const cleanRequest = deepRequest.trim() || 'почути свій наступний крок';
-    return `Ваш запит звучить так: ${cleanRequest}. Намір подорожі: ${deepOutcome}.`;
-  }, [deepOutcome, deepRequest]);
 
   const updatePlayer = (id: string, patch: Partial<PlayerDraft>) => {
     setPlayers((prev) => prev.map((player) => (player.id === id ? { ...player, ...patch } : player)));
@@ -129,21 +114,6 @@ export const JourneySetupHub = () => {
         need: summary,
       },
       { speed: 'normal', depth: 'standard' },
-    );
-
-    navigate('/game');
-  };
-
-  const startDeepGame = async () => {
-    await startNewSession(
-      'full',
-      {
-        isDeepEntry: true,
-        simpleRequest: deepRequest,
-        need: deepName,
-        question: deepSummary,
-      },
-      { speed: 'normal', depth: 'deep' },
     );
 
     navigate('/game');
@@ -256,64 +226,31 @@ export const JourneySetupHub = () => {
 
       {activeTab === 'deep' && (
         <div className="mt-4 space-y-3">
-          <article className="rounded-2xl border border-[#ead9cc] bg-gradient-to-b from-[#fbf2e9] to-white p-4">
-            <h3 className="text-base font-semibold text-stone-900">Глибока гра</h3>
-            <p className="mt-1 text-sm text-stone-600">Індивідуальний простір трансформаційної роботи.</p>
-
-            <label className="mt-3 block text-sm text-stone-700">
-              Імʼя
-              <input
-                value={deepName}
-                onChange={(event) => setDeepName(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#d6b29c]"
-              />
-            </label>
-
-            <label className="mt-3 block text-sm text-stone-700">
-              Мій запит
-              <textarea
-                value={deepRequest}
-                onChange={(event) => setDeepRequest(event.target.value)}
-                className="mt-1 min-h-24 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#d6b29c]"
-                placeholder="Що в мені заважає…? Який мій урок…? Де мій ресурс…?"
-              />
-            </label>
-
-            <div className="mt-3 rounded-xl bg-white/80 p-3 text-xs leading-relaxed text-stone-600">
-              <p>Ліла має власну «граматику» і працює тільки в форматі «Тут і Зараз».</p>
-              <p className="mt-1">Не працює: «Коли я вийду заміж?», «Чи пощастить мені?»</p>
-              <p className="mt-1">Працює: «Що в мені заважає…?», «Який мій урок…?», «Де мій ресурс…?»</p>
-            </div>
-
-            <label className="mt-3 block text-sm text-stone-700">
-              Бажаний результат
-              <select
-                value={deepOutcome}
-                onChange={(event) => setDeepOutcome(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#d6b29c]"
+          <article className="relative overflow-hidden rounded-2xl border border-[#ead9cc] bg-gradient-to-b from-[#fbf2e9] to-white p-4">
+            <div className="space-y-3 opacity-60 blur-[1px]">
+              <h3 className="text-base font-semibold text-stone-900">Глибока гра</h3>
+              <p className="mt-1 text-sm text-stone-600">Індивідуальний простір трансформаційної роботи.</p>
+              <div className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-500">
+                Запит, фокус і персональний формат будуть доступні після релізу AI.
+              </div>
+              <button
+                type="button"
+                disabled
+                className="w-full rounded-xl bg-[#c57b5d] px-3 py-2.5 text-sm font-medium text-white disabled:opacity-60"
               >
-                {deepOutcomeOptions.map((outcome) => (
-                  <option key={outcome} value={outcome}>
-                    {outcome}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="mt-3 rounded-xl border border-[#e2ccbe] bg-[#f4e6dc] p-3 text-sm text-[#6f4a3a]">
-              {deepSummary}
+                Почати гру
+              </button>
             </div>
 
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => {
-                void startDeepGame();
-              }}
-              className="mt-4 w-full rounded-xl bg-[#c57b5d] px-3 py-2.5 text-sm font-medium text-white transition hover:bg-[#b96d50] disabled:opacity-60"
-            >
-              Почати гру
-            </button>
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#f7efe7]/88 p-4 backdrop-blur-[2px]">
+              <div className="w-full max-w-md rounded-2xl border border-[#e4d4c6] bg-[linear-gradient(135deg,#fff9f3,#f4e8dd)] p-4 text-center text-[#332823] shadow-[0_14px_36px_rgba(100,74,56,0.2)]">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[#8f6d5b]">Locked Section</p>
+                <h4 className="mt-1 text-lg font-semibold">Ask AI assistant (Coming soon)</h4>
+                <p className="mt-2 text-sm text-[#6f5d53]">
+                  Розділ глибокої AI-роботи ще недоступний. Ви зможете активувати його після релізу.
+                </p>
+              </div>
+            </div>
           </article>
         </div>
       )}

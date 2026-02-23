@@ -1,32 +1,22 @@
-import { Link } from 'react-router-dom';
-import { DEEP_MODE_ROUTE } from './deepMode.routes';
-import { useDeepModeStore } from './useDeepModeStore';
-
 export const DeepModeCard = () => {
-  const { isLocked, hasSeenDeepMode, markDeepModeSeen } = useDeepModeStore();
-
   return (
     <section className="rounded-3xl border border-[#e8d8cb] bg-[linear-gradient(135deg,#fffaf5,#f3e7dc)] p-5 text-[#312723] shadow-[0_16px_44px_rgba(98,76,62,0.14)]">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold tracking-tight">Глибока гра</h2>
-        <span className="rounded-full border border-[#d9c2b1] bg-white/70 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-[#7e6558]">
-          {isLocked ? 'locked' : 'open'}
-        </span>
-      </div>
+      <p className="text-[11px] uppercase tracking-[0.16em] text-[#8f6d5b]">Deep Journey</p>
+      <h2 className="mt-1 text-lg font-semibold tracking-tight">Ask AI assistant (Coming soon)</h2>
 
       <p className="mt-2 text-sm text-[#6a5b52]">
-        Тиха зона для глибшої роботи: більше сенсу, більше зв’язків, більше м’яких інсайтів.
+        Скоро тут з’явиться AI-помічник для глибших інсайтів, патернів шляху та точніших запитань.
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Link
-          to={DEEP_MODE_ROUTE}
-          onClick={markDeepModeSeen}
-          className="rounded-xl bg-[#c57b5d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#b96d50]"
+        <button
+          type="button"
+          disabled
+          className="rounded-xl bg-[#c57b5d] px-4 py-2 text-sm font-semibold text-white opacity-75"
         >
-          Глибока гра
-        </Link>
-        <span className="text-xs text-[#7a685f]">{hasSeenDeepMode ? 'Доступно в меню (Coming Soon)' : 'Нова секція: Coming Soon'}</span>
+          Coming Soon — AI Journey
+        </button>
+        <span className="text-xs text-[#7a685f]">Поки недоступно для запуску</span>
       </div>
     </section>
   );

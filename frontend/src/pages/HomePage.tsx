@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGameContext } from '../context/GameContext';
 import { JourneySetupHub } from '../components/journey/JourneySetupHub';
-import { DeepModeCard } from '../features/deep-mode';
 
 export const HomePage = () => {
   const { resumeLastSession } = useGameContext();
@@ -44,10 +43,6 @@ export const HomePage = () => {
       </section>
 
       {showSetup && <JourneySetupHub />}
-
-      <section className="mt-5">
-        <DeepModeCard />
-      </section>
     </main>
   );
 };

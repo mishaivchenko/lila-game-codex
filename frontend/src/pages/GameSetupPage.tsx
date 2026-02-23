@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { JourneySetupHub } from '../components/journey/JourneySetupHub';
-import { DeepModeCard } from '../features/deep-mode';
 
 export const GameSetupPage = () => {
   return (
@@ -16,10 +15,6 @@ export const GameSetupPage = () => {
       </header>
 
       <JourneySetupHub />
-
-      <section className="mt-5">
-        <DeepModeCard />
-      </section>
     </main>
   );
 };
