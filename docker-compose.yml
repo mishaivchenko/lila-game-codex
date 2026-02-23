@@ -1,28 +1,88 @@
-version: '3.9'
+name: lila-prod
 
 services:
-  backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    image: lila-backend:local
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
     ports:
-      - '3001:3001'
+      - '80:80'
+      - '443:443'
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - web
+
+  frontend:
+    image: ${FRONTEND_IMAGE}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '-', 'http://127.0.0.1/']
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    networks:
+      - web
+
+  backend:
+    image: ${BACKEND_IMAGE}
+    restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3001
-      APP_AUTH_SECRET: local-dev-secret-change-me
-      TELEGRAM_BOT_TOKEN: 123456:replace-me
-      FRONTEND_DIST: /dev/null
-
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-      args:
-        VITE_API_BASE_URL: /api
-    image: lila-frontend:local
+      APP_AUTH_SECRET: ${APP_AUTH_SECRET}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      APP_BASE_URL: https://${DOMAIN}
+      FRONTEND_WEBAPP_URL: https://${DOMAIN}/telegram
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
-      - backend
-    ports:
-      - '8080:80'
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '-', 'http://127.0.0.1:3001/health']
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    networks:
+      - web
+      - internal
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  web:
+  internal:
