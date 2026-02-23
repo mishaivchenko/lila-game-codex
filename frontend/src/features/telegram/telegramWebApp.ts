@@ -29,8 +29,11 @@ export interface TelegramWebApp {
   colorScheme?: 'light' | 'dark';
   themeParams?: TelegramThemeParams;
   isExpanded?: boolean;
+  isFullscreen?: boolean;
   ready: () => void;
   expand: () => void;
+  requestFullscreen?: () => void;
+  exitFullscreen?: () => void;
   close: () => void;
   BackButton?: TelegramWebAppButton;
 }

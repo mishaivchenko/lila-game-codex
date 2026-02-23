@@ -27,6 +27,7 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
   const routeForcesTelegram = location.pathname === '/telegram';
   const telegramMode = useMemo(() => routeForcesTelegram || isTelegramWebApp(), [routeForcesTelegram]);
   const [authState, setAuthState] = useState<TelegramAuthContextValue>(() => createInitialState(telegramMode));
+  const [fullscreenRequested, setFullscreenRequested] = useState(false);
 
   useEffect(() => {
     setAuthState((prev) => ({
@@ -35,6 +36,37 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
       status: telegramMode ? (prev.status === 'authenticated' ? 'authenticated' : 'loading') : 'idle',
     }));
   }, [telegramMode]);
+
+  const requestFullScreen = async () => {
+    const webApp = getTelegramWebApp();
+    webApp?.requestFullscreen?.();
+    webApp?.expand();
+
+    // Fallback for desktop/web contexts where WebApp expand is not enough.
+    if (document.fullscreenElement) {
+      setFullscreenRequested(true);
+      return;
+    }
+
+    const root = document.documentElement as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void> | void;
+      msRequestFullscreen?: () => Promise<void> | void;
+    };
+
+    try {
+      if (root.requestFullscreen) {
+        await root.requestFullscreen();
+      } else if (root.webkitRequestFullscreen) {
+        await root.webkitRequestFullscreen();
+      } else if (root.msRequestFullscreen) {
+        await root.msRequestFullscreen();
+      }
+    } catch {
+      // Non-blocking UX: keep app usable even if fullscreen is denied by browser policy.
+    } finally {
+      setFullscreenRequested(true);
+    }
+  };
 
   useEffect(() => {
     if (!telegramMode) {
@@ -122,6 +154,20 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
     <TelegramAuthProvider value={authState}>
       <TelegramRoomsProvider authToken={authState.token}>
         <div className={shellClassName} data-telegram-mode={telegramMode ? 'true' : 'false'}>
+          {authState.isTelegramMode && !fullscreenRequested && (
+            <div className="mb-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  void requestFullScreen();
+                }}
+                className="rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] px-3 py-1.5 text-xs font-medium text-[var(--lila-text-primary)] shadow-sm transition hover:bg-[var(--lila-surface-muted)]"
+              >
+                Open full screen
+              </button>
+            </div>
+          )}
+
           <AnimatePresence>
             {authState.isTelegramMode && authState.status === 'loading' && (
               <motion.div
