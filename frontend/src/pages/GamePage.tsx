@@ -16,6 +16,7 @@ import { buttonHoverScale, buttonTapScale } from '../lib/animations/lilaMotion';
 import { formatMovePath, getMovePresentation, resolveMoveType } from '../lib/lila/historyFormat';
 import { getBoardTransitionPath } from '../lib/lila/boardProfiles';
 import { resolveTransitionEntryCell } from '../lib/lila/moveVisualization';
+import { DEEP_MODE_ROUTE } from '../features/deep-mode';
 
 const chakras = chakrasRaw as ChakraInfo[];
 const SIMPLE_COLOR_HEX: Record<string, string> = {
@@ -575,6 +576,28 @@ export const GamePage = () => {
           </Link>
           <span>Звук</span>
         </div>
+      </section>
+
+      <section className="mt-4 rounded-3xl border border-cyan-100 bg-gradient-to-br from-[#0b1022] via-[#182235] to-[#20223a] p-4 text-slate-100 shadow-[0_16px_44px_rgba(11,16,34,0.35)]">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-200/90">Deep Journey</p>
+            <h2 className="mt-1 text-base font-semibold">Deep Game (AI)</h2>
+            <p className="mt-1 text-xs text-slate-300">
+              Coming Soon: глибинні інсайти і патерни шляху на окремому AI-рівні.
+            </p>
+          </div>
+          <span className="rounded-full border border-cyan-200/35 bg-cyan-300/10 px-2.5 py-1 text-[10px] uppercase tracking-wide text-cyan-100">
+            locked
+          </span>
+        </div>
+
+        <Link
+          to={DEEP_MODE_ROUTE}
+          className="mt-4 inline-flex rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-200"
+        >
+          Open AI Wall
+        </Link>
       </section>
 
       <AnimatePresence>
