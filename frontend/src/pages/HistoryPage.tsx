@@ -5,6 +5,7 @@ import { BOARD_DEFINITIONS } from '../content/boards';
 import { createRepositories } from '../repositories';
 import { useGameContext } from '../context/GameContext';
 import type { CellInsight, GameMove } from '../domain/types';
+import { formatMovePath, getMovePresentation, resolveMoveType } from '../lib/lila/historyFormat';
 
 const repositories = createRepositories();
 
@@ -122,29 +123,6 @@ export const HistoryPage = () => {
     });
   }, [filter, insights, moves]);
 
-  const resolveMoveType = (move: GameMove): 'normal' | 'snake' | 'ladder' => {
-    if (move.moveType) {
-      return move.moveType;
-    }
-    if (move.snakeOrArrow === 'snake') {
-      return 'snake';
-    }
-    if (move.snakeOrArrow === 'arrow') {
-      return 'ladder';
-    }
-    return 'normal';
-  };
-
-  const getMoveSymbol = (moveType: 'normal' | 'snake' | 'ladder'): string => {
-    if (moveType === 'ladder') {
-      return '⇧';
-    }
-    if (moveType === 'snake') {
-      return '⇩';
-    }
-    return '→';
-  };
-
   const selectedContent = selectedCell ? board.cells[selectedCell - 1] : undefined;
   const selectedInsight = insights.find((insight) => insight.cellNumber === selectedCell)?.text;
   const selectedMove = selectedMoveId ? rows.find((move) => move.id === selectedMoveId) : undefined;
@@ -196,7 +174,7 @@ export const HistoryPage = () => {
           const content = board.cells[move.toCell - 1];
           const hasInsight = insights.some((insight) => insight.cellNumber === move.toCell);
           const moveType = resolveMoveType(move);
-          const symbol = getMoveSymbol(moveType);
+          const presentation = getMovePresentation(moveType);
           return (
             <button
               key={move.id}
@@ -205,18 +183,23 @@ export const HistoryPage = () => {
                 setSelectedCell(move.toCell);
                 setSelectedMoveId(move.id);
               }}
-              className="flex w-full items-center justify-between rounded-xl bg-white p-3 text-left shadow-sm"
+              className={`flex w-full items-center justify-between rounded-xl p-3 text-left shadow-sm ${presentation.rowClassName}`}
             >
               <div>
                 <p className="text-xs text-stone-500">Клітина {move.toCell}</p>
                 <p className="text-sm font-medium text-stone-900">{content.title}</p>
                 <p className="mt-1 text-xs text-stone-500">
-                  Хід: {move.fromCell} {symbol} {move.toCell}
+                  Хід: {formatMovePath(move)}
                 </p>
               </div>
-              <span className={`rounded-full px-2 py-1 text-xs ${hasInsight ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-600'}`}>
-                {hasInsight ? 'є нотатка' : 'без нотатки'}
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className={`rounded-full px-2 py-1 text-xs font-medium ${presentation.badgeClassName}`}>
+                  {presentation.label} {presentation.symbol}
+                </span>
+                <span className={`rounded-full px-2 py-1 text-xs ${hasInsight ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-600'}`}>
+                  {hasInsight ? 'є нотатка' : 'без нотатки'}
+                </span>
+              </div>
             </button>
           );
         })}

@@ -6,12 +6,20 @@ import { LilaDexieDb } from '../db/dexie';
 import { createRepositories } from '../repositories';
 
 const TestHarness = () => {
-  const { currentSession, startNewSession, performMove, saveInsight, resumeLastSession } = useGameContext();
+  const {
+    currentSession,
+    startNewSession,
+    performMove,
+    finishSession,
+    saveInsight,
+    resumeLastSession,
+  } = useGameContext();
 
   return (
     <div>
       <p data-testid="cell">{currentSession?.currentCell ?? 'none'}</p>
       <p data-testid="board">{currentSession?.boardType ?? 'none'}</p>
+      <p data-testid="status">{currentSession?.sessionStatus ?? 'none'}</p>
       <button
         type="button"
         onClick={() => {
@@ -21,6 +29,7 @@ const TestHarness = () => {
         start
       </button>
       <button type="button" onClick={() => { void performMove(); }}>move</button>
+      <button type="button" onClick={() => { void finishSession(); }}>finish</button>
       <button type="button" onClick={() => { void saveInsight(currentSession?.currentCell ?? 1, 'hello'); }}>insight</button>
       <button type="button" onClick={() => { void resumeLastSession(); }}>resume</button>
     </div>
@@ -49,6 +58,7 @@ describe('GameContext', () => {
 
     await user.click(screen.getByText('move'));
     await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe('7'));
+    await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('active'));
 
     await user.click(screen.getByText('insight'));
     const saved = await repositories.insightsRepository.getInsightsBySession(
@@ -74,6 +84,7 @@ describe('GameContext', () => {
       currentCell: 999,
       settings: { speed: 'normal', depth: 'standard' },
       request: { isDeepEntry: false, simpleRequest: 'legacy' },
+      sessionStatus: undefined,
       finished: false,
       hasEnteredGame: undefined,
     } as any);
@@ -89,6 +100,31 @@ describe('GameContext', () => {
 
     await waitFor(() => expect(screen.getByTestId('board').textContent).toBe('full'));
     await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe('72'));
+    await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('active'));
+
+    await db.delete();
+  });
+
+  it('can be manually finished and blocks further moves', async () => {
+    const db = new LilaDexieDb(`ctx_finish_${Date.now()}`);
+    const repositories = createRepositories(db);
+
+    render(
+      <GameProvider repositories={repositories} diceRng={() => 0.8}>
+        <TestHarness />
+      </GameProvider>,
+    );
+
+    const user = userEvent.setup();
+    await user.click(screen.getByText('start'));
+    await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('active'));
+
+    await user.click(screen.getByText('finish'));
+    await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('completed'));
+
+    const beforeCell = screen.getByTestId('cell').textContent;
+    await user.click(screen.getByText('move'));
+    await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe(beforeCell));
 
     await db.delete();
   });

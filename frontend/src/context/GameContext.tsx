@@ -44,6 +44,7 @@ const normalizeSession = (session: GameSession): GameSession => {
     ...session,
     boardType: normalizedBoardType,
     currentCell: normalizedCell,
+    sessionStatus: session.finished ? 'completed' : (session.sessionStatus ?? 'active'),
     hasEnteredGame: Boolean(session.hasEnteredGame),
   };
 };
@@ -73,6 +74,7 @@ export interface GameContextValue extends GameState {
   ) => Promise<void>;
   resumeLastSession: () => Promise<void>;
   performMove: (forcedDice?: number) => Promise<GameMove | undefined>;
+  finishSession: () => Promise<void>;
   saveInsight: (cellNumber: number, text: string, voiceNoteId?: string) => Promise<void>;
   updateSessionRequest: (patch: string | Partial<GameRequest>) => Promise<void>;
 }
@@ -107,6 +109,7 @@ export const GameProvider = ({
           currentCell: 1,
           settings,
           request,
+          sessionStatus: 'active',
           finished: false,
           hasEnteredGame: false,
         };
@@ -134,12 +137,14 @@ export const GameProvider = ({
       if (
         normalizedSession.boardType !== session.boardType ||
         normalizedSession.currentCell !== session.currentCell ||
-        normalizedSession.hasEnteredGame !== session.hasEnteredGame
+        normalizedSession.hasEnteredGame !== session.hasEnteredGame ||
+        normalizedSession.sessionStatus !== session.sessionStatus
       ) {
         await repositories.sessionsRepository.updateSession(session.id, {
           boardType: normalizedSession.boardType,
           currentCell: normalizedSession.currentCell,
           hasEnteredGame: normalizedSession.hasEnteredGame,
+          sessionStatus: normalizedSession.sessionStatus,
         });
       }
 
@@ -157,6 +162,10 @@ export const GameProvider = ({
 
     try {
       const normalizedSession = normalizeSession(state.currentSession);
+      if (normalizedSession.finished || normalizedSession.sessionStatus === 'completed') {
+        dispatch({ type: 'SET_ERROR', payload: 'Сесію завершено. Почніть нову подорож.' });
+        return undefined;
+      }
       const dice = typeof forcedDice === 'number' ? Math.min(6, Math.max(1, Math.round(forcedDice))) : rollDice(diceRng);
       const board = BOARD_DEFINITIONS[normalizedSession.boardType];
       const deepEntryGate =
@@ -199,6 +208,7 @@ export const GameProvider = ({
       const sessionPatch: Partial<GameSession> = {
         currentCell: next.toCell,
         finished: next.finished,
+        sessionStatus: next.finished ? 'completed' : 'active',
         hasEnteredGame: next.hasEnteredGame,
         finishedAt: next.finished ? now : undefined,
       };
@@ -215,10 +225,11 @@ export const GameProvider = ({
 
       await repositories.movesRepository.saveMove(move);
 
-      dispatch({ type: next.finished ? 'SESSION_FINISHED' : 'MOVE_PERFORMED', payload: updatedSession });
+      const normalizedUpdatedSession = normalizeSession(updatedSession);
+      dispatch({ type: next.finished ? 'SESSION_FINISHED' : 'MOVE_PERFORMED', payload: normalizedUpdatedSession });
       void logEvent({
         eventType: next.finished ? 'game_finished' : 'move_performed',
-        sessionId: updatedSession.id,
+        sessionId: normalizedUpdatedSession.id,
         timestamp: now,
         payload: { fromCell: move.fromCell, toCell: move.toCell, dice: move.dice },
       });
@@ -228,6 +239,46 @@ export const GameProvider = ({
       return undefined;
     }
   }, [diceRng, repositories.movesRepository, repositories.sessionsRepository, state.currentSession]);
+
+  const finishSession = useCallback(async () => {
+    if (!state.currentSession) {
+      dispatch({ type: 'SET_ERROR', payload: 'Немає активної сесії.' });
+      return;
+    }
+
+    try {
+      const normalizedSession = normalizeSession(state.currentSession);
+      if (normalizedSession.finished || normalizedSession.sessionStatus === 'completed') {
+        dispatch({ type: 'SESSION_FINISHED', payload: normalizedSession });
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const updatedSession = await repositories.sessionsRepository.updateSession(
+        normalizedSession.id,
+        {
+          finished: true,
+          sessionStatus: 'completed',
+          finishedAt: now,
+        },
+      );
+
+      if (!updatedSession) {
+        dispatch({ type: 'SET_ERROR', payload: 'Не вдалося завершити подорож.' });
+        return;
+      }
+
+      dispatch({ type: 'SESSION_FINISHED', payload: normalizeSession(updatedSession) });
+      void logEvent({
+        eventType: 'game_finished',
+        sessionId: updatedSession.id,
+        timestamp: now,
+        payload: { completedManually: true },
+      });
+    } catch {
+      dispatch({ type: 'SET_ERROR', payload: 'Не вдалося завершити подорож.' });
+    }
+  }, [repositories.sessionsRepository, state.currentSession]);
 
   const saveInsight = useCallback<GameContextValue['saveInsight']>(
     async (cellNumber, text, voiceNoteId) => {
@@ -288,9 +339,10 @@ export const GameProvider = ({
           return;
         }
 
+        const normalizedUpdatedSession = normalizeSession(updatedSession);
         dispatch({
-          type: updatedSession.finished ? 'SESSION_FINISHED' : 'MOVE_PERFORMED',
-          payload: updatedSession,
+          type: normalizedUpdatedSession.finished ? 'SESSION_FINISHED' : 'MOVE_PERFORMED',
+          payload: normalizedUpdatedSession,
         });
       } catch {
         dispatch({ type: 'SET_ERROR', payload: 'Не вдалося оновити запит.' });
@@ -305,10 +357,11 @@ export const GameProvider = ({
       startNewSession,
       resumeLastSession,
       performMove,
+      finishSession,
       saveInsight,
       updateSessionRequest,
     }),
-    [performMove, resumeLastSession, saveInsight, startNewSession, state, updateSessionRequest],
+    [finishSession, performMove, resumeLastSession, saveInsight, startNewSession, state, updateSessionRequest],
   );
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

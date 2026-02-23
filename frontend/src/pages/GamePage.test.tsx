@@ -40,6 +40,7 @@ const baseSession: GameSession = {
   currentCell: 1,
   settings: { speed: 'normal', depth: 'standard' },
   request: { isDeepEntry: false, simpleRequest: 'test' },
+  sessionStatus: 'active',
   finished: false,
   hasEnteredGame: true,
 };
@@ -77,6 +78,7 @@ describe('GamePage modal timing', () => {
     mockUseGameContext.mockReturnValue({
       currentSession: { ...baseSession, currentCell: 5 },
       performMove: vi.fn().mockResolvedValue(move),
+      finishSession: vi.fn().mockResolvedValue(undefined),
       saveInsight: vi.fn().mockResolvedValue(undefined),
       error: undefined,
     });
@@ -116,6 +118,7 @@ describe('GamePage modal timing', () => {
     mockUseGameContext.mockReturnValue({
       currentSession: { ...baseSession, currentCell: 7 },
       performMove: vi.fn().mockResolvedValue(move),
+      finishSession: vi.fn().mockResolvedValue(undefined),
       saveInsight: vi.fn().mockResolvedValue(undefined),
       error: undefined,
     });

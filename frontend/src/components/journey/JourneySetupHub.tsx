@@ -109,7 +109,14 @@ export const JourneySetupHub = () => {
       players: playersPayload,
       historyByPlayer: {} as Record<
         string,
-        { fromCell: number; toCell: number; dice: number; snakeOrArrow: 'snake' | 'arrow' | null; createdAt: string }[]
+        {
+          fromCell: number;
+          toCell: number;
+          dice: number;
+          moveType?: 'normal' | 'snake' | 'ladder';
+          snakeOrArrow: 'snake' | 'arrow' | null;
+          createdAt: string;
+        }[]
       >,
     };
 
