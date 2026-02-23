@@ -1,12 +1,33 @@
 import type { BoardDefinition } from '../../domain/types';
 
-const applyBounce = (fromCell: number, dice: number, maxCell: number): number => {
-  const target = fromCell + dice;
-  if (target <= maxCell) {
-    return target;
+export const buildStepwiseCellPath = (fromCell: number, dice: number, maxCell: number): number[] => {
+  if (dice <= 0) {
+    return [fromCell];
   }
-  const overshoot = target - maxCell;
-  return maxCell - overshoot;
+
+  const path = [fromCell];
+  let cell = fromCell;
+  let direction: 1 | -1 = 1;
+
+  for (let step = 0; step < dice; step += 1) {
+    if (direction === 1) {
+      if (cell >= maxCell) {
+        direction = -1;
+        cell = Math.max(1, maxCell - 1);
+      } else {
+        cell += 1;
+      }
+    } else if (cell > 1) {
+      cell -= 1;
+    } else {
+      direction = 1;
+      cell += 1;
+    }
+
+    path.push(cell);
+  }
+
+  return path;
 };
 
 export const resolveTransitionEntryCell = (
@@ -20,7 +41,8 @@ export const resolveTransitionEntryCell = (
     return undefined;
   }
 
-  const provisional = applyBounce(fromCell, dice, board.maxCell);
+  const provisionalPath = buildStepwiseCellPath(fromCell, dice, board.maxCell);
+  const provisional = provisionalPath[provisionalPath.length - 1] ?? fromCell;
   const source = type === 'snake' ? board.snakes : board.arrows;
   const match = source.find((entry) => entry.from === provisional && entry.to === toCell);
   return match?.from;

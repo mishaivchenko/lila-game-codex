@@ -1,5 +1,5 @@
-import { act, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LilaBoardCanvas } from '../LilaBoardCanvas';
 import { TOKEN_MOVE_DURATION_MS } from '../../../lib/animations/lilaMotion';
 
@@ -8,6 +8,10 @@ vi.mock('../LilaPathAnimation', () => ({
     <div data-testid={`lila-transition-${type}`} />
   ),
 }));
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('LilaBoardCanvas', () => {
   it('renders full board image and token overlay', () => {
@@ -47,6 +51,43 @@ describe('LilaBoardCanvas', () => {
     });
     expect(screen.getByTestId('lila-transition-arrow')).not.toBeNull();
 
+    vi.useRealTimers();
+  });
+
+  it('animates through explicit step path even when start and end cells match', () => {
+    vi.useFakeTimers();
+    const onMoveAnimationComplete = vi.fn();
+
+    const { container } = render(
+      <LilaBoardCanvas
+        boardType="full"
+        currentCell={71}
+        animationMove={{
+          id: 'm-bounce',
+          fromCell: 71,
+          toCell: 71,
+          type: null,
+          tokenPathCells: [71, 72, 71],
+        }}
+        onMoveAnimationComplete={onMoveAnimationComplete}
+      />,
+    );
+
+    const token = within(container).getByLabelText('token');
+    const startLeft = token.getAttribute('style') ?? '';
+
+    act(() => {
+      vi.advanceTimersByTime(Math.round(TOKEN_MOVE_DURATION_MS / 2));
+    });
+
+    const midLeft = token.getAttribute('style') ?? '';
+    expect(midLeft).not.toBe(startLeft);
+
+    act(() => {
+      vi.advanceTimersByTime(TOKEN_MOVE_DURATION_MS / 2);
+    });
+
+    expect(onMoveAnimationComplete).toHaveBeenCalledWith('m-bounce');
     vi.useRealTimers();
   });
 });

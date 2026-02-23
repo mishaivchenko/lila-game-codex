@@ -15,7 +15,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { buttonHoverScale, buttonTapScale } from '../lib/animations/lilaMotion';
 import { formatMovePath, getMovePresentation, resolveMoveType } from '../lib/lila/historyFormat';
 import { getBoardTransitionPath } from '../lib/lila/boardProfiles';
-import { resolveTransitionEntryCell } from '../lib/lila/moveVisualization';
+import { buildStepwiseCellPath, resolveTransitionEntryCell } from '../lib/lila/moveVisualization';
 import { DeepModeCard } from '../features/deep-mode';
 
 const chakras = chakrasRaw as ChakraInfo[];
@@ -392,6 +392,7 @@ export const GamePage = () => {
         computed.snakeOrArrow && entryCell
           ? getBoardTransitionPath(currentSession.boardType, computed.snakeOrArrow, entryCell, computed.toCell)?.points
           : undefined;
+      const tokenPathCells = buildStepwiseCellPath(computed.fromCell, computed.dice, board.maxCell);
       setAnimationMove({
         id: moveId,
         fromCell: computed.fromCell,
@@ -399,6 +400,7 @@ export const GamePage = () => {
         type: computed.snakeOrArrow ?? null,
         entryCell,
         pathPoints: transitionPath,
+        tokenPathCells,
       });
       return;
     }
@@ -432,6 +434,7 @@ export const GamePage = () => {
       move.snakeOrArrow && entryCell
         ? getBoardTransitionPath(currentSession.boardType, move.snakeOrArrow, entryCell, move.toCell)?.points
         : undefined;
+    const tokenPathCells = buildStepwiseCellPath(move.fromCell, move.dice, board.maxCell);
 
     setAnimationMove({
       id: move.id,
@@ -440,6 +443,7 @@ export const GamePage = () => {
       type: move.snakeOrArrow ?? null,
       entryCell,
       pathPoints: transitionPath,
+      tokenPathCells,
     });
   };
 

@@ -10,6 +10,7 @@ export interface LilaTransition {
   type: 'snake' | 'arrow' | null;
   entryCell?: number;
   pathPoints?: BoardPathPoint[];
+  tokenPathCells?: number[];
 }
 
 interface LilaBoardProps {
