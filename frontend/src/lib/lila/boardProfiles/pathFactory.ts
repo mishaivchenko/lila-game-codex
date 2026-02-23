@@ -45,6 +45,38 @@ const buildCurvedPoints = (
   ];
 };
 
+const buildSnakeFlowPoints = (
+  from: CellCoord,
+  to: CellCoord,
+): BoardTransitionPath['points'] => {
+  const dx = to.xPercent - from.xPercent;
+  const dy = to.yPercent - from.yPercent;
+  const length = Math.max(1, Math.hypot(dx, dy));
+  const ux = dx / length;
+  const uy = dy / length;
+  const px = -uy;
+  const py = ux;
+
+  const amplitude = Math.min(7.6, Math.max(3.2, length * 0.12));
+  const waves = Math.max(3, Math.min(7, Math.round(length / 16)));
+  const steps = Math.max(10, waves * 4);
+  const points: BoardTransitionPath['points'] = [];
+
+  for (let index = 0; index <= steps; index += 1) {
+    const t = index / steps;
+    const taper = 1 - Math.abs(0.5 - t) * 0.9;
+    const offset = Math.sin(t * Math.PI * waves) * amplitude * taper;
+    points.push({
+      xPercent: normalize(from.xPercent + dx * t + px * offset),
+      yPercent: normalize(from.yPercent + dy * t + py * offset),
+    });
+  }
+
+  points[0] = { xPercent: from.xPercent, yPercent: from.yPercent };
+  points[points.length - 1] = { xPercent: to.xPercent, yPercent: to.yPercent };
+  return points;
+};
+
 export const createTransitionPaths = (
   coordinates: CellCoord[],
   transitions: Array<{ from: number; to: number }>,
@@ -54,11 +86,14 @@ export const createTransitionPaths = (
   return transitions.map((transition) => {
     const from = getCoord(index, transition.from);
     const to = getCoord(index, transition.to);
+    const points = type === 'snake'
+      ? buildSnakeFlowPoints(from, to)
+      : buildCurvedPoints(from, to, type);
 
     return {
       fromCell: transition.from,
       toCell: transition.to,
-      points: buildCurvedPoints(from, to, type),
+      points,
     };
   });
 };

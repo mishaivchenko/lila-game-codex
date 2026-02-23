@@ -25,45 +25,6 @@ interface LilaBoardCanvasProps {
   onMoveAnimationComplete?: (moveId: string) => void;
 }
 
-const SPECIAL_PATH_TRAVEL_MS = TOKEN_MOVE_DURATION_MS;
-
-const interpolatePathPoints = (points: BoardPathPoint[], progress: number): BoardPathPoint => {
-  if (points.length === 0) {
-    return { xPercent: 50, yPercent: 50 };
-  }
-  if (points.length === 1) {
-    return points[0];
-  }
-
-  const lengths: number[] = [];
-  let totalLength = 0;
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const dx = points[i + 1].xPercent - points[i].xPercent;
-    const dy = points[i + 1].yPercent - points[i].yPercent;
-    const len = Math.hypot(dx, dy);
-    lengths.push(len);
-    totalLength += len;
-  }
-
-  if (totalLength === 0) {
-    return points[points.length - 1];
-  }
-
-  let targetDistance = totalLength * Math.max(0, Math.min(1, progress));
-  for (let i = 0; i < lengths.length; i += 1) {
-    if (targetDistance <= lengths[i]) {
-      const segmentProgress = lengths[i] === 0 ? 1 : targetDistance / lengths[i];
-      return {
-        xPercent: points[i].xPercent + (points[i + 1].xPercent - points[i].xPercent) * segmentProgress,
-        yPercent: points[i].yPercent + (points[i + 1].yPercent - points[i].yPercent) * segmentProgress,
-      };
-    }
-    targetDistance -= lengths[i];
-  }
-
-  return points[points.length - 1];
-};
-
 export const LilaBoardCanvas = ({
   boardType,
   currentCell,
@@ -78,7 +39,6 @@ export const LilaBoardCanvas = ({
   const [activePath, setActivePath] = useState<LilaTransition | undefined>();
   const [tokenPathPosition, setTokenPathPosition] = useState<BoardPathPoint | undefined>();
   const timersRef = useRef<number[]>([]);
-  const rafRef = useRef<number | undefined>(undefined);
   const boardProfile = useMemo(() => getBoardProfile(boardType), [boardType]);
   const specialTransitions = useMemo(() => {
     const board = BOARD_DEFINITIONS[boardType];
@@ -98,14 +58,11 @@ export const LilaBoardCanvas = ({
 
     timersRef.current.forEach((timer) => window.clearTimeout(timer));
     timersRef.current = [];
-    if (rafRef.current !== undefined) {
-      window.cancelAnimationFrame(rafRef.current);
-      rafRef.current = undefined;
-    }
 
     const specialEntryCell = animationMove.entryCell ?? animationMove.fromCell;
-    const transitionPath = animationMove.pathPoints
-      ?? (animationMove.type
+    const transitionPath =
+      animationMove.pathPoints ??
+      (animationMove.type
         ? getBoardTransitionPath(boardType, animationMove.type, specialEntryCell, animationMove.toCell)?.points
         : undefined);
 
@@ -125,26 +82,6 @@ export const LilaBoardCanvas = ({
           fromCell: specialEntryCell,
           pathPoints: transitionPath,
         });
-
-        const startedAt = performance.now();
-        const step = (now: number) => {
-          const elapsed = now - startedAt;
-          const progress = Math.min(1, elapsed / SPECIAL_PATH_TRAVEL_MS);
-          setTokenPathPosition(interpolatePathPoints(transitionPath, progress));
-
-          if (progress < 1) {
-            rafRef.current = window.requestAnimationFrame(step);
-            return;
-          }
-
-          setTokenPathPosition(undefined);
-          setTokenCell(animationMove.toCell);
-          setActivePath(undefined);
-          rafRef.current = undefined;
-          onMoveAnimationComplete?.(animationMove.id);
-        };
-
-        rafRef.current = window.requestAnimationFrame(step);
       }, TOKEN_MOVE_DURATION_MS);
 
       timersRef.current.push(pulseTimer, toEntryTimer, startPathTimer);
@@ -165,10 +102,6 @@ export const LilaBoardCanvas = ({
     return () => {
       timersRef.current.forEach((timer) => window.clearTimeout(timer));
       timersRef.current = [];
-      if (rafRef.current !== undefined) {
-        window.cancelAnimationFrame(rafRef.current);
-        rafRef.current = undefined;
-      }
     };
   }, []);
 
@@ -180,7 +113,7 @@ export const LilaBoardCanvas = ({
 
   const pulsePosition = pulseCell ? mapCellToBoardPosition(boardType, pulseCell) : undefined;
   const activeCellType = specialTransitions.get(currentCell);
-  const shouldAnimateToken = Boolean(animationMove);
+  const shouldAnimateToken = Boolean(animationMove) && !tokenPathPosition;
   const passiveTokens = otherTokens.map((token) => ({
     ...token,
     position: mapCellToBoardPosition(boardType, token.cell),
@@ -209,6 +142,17 @@ export const LilaBoardCanvas = ({
             toCell={activePath.toCell}
             type={activePath.type}
             points={activePath.pathPoints}
+            onProgress={(_, point) => {
+              setTokenPathPosition(point);
+            }}
+            onTravelComplete={() => {
+              setTokenPathPosition(undefined);
+              setTokenCell(activePath.toCell);
+            }}
+            onComplete={() => {
+              setActivePath(undefined);
+              onMoveAnimationComplete?.(activePath.id);
+            }}
           />
         )}
 
@@ -270,11 +214,9 @@ export const LilaBoardCanvas = ({
             scale: activePath?.type ? [1, 1.08, 1] : 1,
           }}
           transition={
-            tokenPathPosition
-              ? { duration: 0 }
-              : shouldAnimateToken
-                ? tokenMoveTransition
-                : { duration: 0 }
+            shouldAnimateToken
+              ? tokenMoveTransition
+              : { duration: 0 }
           }
           aria-label="token"
         />

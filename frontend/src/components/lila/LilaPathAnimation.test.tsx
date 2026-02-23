@@ -1,35 +1,45 @@
-import type { ComponentPropsWithoutRef } from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { LilaPathAnimation } from './LilaPathAnimation';
 
-vi.mock('framer-motion', () => ({
-  motion: {
-    path: (props: ComponentPropsWithoutRef<'path'>) => <path {...props} />,
-    circle: (props: ComponentPropsWithoutRef<'circle'>) => <circle {...props} />,
-  },
-}));
+const points = [
+  { xPercent: 10, yPercent: 80 },
+  { xPercent: 40, yPercent: 50 },
+  { xPercent: 70, yPercent: 20 },
+];
 
 describe('LilaPathAnimation', () => {
-  it('renders an arrow path with turquoise stroke and stairs art', () => {
-    render(<LilaPathAnimation boardType="full" fromCell={4} toCell={14} type="arrow" />);
-    const path = screen.getByTestId('lila-path-arrow');
-    const art = screen.getByTestId('lila-art-arrow');
+  it('renders snake renderer with progressive body layer', () => {
+    render(
+      <LilaPathAnimation
+        boardType="full"
+        fromCell={63}
+        toCell={2}
+        type="snake"
+        points={points}
+      />,
+    );
 
-    expect(path).not.toBeNull();
-    expect(path.getAttribute('stroke')).toBe('#2CBFAF');
-    expect(path.getAttribute('d')?.startsWith('M ')).toBe(true);
-    expect(art.getAttribute('href')).toContain('data:image/svg+xml');
+    expect(screen.getByTestId('lila-transition-snake')).not.toBeNull();
+    expect(screen.getByTestId('lila-snake-renderer')).not.toBeNull();
+    expect(screen.getByTestId('lila-snake-body')).not.toBeNull();
+    expect(screen.getByTestId('lila-snake-head')).not.toBeNull();
   });
 
-  it('renders a snake path with amber stroke and snake art', () => {
-    render(<LilaPathAnimation boardType="full" fromCell={17} toCell={7} type="snake" />);
-    const path = screen.getByTestId('lila-path-snake');
-    const art = screen.getByTestId('lila-art-snake');
+  it('renders ladder renderer with progressive steps', () => {
+    render(
+      <LilaPathAnimation
+        boardType="full"
+        fromCell={17}
+        toCell={69}
+        type="arrow"
+        points={points}
+      />,
+    );
 
-    expect(path).not.toBeNull();
-    expect(path.getAttribute('stroke')).toBe('#D18A43');
-    expect(path.getAttribute('d')?.startsWith('M ')).toBe(true);
-    expect(art.getAttribute('href')).toContain('data:image/svg+xml');
+    expect(screen.getByTestId('lila-transition-arrow')).not.toBeNull();
+    expect(screen.getByTestId('lila-ladder-renderer')).not.toBeNull();
+    expect(screen.getByTestId('lila-ladder-rail')).not.toBeNull();
+    expect(screen.getByTestId('lila-ladder-step-0')).not.toBeNull();
   });
 });
