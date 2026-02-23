@@ -2,6 +2,7 @@ import type { BoardDefinition } from '../../domain/types';
 import { motion } from 'framer-motion';
 import { LilaBoardCanvas } from './LilaBoardCanvas';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
+import type { AnimationTimingSettings } from '../../lib/animations/animationTimingSettings';
 
 export interface LilaTransition {
   id: string;
@@ -19,6 +20,7 @@ interface LilaBoardProps {
   tokenColor?: string;
   otherTokens?: { id: string; cell: number; color: string }[];
   animationMove?: LilaTransition;
+  animationTimings?: AnimationTimingSettings;
   onMoveAnimationComplete?: (moveId: string) => void;
 }
 
@@ -28,6 +30,7 @@ export const LilaBoard = ({
   tokenColor,
   otherTokens,
   animationMove,
+  animationTimings,
   onMoveAnimationComplete,
 }: LilaBoardProps) => {
   return (
@@ -43,6 +46,7 @@ export const LilaBoard = ({
         tokenColor={tokenColor}
         otherTokens={otherTokens}
         animationMove={animationMove}
+        animationTimings={animationTimings}
         onMoveAnimationComplete={onMoveAnimationComplete}
       />
 

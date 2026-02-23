@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { BoardType } from '../../domain/types';
 import { BOARD_DEFINITIONS } from '../../content/boards';
 import { resolveAssetUrl } from '../../content/assetBase';
+import type { AnimationTimingSettings } from '../../lib/animations/animationTimingSettings';
 import {
   PULSE_DURATION_MS,
   TOKEN_MOVE_DURATION_MS,
@@ -22,6 +23,7 @@ interface LilaBoardCanvasProps {
   tokenColor?: string;
   otherTokens?: { id: string; cell: number; color: string }[];
   animationMove?: LilaTransition;
+  animationTimings?: AnimationTimingSettings;
   onMoveAnimationComplete?: (moveId: string) => void;
 }
 
@@ -31,6 +33,7 @@ export const LilaBoardCanvas = ({
   tokenColor = '#1c1917',
   otherTokens = [],
   animationMove,
+  animationTimings,
   onMoveAnimationComplete,
 }: LilaBoardCanvasProps) => {
   const [tokenCell, setTokenCell] = useState(currentCell);
@@ -67,7 +70,8 @@ export const LilaBoardCanvas = ({
         ? [animationMove.fromCell, specialEntryCell]
         : [animationMove.fromCell, animationMove.toCell];
     const pathStepCount = Math.max(1, tokenPathCells.length - 1);
-    const stepDurationMs = Math.max(140, TOKEN_MOVE_DURATION_MS / pathStepCount);
+    const tokenMoveDurationMs = animationTimings?.tokenMoveDurationMs ?? TOKEN_MOVE_DURATION_MS;
+    const stepDurationMs = Math.max(140, tokenMoveDurationMs / pathStepCount);
     setTokenStepDurationMs(stepDurationMs);
     const transitionPath =
       animationMove.pathPoints ??
@@ -94,7 +98,7 @@ export const LilaBoardCanvas = ({
           fromCell: specialEntryCell,
           pathPoints: transitionPath,
         });
-      }, TOKEN_MOVE_DURATION_MS);
+      }, tokenMoveDurationMs);
 
       timersRef.current.push(pulseTimer, startPathTimer);
       return;
@@ -104,10 +108,10 @@ export const LilaBoardCanvas = ({
     setActivePath(undefined);
     const completeTimer = window.setTimeout(() => {
       onMoveAnimationComplete?.(animationMove.id);
-    }, TOKEN_MOVE_DURATION_MS);
+    }, tokenMoveDurationMs);
 
     timersRef.current.push(completeTimer);
-  }, [animationMove, boardType, currentCell, onMoveAnimationComplete]);
+  }, [animationMove, animationTimings?.tokenMoveDurationMs, boardType, currentCell, onMoveAnimationComplete]);
 
   useEffect(() => {
     return () => {
@@ -153,6 +157,7 @@ export const LilaBoardCanvas = ({
             toCell={activePath.toCell}
             type={activePath.type}
             points={activePath.pathPoints}
+            timings={animationTimings}
             onProgress={(_, point) => {
               setTokenPathPosition(point);
             }}

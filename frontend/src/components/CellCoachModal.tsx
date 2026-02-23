@@ -21,6 +21,7 @@ interface CellCoachModalProps {
     fromCell: number;
     toCell: number;
     type: 'normal' | 'snake' | 'ladder';
+    pathLabel?: string;
   };
   readOnly?: boolean;
   initialText?: string;
@@ -52,6 +53,7 @@ export const CellCoachModal = ({
   const displayedQuestionsMarkdown =
     lilaContent.questionsMarkdown ??
     `### Питання для зупинки\n${displayedQuestions.map((question) => `- ${question}`).join('\n')}`;
+  const combinedMarkdown = `${displayedDescriptionMarkdown}\n\n${displayedQuestionsMarkdown}`;
   const movePresentation = moveContext ? getMovePresentation(moveContext.type) : undefined;
 
   useEffect(() => {
@@ -103,7 +105,7 @@ export const CellCoachModal = ({
             {moveContext && (
               <div className="mt-2 flex items-center gap-2">
                 <p className="rounded-lg bg-stone-100 px-2.5 py-1.5 text-xs text-stone-600">
-                  Хід: {moveContext.fromCell} {movePresentation?.symbol ?? '→'} {moveContext.toCell}
+                  Хід: {moveContext.pathLabel ?? `${moveContext.fromCell} ${movePresentation?.symbol ?? '→'} ${moveContext.toCell}`}
                 </p>
                 {movePresentation && moveContext.type !== 'normal' && (
                   <span className={`rounded-full px-2 py-1 text-xs font-medium ${movePresentation.badgeClassName}`}>
@@ -113,10 +115,7 @@ export const CellCoachModal = ({
               </div>
             )}
             <div className="mt-3 rounded-2xl border border-[#ead9cc] bg-[#fff9f4] p-3">
-              <MarkdownText source={displayedDescriptionMarkdown} />
-            </div>
-            <div className="mt-3 rounded-2xl border border-[#ead9cc] bg-[#fff9f4] p-3">
-              <MarkdownText source={displayedQuestionsMarkdown} />
+              <MarkdownText source={combinedMarkdown} />
             </div>
 
             <textarea

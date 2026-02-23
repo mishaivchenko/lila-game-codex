@@ -1,4 +1,5 @@
 import type { GameMove } from '../../domain/types';
+import { buildStepwiseCellPath } from './moveVisualization';
 
 export type MoveType = 'normal' | 'snake' | 'ladder';
 
@@ -66,4 +67,22 @@ export const getMovePresentation = (moveType: MoveType): MovePresentation => {
 export const formatMovePath = (move: Pick<GameMove, 'fromCell' | 'toCell' | 'moveType' | 'snakeOrArrow'>): string => {
   const moveType = resolveMoveType(move);
   return `${move.fromCell} ${getMoveSymbol(moveType)} ${move.toCell}`;
+};
+
+export const formatMovePathWithEntry = (
+  move: Pick<GameMove, 'fromCell' | 'toCell' | 'dice' | 'moveType' | 'snakeOrArrow'>,
+  maxCell: number,
+): string => {
+  const moveType = resolveMoveType(move);
+  if (moveType === 'normal') {
+    return formatMovePath(move);
+  }
+
+  const stepped = buildStepwiseCellPath(move.fromCell, move.dice, maxCell);
+  const entryCell = stepped[stepped.length - 1] ?? move.fromCell;
+
+  if (moveType === 'ladder') {
+    return `${move.fromCell} → ${entryCell} ⇧ ${move.toCell}`;
+  }
+  return `${move.fromCell} → ${entryCell} ⇩ ${move.toCell}`;
 };

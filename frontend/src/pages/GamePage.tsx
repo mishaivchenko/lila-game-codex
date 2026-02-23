@@ -5,6 +5,7 @@ import { LilaBoard, type LilaTransition } from '../components/lila/LilaBoard';
 import { Dice } from '../components/Dice';
 import { Dice3D } from '../components/dice3d/Dice3D';
 import { ChakraNotification } from '../components/ChakraNotification';
+import { AnimationSettingsModal } from '../components/AnimationSettingsModal';
 import { CellCoachModal } from '../components/CellCoachModal';
 import { FinalScreen } from '../components/FinalScreen';
 import { computeNextPosition } from '../domain/gameEngine';
@@ -13,9 +14,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { buttonHoverScale, buttonTapScale } from '../lib/animations/lilaMotion';
-import { formatMovePath, getMovePresentation, resolveMoveType } from '../lib/lila/historyFormat';
+import { formatMovePathWithEntry, getMovePresentation, resolveMoveType } from '../lib/lila/historyFormat';
 import { getBoardTransitionPath } from '../lib/lila/boardProfiles';
 import { buildStepwiseCellPath, resolveTransitionEntryCell } from '../lib/lila/moveVisualization';
+import {
+  DEFAULT_ANIMATION_TIMINGS,
+  normalizeAnimationTimings,
+  saveAnimationTimings,
+} from '../lib/animations/animationTimingSettings';
 import { DeepModeCard } from '../features/deep-mode';
 
 const chakras = chakrasRaw as ChakraInfo[];
@@ -87,11 +93,14 @@ export const GamePage = () => {
   const [diceRequestedValue, setDiceRequestedValue] = useState<number | undefined>(undefined);
   const [turnState, setTurnState] = useState<TurnState>('idle');
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [showAnimationSettings, setShowAnimationSettings] = useState(false);
+  const [animationTimings, setAnimationTimings] = useState(DEFAULT_ANIMATION_TIMINGS);
   const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>();
   const pendingMoveIdRef = useRef<string | undefined>(undefined);
   const pendingModalCellRef = useRef<number | undefined>(undefined);
   const pendingEntryMoveIdRef = useRef<string | undefined>(undefined);
   const pendingEntryResultRef = useRef<'retry' | 'entered' | undefined>(undefined);
+  const animationFallbackTimerRef = useRef<number | undefined>(undefined);
   const multiplayerInitializedSessionIdRef = useRef<string | undefined>(undefined);
   const resumeAttemptedRef = useRef(false);
   const pendingSimpleMoveRef = useRef<{
@@ -206,8 +215,19 @@ export const GamePage = () => {
   const isAnimatingMove = turnState === 'animating';
   const lastMoveType = lastMove ? resolveMoveType(lastMove) : 'normal';
   const lastMovePresentation = getMovePresentation(lastMoveType);
+  const openCoachWithDelay = useCallback(() => {
+    if (animationTimings.cardOpenDelayMs <= 0) {
+      setShowCoach(true);
+      return;
+    }
+    window.setTimeout(() => setShowCoach(true), animationTimings.cardOpenDelayMs);
+  }, [animationTimings.cardOpenDelayMs]);
 
   const onMoveAnimationComplete = useCallback((moveId: string) => {
+    if (animationFallbackTimerRef.current !== undefined) {
+      window.clearTimeout(animationFallbackTimerRef.current);
+      animationFallbackTimerRef.current = undefined;
+    }
     if (pendingMoveIdRef.current !== moveId) {
       return;
     }
@@ -277,7 +297,7 @@ export const GamePage = () => {
       pendingSimpleMoveRef.current = undefined;
       setTurnState('idle');
       setAnimationMove(undefined);
-      setShowCoach(true);
+      openCoachWithDelay();
       return;
     }
 
@@ -298,9 +318,9 @@ export const GamePage = () => {
     }
 
     setTurnState('idle');
-    setShowCoach(true);
+    openCoachWithDelay();
     setAnimationMove(undefined);
-  }, [activeSimplePlayerIndex, updateSessionRequest]);
+  }, [activeSimplePlayerIndex, openCoachWithDelay, updateSessionRequest]);
 
   useEffect(() => {
     setDeepRequestDraft(currentSession?.request.simpleRequest ?? '');
@@ -313,6 +333,18 @@ export const GamePage = () => {
     resumeAttemptedRef.current = true;
     void resumeLastSession();
   }, [currentSession, resumeLastSession]);
+
+  useEffect(() => {
+    return () => {
+      if (animationFallbackTimerRef.current !== undefined) {
+        window.clearTimeout(animationFallbackTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    saveAnimationTimings(animationTimings);
+  }, [animationTimings]);
 
   if (!currentSession) {
     return (
@@ -445,6 +477,22 @@ export const GamePage = () => {
       pathPoints: transitionPath,
       tokenPathCells,
     });
+
+    if (!isDeepEntryRoll) {
+      const specialDuration =
+        move.snakeOrArrow
+          ? animationTimings.pathTravelDurationMs + animationTimings.pathPostHoldMs + animationTimings.pathFadeOutMs
+          : 0;
+      const fallbackMs = animationTimings.tokenMoveDurationMs + specialDuration + animationTimings.cardOpenDelayMs;
+      animationFallbackTimerRef.current = window.setTimeout(() => {
+        if (pendingMoveIdRef.current !== move.id) {
+          return;
+        }
+        setTurnState('idle');
+        openCoachWithDelay();
+        setAnimationMove(undefined);
+      }, fallbackMs);
+    }
   };
 
   const triggerDiceRoll = (requestedValue?: number): void => {
@@ -535,6 +583,7 @@ export const GamePage = () => {
             : undefined
         }
         animationMove={animationMove}
+        animationTimings={animationTimings}
         onMoveAnimationComplete={onMoveAnimationComplete}
       />
 
@@ -548,7 +597,7 @@ export const GamePage = () => {
         </div>
         {lastMove && lastMoveType !== 'normal' && (
           <p className={`mb-3 rounded-xl px-3 py-2 text-xs font-medium ${lastMovePresentation.badgeClassName}`}>
-            {lastMovePresentation.icon} Спецхід: {lastMovePresentation.label} · {formatMovePath(lastMove)}
+            {lastMovePresentation.icon} Спецхід: {lastMovePresentation.label} · {formatMovePathWithEntry(lastMove, board.maxCell)}
           </p>
         )}
         <motion.button
@@ -572,9 +621,13 @@ export const GamePage = () => {
           Завершити подорож
         </button>
         <div className="mt-3 flex items-center justify-between text-xs text-stone-600">
-          <Link className="transition duration-200 ease-out hover:scale-[1.02] active:scale-[0.99]" to="/settings">
+          <button
+            type="button"
+            onClick={() => setShowAnimationSettings(true)}
+            className="transition duration-200 ease-out hover:scale-[1.02] active:scale-[0.99]"
+          >
             Налаштування
-          </Link>
+          </button>
           <Link className="transition duration-200 ease-out hover:scale-[1.02] active:scale-[0.99]" to="/history">
             Мій шлях
           </Link>
@@ -683,15 +736,16 @@ export const GamePage = () => {
                 ? {
                     fromCell: lastMove.fromCell,
                     toCell: lastMove.toCell,
-                    type:
+                  type:
                       lastMove.moveType ??
                       (lastMove.snakeOrArrow === 'snake'
                         ? 'snake'
                         : lastMove.snakeOrArrow === 'arrow'
                           ? 'ladder'
                           : 'normal'),
-                  }
-                : undefined
+                  pathLabel: formatMovePathWithEntry(lastMove, board.maxCell),
+                }
+              : undefined
             }
             onSave={(text) => {
               void saveInsight(modalCellNumber, text).then(() => setShowCoach(false));
@@ -700,6 +754,13 @@ export const GamePage = () => {
             onClose={() => setShowCoach(false)}
           />
         )}
+        <AnimationSettingsModal
+          open={showAnimationSettings}
+          settings={animationTimings}
+          onChange={(next) => setAnimationTimings(normalizeAnimationTimings(next))}
+          onReset={() => setAnimationTimings(DEFAULT_ANIMATION_TIMINGS)}
+          onClose={() => setShowAnimationSettings(false)}
+        />
       </AnimatePresence>
 
       <Dice3D

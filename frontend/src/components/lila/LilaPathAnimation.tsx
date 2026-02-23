@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BoardType } from '../../domain/types';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
+import type { AnimationTimingSettings } from '../../lib/animations/animationTimingSettings';
 import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
 import { AnimationRendererLadder } from './AnimationRendererLadder';
 import { AnimationRendererSnake } from './AnimationRendererSnake';
@@ -20,6 +21,7 @@ interface LilaPathAnimationProps {
   onProgress?: (progress: number, point: BoardPathPoint) => void;
   onTravelComplete?: () => void;
   onComplete?: () => void;
+  timings?: AnimationTimingSettings;
 }
 
 export const LilaPathAnimation = ({
@@ -31,6 +33,7 @@ export const LilaPathAnimation = ({
   onProgress,
   onTravelComplete,
   onComplete,
+  timings,
 }: LilaPathAnimationProps) => {
   const [visible, setVisible] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -77,7 +80,7 @@ export const LilaPathAnimation = ({
     let elapsedMs = 0;
     const updateTravel = () => {
       elapsedMs += 16;
-      const linear = Math.min(1, elapsedMs / TRANSITION_TRAVEL_MS);
+      const linear = Math.min(1, elapsedMs / (timings?.pathTravelDurationMs ?? TRANSITION_TRAVEL_MS));
       const eased = 0.5 - Math.cos(Math.PI * linear) / 2;
       const nextProgress = eased;
       setProgress(nextProgress);
@@ -98,12 +101,12 @@ export const LilaPathAnimation = ({
       const holdTimer = window.setTimeout(() => {
         setPhase('fade');
         setOpacity(0);
-      }, TRANSITION_POST_HOLD_MS);
+      }, timings?.pathPostHoldMs ?? TRANSITION_POST_HOLD_MS);
 
       const doneTimer = window.setTimeout(() => {
         setVisible(false);
         onCompleteRef.current?.();
-      }, TRANSITION_POST_HOLD_MS + TRANSITION_FADE_OUT_MS);
+      }, (timings?.pathPostHoldMs ?? TRANSITION_POST_HOLD_MS) + (timings?.pathFadeOutMs ?? TRANSITION_FADE_OUT_MS));
 
       timersRef.current.push(holdTimer, doneTimer);
     };
@@ -119,7 +122,7 @@ export const LilaPathAnimation = ({
       timersRef.current.forEach((timer) => window.clearTimeout(timer));
       timersRef.current = [];
     };
-  }, [boardType, fromCell, pathPoints, toCell, type]);
+  }, [boardType, fromCell, pathPoints, toCell, timings?.pathFadeOutMs, timings?.pathPostHoldMs, timings?.pathTravelDurationMs, type]);
 
   if (!visible) {
     return null;
@@ -132,7 +135,7 @@ export const LilaPathAnimation = ({
       preserveAspectRatio="none"
       style={{
         opacity,
-        transition: phase === 'fade' ? `opacity ${TRANSITION_FADE_OUT_MS}ms ease-out` : undefined,
+        transition: phase === 'fade' ? `opacity ${timings?.pathFadeOutMs ?? TRANSITION_FADE_OUT_MS}ms ease-out` : undefined,
       }}
       data-testid={`lila-transition-${type}`}
     >
