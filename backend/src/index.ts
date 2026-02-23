@@ -1,8 +1,11 @@
+import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { eventsRouter } from './routes/events.js';
+import { authRouter } from './routes/auth.js';
+import { roomsRouter } from './routes/rooms.js';
 
 export const createApp = (): express.Express => {
   const app = express();
@@ -18,6 +21,8 @@ export const createApp = (): express.Express => {
   });
 
   app.use('/api/events', eventsRouter);
+  app.use('/api/auth', authRouter);
+  app.use('/api/rooms', roomsRouter);
 
   if (process.env.NODE_ENV === 'production') {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));

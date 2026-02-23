@@ -1,3 +1,5 @@
+import { apiFetch } from '../lib/api/apiClient';
+
 export type EventType = 'game_started' | 'move_performed' | 'insight_saved' | 'game_finished';
 
 export interface EventPayload {
@@ -14,9 +16,8 @@ export const logEvent = async (event: EventPayload): Promise<void> => {
   const timeoutId = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
   try {
-    await fetch('/api/events', {
+    await apiFetch('/api/events', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(event),
       signal: controller.signal,
     });

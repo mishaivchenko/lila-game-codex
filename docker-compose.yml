@@ -1,13 +1,28 @@
-version: "3.9"
+version: '3.9'
 
 services:
-  app:
+  backend:
     build:
       context: .
-      dockerfile: Dockerfile
-    image: lila-game-codex:local
+      dockerfile: backend/Dockerfile
+    image: lila-backend:local
     ports:
-      - "3001:3001"
+      - '3001:3001'
     environment:
       NODE_ENV: production
       PORT: 3001
+      APP_AUTH_SECRET: local-dev-secret-change-me
+      TELEGRAM_BOT_TOKEN: 123456:replace-me
+      FRONTEND_DIST: /dev/null
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    image: lila-frontend:local
+    depends_on:
+      - backend
+    ports:
+      - '8080:80'

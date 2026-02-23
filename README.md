@@ -2,7 +2,7 @@
 
 Monorepo:
 - `frontend` — React + TypeScript + Vite + Dexie + Tailwind
-- `backend` — Express + TypeScript (`/api/events`, `/health`)
+- `backend` — Express + TypeScript (`/api/events`, `/api/auth/telegram/webapp`, `/api/rooms`, `/health`)
 
 ## Local run
 - `npm run dev` — frontend + backend
@@ -10,14 +10,16 @@ Monorepo:
 - `npm run build` — frontend + backend build
 
 ## Docker
-- Build: `docker build -t lila-game-codex:prod .`
-- Run: `docker run --rm -p 3001:3001 lila-game-codex:prod`
-- App URL: `http://localhost:3001`
+- Full stack (frontend + backend): `docker compose up --build`
+  - frontend: `http://localhost:8080`
+  - backend: `http://localhost:3001`
+- Backend image only: `docker build -f backend/Dockerfile -t lila-backend:local .`
+- Frontend image only: `docker build -f frontend/Dockerfile -t lila-frontend:local .`
 
-Container details:
-- multi-stage build
-- non-root runtime user
-- serves built frontend + backend API in one container
+## Telegram Mini App
+- Setup guide: `/Users/mishaivchenko/dev/lila-game-codex/docs/TELEGRAM_MINI_APP_SETUP.md`
+- Required backend env: `TELEGRAM_BOT_TOKEN`, `APP_AUTH_SECRET`, `FRONTEND_WEBAPP_URL`
+- Required frontend env: `VITE_API_BASE_URL`
 
 ## CI/CD
 Workflow: `/Users/mishaivchenko/dev/lila-game-codex/.github/workflows/ci-cd.yml`
