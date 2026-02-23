@@ -1,12 +1,15 @@
 import type { BoardDefinition } from '../../domain/types';
 import { motion } from 'framer-motion';
 import { LilaBoardCanvas } from './LilaBoardCanvas';
+import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 
 export interface LilaTransition {
   id: string;
   fromCell: number;
   toCell: number;
   type: 'snake' | 'arrow' | null;
+  entryCell?: number;
+  pathPoints?: BoardPathPoint[];
 }
 
 interface LilaBoardProps {

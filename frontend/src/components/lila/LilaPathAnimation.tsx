@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import snakeSpirit from '../../assets/lila/snake-spirit.svg';
 import stairsLight from '../../assets/lila/stairs-light.svg';
 import type { BoardType } from '../../domain/types';
+import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import {
   PATH_DRAW_DURATION_MS,
   pathDrawTransition,
@@ -15,30 +16,33 @@ interface LilaPathAnimationProps {
   fromCell: number;
   toCell: number;
   type: 'snake' | 'arrow';
+  points?: BoardPathPoint[];
 }
 
 const CLEAR_AFTER_MS = 1200;
 
-const buildSnakePath = (fromX: number, fromY: number, toX: number, toY: number): string => {
-  const midX = (fromX + toX) / 2;
-  const midY = (fromY + toY) / 2;
-  const direction = toX > fromX ? 1 : -1;
-  const arc = 6.4 * direction;
+const buildSmoothPath = (points: BoardPathPoint[]): string => {
+  if (points.length < 2) {
+    return '';
+  }
+  if (points.length === 2) {
+    return `M ${points[0].xPercent} ${points[0].yPercent} L ${points[1].xPercent} ${points[1].yPercent}`;
+  }
 
-  return [
-    `M ${fromX} ${fromY}`,
-    `Q ${midX - arc} ${midY - 5}, ${midX} ${midY}`,
-    `Q ${midX + arc} ${midY + 5}, ${toX} ${toY}`,
-  ].join(' ');
+  let d = `M ${points[0].xPercent} ${points[0].yPercent}`;
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const current = points[i];
+    const next = points[i + 1];
+    const midX = (current.xPercent + next.xPercent) / 2;
+    const midY = (current.yPercent + next.yPercent) / 2;
+    d += ` Q ${current.xPercent} ${current.yPercent}, ${midX} ${midY}`;
+  }
+  const last = points[points.length - 1];
+  d += ` T ${last.xPercent} ${last.yPercent}`;
+  return d;
 };
 
-const buildArrowPath = (fromX: number, fromY: number, toX: number, toY: number): string => {
-  const controlX = (fromX + toX) / 2;
-  const controlY = Math.min(fromY, toY) - 4.5;
-  return `M ${fromX} ${fromY} Q ${controlX} ${controlY}, ${toX} ${toY}`;
-};
-
-export const LilaPathAnimation = ({ boardType, fromCell, toCell, type }: LilaPathAnimationProps) => {
+export const LilaPathAnimation = ({ boardType, fromCell, toCell, type, points }: LilaPathAnimationProps) => {
   const [visible, setVisible] = useState(true);
   const [drawn, setDrawn] = useState(false);
 
@@ -59,17 +63,21 @@ export const LilaPathAnimation = ({ boardType, fromCell, toCell, type }: LilaPat
     return null;
   }
 
-  const path =
-    type === 'snake'
-      ? buildSnakePath(from.xPercent, from.yPercent, to.xPercent, to.yPercent)
-      : buildArrowPath(from.xPercent, from.yPercent, to.xPercent, to.yPercent);
+  const pathPoints = points && points.length >= 2
+    ? points
+    : [
+        { xPercent: from.xPercent, yPercent: from.yPercent },
+        { xPercent: to.xPercent, yPercent: to.yPercent },
+      ];
+
+  const path = buildSmoothPath(pathPoints);
 
   const color = type === 'arrow' ? '#2CBFAF' : '#D18A43';
   const shadowColor = type === 'arrow' ? 'rgba(44,191,175,0.38)' : 'rgba(209,138,67,0.38)';
   const artIcon = type === 'arrow' ? stairsLight : snakeSpirit;
   const midpoint = {
-    x: (from.xPercent + to.xPercent) / 2,
-    y: (from.yPercent + to.yPercent) / 2,
+    x: pathPoints[Math.floor(pathPoints.length / 2)]?.xPercent ?? (from.xPercent + to.xPercent) / 2,
+    y: pathPoints[Math.floor(pathPoints.length / 2)]?.yPercent ?? (from.yPercent + to.yPercent) / 2,
   };
 
   return (

@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LilaBoardCanvas } from '../LilaBoardCanvas';
-import { PATH_DRAW_DURATION_MS, TOKEN_MOVE_DURATION_MS } from '../../../lib/animations/lilaMotion';
+import { TOKEN_MOVE_DURATION_MS } from '../../../lib/animations/lilaMotion';
 
 describe('LilaBoardCanvas', () => {
   it('renders full board image and token overlay', () => {
@@ -30,17 +30,22 @@ describe('LilaBoardCanvas', () => {
     render(
       <LilaBoardCanvas
         boardType="full"
-        currentCell={14}
-        animationMove={{ id: 'm1', fromCell: 4, toCell: 14, type: 'arrow' }}
+        currentCell={23}
+        animationMove={{ id: 'm1', fromCell: 7, toCell: 23, type: 'arrow', entryCell: 10 }}
         onMoveAnimationComplete={onComplete}
       />,
     );
 
-    expect(screen.getByTestId('lila-path-arrow')).not.toBeNull();
+    expect(screen.queryByTestId('lila-path-arrow')).toBeNull();
     expect(onComplete).not.toHaveBeenCalled();
 
     act(() => {
-      vi.advanceTimersByTime(PATH_DRAW_DURATION_MS + TOKEN_MOVE_DURATION_MS - 1);
+      vi.advanceTimersByTime(TOKEN_MOVE_DURATION_MS);
+    });
+    expect(screen.getByTestId('lila-path-arrow')).not.toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(TOKEN_MOVE_DURATION_MS - 1);
     });
     expect(onComplete).not.toHaveBeenCalled();
 

@@ -14,6 +14,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { buttonHoverScale, buttonTapScale } from '../lib/animations/lilaMotion';
 import { formatMovePath, getMovePresentation, resolveMoveType } from '../lib/lila/historyFormat';
+import { getBoardTransitionPath } from '../lib/lila/boardProfiles';
+import { resolveTransitionEntryCell } from '../lib/lila/moveVisualization';
 
 const chakras = chakrasRaw as ChakraInfo[];
 const SIMPLE_COLOR_HEX: Record<string, string> = {
@@ -378,11 +380,24 @@ export const GamePage = () => {
         hasEnteredGame: computed.hasEnteredGame,
         createdAt: new Date().toISOString(),
       };
+      const entryCell = resolveTransitionEntryCell(
+        computed.fromCell,
+        computed.dice,
+        board,
+        computed.snakeOrArrow,
+        computed.toCell,
+      );
+      const transitionPath =
+        computed.snakeOrArrow && entryCell
+          ? getBoardTransitionPath(currentSession.boardType, computed.snakeOrArrow, entryCell, computed.toCell)?.points
+          : undefined;
       setAnimationMove({
         id: moveId,
         fromCell: computed.fromCell,
         toCell: computed.toCell,
         type: computed.snakeOrArrow ?? null,
+        entryCell,
+        pathPoints: transitionPath,
       });
       return;
     }
@@ -405,12 +420,25 @@ export const GamePage = () => {
       pendingEntryMoveIdRef.current = move.id;
       pendingEntryResultRef.current = move.dice === 6 ? 'entered' : 'retry';
     }
+    const entryCell = resolveTransitionEntryCell(
+      move.fromCell,
+      move.dice,
+      board,
+      move.snakeOrArrow ?? null,
+      move.toCell,
+    );
+    const transitionPath =
+      move.snakeOrArrow && entryCell
+        ? getBoardTransitionPath(currentSession.boardType, move.snakeOrArrow, entryCell, move.toCell)?.points
+        : undefined;
 
     setAnimationMove({
       id: move.id,
       fromCell: move.fromCell,
       toCell: move.toCell,
       type: move.snakeOrArrow ?? null,
+      entryCell,
+      pathPoints: transitionPath,
     });
   };
 
