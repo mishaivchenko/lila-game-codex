@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { getCardImagePath } from '../content/cardAssets';
 import type { CellContent, DepthSetting } from '../domain/types';
 import { getLilaCellContent } from '../lib/lila/cellContent';
+import { getNoteValidationError } from '../lib/lila/noteValidation';
 import {
   buttonHoverScale,
   buttonTapScale,
@@ -38,6 +39,7 @@ export const CellCoachModal = ({
   onClose,
 }: CellCoachModalProps) => {
   const [text, setText] = useState(initialText);
+  const [validationError, setValidationError] = useState<string | undefined>(undefined);
   const lilaContent = getLilaCellContent(cellNumber);
   const displayedDescription =
     lilaContent.description || (depth === 'light' ? cellContent.shortText : cellContent.fullText);
@@ -46,7 +48,20 @@ export const CellCoachModal = ({
 
   useEffect(() => {
     setText(initialText);
+    setValidationError(undefined);
   }, [initialText]);
+
+  const handleSave = () => {
+    if (!readOnly) {
+      const error = getNoteValidationError(text);
+      if (error) {
+        setValidationError(error);
+        return;
+      }
+    }
+    setValidationError(undefined);
+    onSave(text);
+  };
 
   return (
     <motion.div
@@ -97,16 +112,24 @@ export const CellCoachModal = ({
             <textarea
               className="mt-5 min-h-28 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm"
               value={text}
-              onChange={(event) => setText(event.target.value)}
+              onChange={(event) => {
+                setText(event.target.value);
+                if (validationError) {
+                  setValidationError(undefined);
+                }
+              }}
               placeholder="Напишіть 1-2 чесні речення. Не обов'язково ідеально."
               readOnly={readOnly}
             />
+            {validationError && (
+              <p className="mt-2 text-xs text-amber-700">{validationError}</p>
+            )}
 
             <div className="mt-5 flex gap-2">
               <motion.button
                 className="flex-1 rounded-xl bg-emerald-600 px-3 py-3 text-sm font-medium text-white disabled:opacity-50"
                 type="button"
-                onClick={() => onSave(text)}
+                onClick={handleSave}
                 disabled={readOnly && text.trim().length === 0}
                 whileTap={buttonTapScale}
                 whileHover={buttonHoverScale}

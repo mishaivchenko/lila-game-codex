@@ -57,9 +57,20 @@ interface SimpleMultiplayerPayload {
   historyByPlayer: Record<string, SimplePlayerHistoryEntry[]>;
 }
 
+type TurnState = 'idle' | 'rolling' | 'animating';
+
 export const GamePage = () => {
   const navigate = useNavigate();
-  const { currentSession, performMove, saveInsight, updateSessionRequest, resumeLastSession, loading, error } = useGameContext();
+  const {
+    currentSession,
+    performMove,
+    finishSession,
+    saveInsight,
+    updateSessionRequest,
+    resumeLastSession,
+    loading,
+    error,
+  } = useGameContext();
   const [lastMove, setLastMove] = useState<GameMove | undefined>();
   const [showCoach, setShowCoach] = useState(false);
   const [showDeepRequestModal, setShowDeepRequestModal] = useState(false);
@@ -70,8 +81,8 @@ export const GamePage = () => {
   const [activeSimplePlayerIndex, setActiveSimplePlayerIndex] = useState(0);
   const [diceRollToken, setDiceRollToken] = useState(0);
   const [diceRequestedValue, setDiceRequestedValue] = useState<number | undefined>(undefined);
-  const [diceRollingVisible, setDiceRollingVisible] = useState(false);
-  const [isAnimatingMove, setIsAnimatingMove] = useState(false);
+  const [turnState, setTurnState] = useState<TurnState>('idle');
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>();
   const pendingMoveIdRef = useRef<string | undefined>(undefined);
   const pendingModalCellRef = useRef<number | undefined>(undefined);
@@ -188,6 +199,7 @@ export const GamePage = () => {
     board.maxCell,
   );
   const cellContent = board.cells[modalCellNumber - 1] ?? board.cells[0];
+  const isAnimatingMove = turnState === 'animating';
 
   const onMoveAnimationComplete = useCallback((moveId: string) => {
     if (pendingMoveIdRef.current !== moveId) {
@@ -257,7 +269,7 @@ export const GamePage = () => {
       }
       pendingModalCellRef.current = pending.toCell;
       pendingSimpleMoveRef.current = undefined;
-      setIsAnimatingMove(false);
+      setTurnState('idle');
       setAnimationMove(undefined);
       setShowCoach(true);
       return;
@@ -265,7 +277,7 @@ export const GamePage = () => {
 
     if (pendingEntryMoveIdRef.current === moveId) {
       const result = pendingEntryResultRef.current;
-      setIsAnimatingMove(false);
+      setTurnState('idle');
       setAnimationMove(undefined);
       pendingEntryMoveIdRef.current = undefined;
       pendingEntryResultRef.current = undefined;
@@ -279,7 +291,7 @@ export const GamePage = () => {
       return;
     }
 
-    setIsAnimatingMove(false);
+    setTurnState('idle');
     setShowCoach(true);
     setAnimationMove(undefined);
   }, [activeSimplePlayerIndex, updateSessionRequest]);
@@ -312,7 +324,7 @@ export const GamePage = () => {
   }
 
   const applyRolledValue = async (diceValue: number): Promise<void> => {
-    if (isAnimatingMove || multiplayerFinished) {
+    if (isAnimatingMove || multiplayerFinished || currentSession.finished || currentSession.sessionStatus === 'completed') {
       return;
     }
 
@@ -344,7 +356,7 @@ export const GamePage = () => {
         snakeOrArrow: computed.snakeOrArrow,
         createdAt: new Date().toISOString(),
       });
-      setIsAnimatingMove(true);
+      setTurnState('animating');
       pendingMoveIdRef.current = moveId;
       pendingSimpleMoveRef.current = {
         moveId,
@@ -379,7 +391,7 @@ export const GamePage = () => {
 
     const isDeepEntryRoll = currentSession.request.isDeepEntry && !currentSession.hasEnteredGame;
     setLastMove(move);
-    setIsAnimatingMove(true);
+    setTurnState('animating');
 
     pendingMoveIdRef.current = move.id;
     pendingModalCellRef.current = move.toCell;
@@ -400,12 +412,12 @@ export const GamePage = () => {
   };
 
   const triggerDiceRoll = (requestedValue?: number): void => {
-    if (isAnimatingMove || multiplayerFinished || diceRollingVisible) {
+    if (turnState !== 'idle' || multiplayerFinished || currentSession.finished || currentSession.sessionStatus === 'completed') {
       return;
     }
     setShowCoach(false);
     setDiceRequestedValue(requestedValue);
-    setDiceRollingVisible(true);
+    setTurnState('rolling');
     setDiceRollToken((prev) => prev + 1);
   };
 
@@ -503,13 +515,21 @@ export const GamePage = () => {
             triggerDiceRoll();
           }}
           type="button"
-          disabled={isAnimatingMove || diceRollingVisible}
+          disabled={turnState !== 'idle'}
           className="w-full rounded-xl bg-emerald-600 px-4 py-4 text-base font-semibold text-white transition duration-300 ease-out disabled:opacity-70"
           whileTap={buttonTapScale}
           whileHover={buttonHoverScale}
         >
           Кинути кубик
         </motion.button>
+        <button
+          type="button"
+          onClick={() => setShowFinishConfirm(true)}
+          disabled={turnState !== 'idle'}
+          className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 text-sm font-medium text-stone-700 transition disabled:opacity-50"
+        >
+          Завершити подорож
+        </button>
         <div className="mt-3 flex items-center justify-between text-xs text-stone-600">
           <Link className="transition duration-200 ease-out hover:scale-[1.02] active:scale-[0.99]" to="/settings">
             Налаштування
@@ -522,6 +542,44 @@ export const GamePage = () => {
       </section>
 
       <AnimatePresence>
+        {showFinishConfirm && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="w-full max-w-md rounded-3xl bg-white p-4 shadow-xl"
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.99 }}
+            >
+              <h3 className="text-lg font-semibold text-stone-900">Завершити подорож?</h3>
+              <p className="mt-2 text-sm text-stone-600">
+                Поточну сесію буде позначено завершеною. Нові ходи стануть недоступними.
+              </p>
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void finishSession().then(() => setShowFinishConfirm(false));
+                  }}
+                  className="flex-1 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white"
+                >
+                  Так, завершити
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowFinishConfirm(false)}
+                  className="rounded-xl border border-stone-300 px-3 py-2.5 text-sm text-stone-700"
+                >
+                  Повернутись
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
         {showDeepRequestModal && (
           <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
@@ -606,7 +664,7 @@ export const GamePage = () => {
           void applyRolledValue(value);
         }}
         onFinished={() => {
-          setDiceRollingVisible(false);
+          setTurnState((prev) => (prev === 'rolling' ? 'idle' : prev));
           setDiceRequestedValue(undefined);
         }}
       />

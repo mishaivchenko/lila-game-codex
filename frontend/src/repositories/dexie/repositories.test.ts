@@ -24,6 +24,7 @@ describe('dexie repositories', () => {
       currentCell: 1,
       settings: { speed: 'normal', depth: 'standard' },
       request: { isDeepEntry: false, simpleRequest: 'test' },
+      sessionStatus: 'active',
       finished: false,
       hasEnteredGame: false,
     });
