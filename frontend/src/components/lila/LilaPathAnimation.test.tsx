@@ -1,6 +1,14 @@
+import type { ComponentPropsWithoutRef } from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { LilaPathAnimation } from './LilaPathAnimation';
+
+vi.mock('framer-motion', () => ({
+  motion: {
+    path: (props: ComponentPropsWithoutRef<'path'>) => <path {...props} />,
+    circle: (props: ComponentPropsWithoutRef<'circle'>) => <circle {...props} />,
+  },
+}));
 
 describe('LilaPathAnimation', () => {
   it('renders an arrow path with turquoise stroke and stairs art', () => {

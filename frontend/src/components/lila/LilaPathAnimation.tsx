@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import snakeSpirit from '../../assets/lila/snake-spirit.svg';
-import stairsLight from '../../assets/lila/stairs-light.svg';
 import type { BoardType } from '../../domain/types';
+import { getLilaVisualAssets } from '../../config/visualThemes';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import {
   PATH_DRAW_DURATION_MS,
@@ -45,16 +44,16 @@ const buildSmoothPath = (points: BoardPathPoint[]): string => {
 export const LilaPathAnimation = ({ boardType, fromCell, toCell, type, points }: LilaPathAnimationProps) => {
   const [visible, setVisible] = useState(true);
   const [drawn, setDrawn] = useState(false);
+  const visuals = useMemo(() => getLilaVisualAssets(), []);
 
   const from = useMemo(() => mapCellToBoardPosition(boardType, fromCell), [boardType, fromCell]);
   const to = useMemo(() => mapCellToBoardPosition(boardType, toCell), [boardType, toCell]);
 
   useEffect(() => {
-    const raf = window.requestAnimationFrame(() => setDrawn(true));
+    setDrawn(true);
     const timer = window.setTimeout(() => setVisible(false), CLEAR_AFTER_MS);
 
     return () => {
-      window.cancelAnimationFrame(raf);
       window.clearTimeout(timer);
     };
   }, [boardType, fromCell, toCell, type]);
@@ -74,7 +73,7 @@ export const LilaPathAnimation = ({ boardType, fromCell, toCell, type, points }:
 
   const color = type === 'arrow' ? '#2CBFAF' : '#D18A43';
   const shadowColor = type === 'arrow' ? 'rgba(44,191,175,0.38)' : 'rgba(209,138,67,0.38)';
-  const artIcon = type === 'arrow' ? stairsLight : snakeSpirit;
+  const artIcon = type === 'arrow' ? visuals.stairsLight : visuals.snakeSpirit;
   const midpoint = {
     x: pathPoints[Math.floor(pathPoints.length / 2)]?.xPercent ?? (from.xPercent + to.xPercent) / 2,
     y: pathPoints[Math.floor(pathPoints.length / 2)]?.yPercent ?? (from.yPercent + to.yPercent) / 2,
