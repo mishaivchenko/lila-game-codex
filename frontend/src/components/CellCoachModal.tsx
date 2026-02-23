@@ -5,6 +5,7 @@ import type { CellContent, DepthSetting } from '../domain/types';
 import { getLilaCellContent } from '../lib/lila/cellContent';
 import { getMovePresentation } from '../lib/lila/historyFormat';
 import { getNoteValidationError } from '../lib/lila/noteValidation';
+import { MarkdownText } from './MarkdownText';
 import {
   buttonHoverScale,
   buttonTapScale,
@@ -20,6 +21,7 @@ interface CellCoachModalProps {
     fromCell: number;
     toCell: number;
     type: 'normal' | 'snake' | 'ladder';
+    pathLabel?: string;
   };
   readOnly?: boolean;
   initialText?: string;
@@ -46,6 +48,12 @@ export const CellCoachModal = ({
     lilaContent.description || (depth === 'light' ? cellContent.shortText : cellContent.fullText);
   const displayedQuestions =
     lilaContent.questions.length > 0 ? lilaContent.questions : cellContent.questions;
+  const displayedDescriptionMarkdown =
+    lilaContent.descriptionMarkdown ?? `### ${lilaContent.title}\n${displayedDescription}`;
+  const displayedQuestionsMarkdown =
+    lilaContent.questionsMarkdown ??
+    `### Питання для зупинки\n${displayedQuestions.map((question) => `- ${question}`).join('\n')}`;
+  const combinedMarkdown = `${displayedDescriptionMarkdown}\n\n${displayedQuestionsMarkdown}`;
   const movePresentation = moveContext ? getMovePresentation(moveContext.type) : undefined;
 
   useEffect(() => {
@@ -97,7 +105,7 @@ export const CellCoachModal = ({
             {moveContext && (
               <div className="mt-2 flex items-center gap-2">
                 <p className="rounded-lg bg-stone-100 px-2.5 py-1.5 text-xs text-stone-600">
-                  Хід: {moveContext.fromCell} {movePresentation?.symbol ?? '→'} {moveContext.toCell}
+                  Хід: {moveContext.pathLabel ?? `${moveContext.fromCell} ${movePresentation?.symbol ?? '→'} ${moveContext.toCell}`}
                 </p>
                 {movePresentation && moveContext.type !== 'normal' && (
                   <span className={`rounded-full px-2 py-1 text-xs font-medium ${movePresentation.badgeClassName}`}>
@@ -106,14 +114,9 @@ export const CellCoachModal = ({
                 )}
               </div>
             )}
-            <p className="mt-3 text-sm leading-relaxed text-stone-700">
-              {displayedDescription}
-            </p>
-            <ul className="mt-4 space-y-2 text-sm text-stone-700">
-              {displayedQuestions.map((question) => (
-                <li key={question}>• {question}</li>
-              ))}
-            </ul>
+            <div className="mt-3 rounded-2xl border border-[#ead9cc] bg-[#fff9f4] p-3">
+              <MarkdownText source={combinedMarkdown} />
+            </div>
 
             <textarea
               className="mt-5 min-h-28 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm"

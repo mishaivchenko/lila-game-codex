@@ -5,7 +5,7 @@ import { BOARD_DEFINITIONS } from '../content/boards';
 import { createRepositories } from '../repositories';
 import { useGameContext } from '../context/GameContext';
 import type { CellInsight, GameMove } from '../domain/types';
-import { formatMovePath, getMovePresentation, resolveMoveType } from '../lib/lila/historyFormat';
+import { formatMovePathWithEntry, getMovePresentation, resolveMoveType } from '../lib/lila/historyFormat';
 
 const repositories = createRepositories();
 
@@ -189,7 +189,7 @@ export const HistoryPage = () => {
                 <p className="text-xs text-stone-500">Клітина {move.toCell}</p>
                 <p className="text-sm font-medium text-stone-900">{content.title}</p>
                 <p className="mt-1 text-xs text-stone-500">
-                  Хід: {formatMovePath(move)}
+                  Хід: {formatMovePathWithEntry(move, board.maxCell)}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1">
@@ -207,7 +207,6 @@ export const HistoryPage = () => {
 
       {selectedCell && selectedContent && (
         <CellCoachModal
-          readOnly
           cellNumber={selectedCell}
           cellContent={selectedContent}
           depth={currentSession.settings.depth}
@@ -217,6 +216,7 @@ export const HistoryPage = () => {
                   fromCell: selectedMove.fromCell,
                   toCell: selectedMove.toCell,
                   type: resolveMoveType(selectedMove),
+                  pathLabel: formatMovePathWithEntry(selectedMove, board.maxCell),
                 }
               : undefined
           }

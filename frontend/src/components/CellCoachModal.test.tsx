@@ -73,7 +73,7 @@ describe('CellCoachModal image layout', () => {
       />,
     );
 
-    expect(screen.getByText('Бажання')).not.toBeNull();
+    expect(screen.getAllByText('Бажання').length).toBeGreaterThan(0);
     expect(screen.getByText(/Є бажання \"хибні\"/i)).not.toBeNull();
     expect(screen.getByText(/Яке твоє головне бажання/i)).not.toBeNull();
   });

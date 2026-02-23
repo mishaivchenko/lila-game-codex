@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BOARD_DEFINITIONS } from '../../../content/boards';
-import { resolveTransitionEntryCell } from '../moveVisualization';
+import { buildStepwiseCellPath, resolveTransitionEntryCell } from '../moveVisualization';
 
 describe('moveVisualization', () => {
   it('resolves transition entry cell for snake and ladder moves', () => {
@@ -17,5 +17,15 @@ describe('moveVisualization', () => {
     const board = BOARD_DEFINITIONS.full;
     const entry = resolveTransitionEntryCell(1, 2, board, null, 3);
     expect(entry).toBeUndefined();
+  });
+
+  it('builds stepwise path without diagonal shortcuts', () => {
+    const path = buildStepwiseCellPath(8, 3, 72);
+    expect(path).toEqual([8, 9, 10, 11]);
+  });
+
+  it('builds bounce path even when final cell equals start cell', () => {
+    const path = buildStepwiseCellPath(71, 2, 72);
+    expect(path).toEqual([71, 72, 71]);
   });
 });

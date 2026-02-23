@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { MarkdownText } from '../../components/MarkdownText';
 
 interface DeepModeWallProps {
   open: boolean;
@@ -9,6 +10,16 @@ export const DeepModeWall = ({ open, onClose }: DeepModeWallProps) => {
   if (!open) {
     return null;
   }
+
+  const promoMarkdown = `
+### Тихий, але дуже точний рівень подорожі
+У **Глибокій грі** ви отримуєте не просто пояснення клітини, а цілісну перспективу шляху.
+
+- **Глибинні інтерпретації клітин** у контексті вашого наміру.
+- **AI-провідник** для м’якої рефлексії та наступних кроків.
+- **Патерни маршруту**: повтори, повороти, точки росту.
+- **Нові питання** для переходу від розуміння до дії.
+`;
 
   return (
     <div className="absolute inset-0 z-20 rounded-3xl" data-testid="deep-mode-wall">
@@ -37,15 +48,9 @@ export const DeepModeWall = ({ open, onClose }: DeepModeWallProps) => {
           </button>
         </div>
 
-        <p className="relative mt-3 text-sm leading-6 text-[#6f5d53]">
-          Проникніть глибше. Побачте приховані зв’язки. Дослухайтесь до тихих сигналів вашої подорожі.
-        </p>
-
-        <ul className="relative mt-4 space-y-2 text-sm text-[#4f3f36]">
-          <li className="rounded-xl border border-[#e6d8cd] bg-white/65 px-3 py-2">Глибинні інтерпретації клітин</li>
-          <li className="rounded-xl border border-[#e6d8cd] bg-white/65 px-3 py-2">AI-провідник з RAG-пам’яттю</li>
-          <li className="rounded-xl border border-[#e6d8cd] bg-white/65 px-3 py-2">Патерни шляху та нові питання</li>
-        </ul>
+        <div className="relative mt-3 rounded-2xl border border-[#e6d8cd] bg-white/55 px-3 py-3">
+          <MarkdownText source={promoMarkdown} />
+        </div>
 
         <div className="relative mt-5 flex flex-wrap items-center gap-2">
           <button
