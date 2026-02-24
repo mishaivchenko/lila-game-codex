@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { getLilaVisualAssets } from '../../config/visualThemes';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { buildSmoothPath, sampleAngleByProgress, samplePathByProgress } from './pathAnimationMath';
@@ -10,6 +10,8 @@ interface AnimationRendererSnakeProps {
 }
 
 export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationRendererSnakeProps) => {
+  const gradientSeed = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const gradientId = `snakeMinimalCore-${gradientSeed}`;
   const snakeSpirit = useMemo(() => getLilaVisualAssets().snakeSpirit, []);
   const path = useMemo(() => buildSmoothPath(points), [points]);
   const head = useMemo(() => samplePathByProgress(points, progress), [points, progress]);
@@ -22,7 +24,7 @@ export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationR
   return (
     <g style={{ opacity }} data-testid="lila-snake-renderer">
       <defs>
-        <linearGradient id="snakeMinimalCore" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#D9E3EC" />
           <stop offset="58%" stopColor="#9FB7C8" />
           <stop offset="100%" stopColor="#79D8F2" />
@@ -43,7 +45,7 @@ export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationR
       <path
         d={path}
         fill="none"
-        stroke="url(#snakeMinimalCore)"
+        stroke={`url(#${gradientId})`}
         strokeWidth={1.7}
         strokeLinecap="round"
         strokeLinejoin="round"

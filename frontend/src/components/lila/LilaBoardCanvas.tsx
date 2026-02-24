@@ -28,6 +28,7 @@ interface LilaBoardCanvasProps {
   onMoveAnimationComplete?: (moveId: string) => void;
   onCellSelect?: (cellNumber: number) => void;
   disableCellSelect?: boolean;
+  holdTokenSync?: boolean;
 }
 
 export const LilaBoardCanvas = ({
@@ -40,6 +41,7 @@ export const LilaBoardCanvas = ({
   onMoveAnimationComplete,
   onCellSelect,
   disableCellSelect = false,
+  holdTokenSync = false,
 }: LilaBoardCanvasProps) => {
   const [tokenCell, setTokenCell] = useState(currentCell);
   const [pulseCell, setPulseCell] = useState<number | null>(null);
@@ -59,7 +61,9 @@ export const LilaBoardCanvas = ({
 
   useEffect(() => {
     if (!animationMove) {
-      setTokenCell(currentCell);
+      if (!holdTokenSync) {
+        setTokenCell(currentCell);
+      }
       setActivePath(undefined);
       setTokenPathPosition(undefined);
       return;
@@ -116,7 +120,7 @@ export const LilaBoardCanvas = ({
     }, tokenMoveDurationMs);
 
     timersRef.current.push(completeTimer);
-  }, [animationMove, animationTimings?.tokenMoveDurationMs, boardType, currentCell, onMoveAnimationComplete]);
+  }, [animationMove, animationTimings?.tokenMoveDurationMs, boardType, currentCell, holdTokenSync, onMoveAnimationComplete]);
 
   useEffect(() => {
     return () => {

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { getLilaVisualAssets } from '../../config/visualThemes';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { buildSmoothPath, buildStepSamples, sampleAngleByProgress, samplePathByProgress } from './pathAnimationMath';
@@ -12,6 +12,8 @@ interface AnimationRendererLadderProps {
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 
 export const AnimationRendererLadder = ({ points, progress, opacity }: AnimationRendererLadderProps) => {
+  const gradientSeed = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const gradientId = `ladderMinimalRail-${gradientSeed}`;
   const stairsLight = useMemo(() => getLilaVisualAssets().stairsLight, []);
   const path = useMemo(() => buildSmoothPath(points), [points]);
   const steps = useMemo(() => buildStepSamples(points), [points]);
@@ -22,7 +24,7 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
   return (
     <g style={{ opacity }} data-testid="lila-ladder-renderer">
       <defs>
-        <linearGradient id="ladderMinimalRail" x1="0%" y1="100%" x2="100%" y2="0%">
+        <linearGradient id={gradientId} x1="0%" y1="100%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#C3D2DE" />
           <stop offset="100%" stopColor="#7EE5FF" />
         </linearGradient>
@@ -55,7 +57,7 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
       <path
         d={path}
         fill="none"
-        stroke="url(#ladderMinimalRail)"
+        stroke={`url(#${gradientId})`}
         strokeWidth={1.65}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -81,7 +83,7 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
 
         return (
           <g
-            key={`${step.point.xPercent}-${step.point.yPercent}`}
+            key={`ladder-step-${index}`}
             transform={`translate(${step.point.xPercent} ${step.point.yPercent}) rotate(${step.angle}) scale(${scale})`}
             style={{ opacity: stepProgress }}
             data-testid={`lila-ladder-step-${index}`}
