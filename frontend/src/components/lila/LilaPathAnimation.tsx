@@ -72,6 +72,7 @@ export const LilaPathAnimation = ({
   }, [onComplete]);
 
   useEffect(() => {
+    let isEffectActive = true;
     setVisible(true);
     setProgress(0);
     setOpacity(1);
@@ -79,6 +80,10 @@ export const LilaPathAnimation = ({
 
     let elapsedMs = 0;
     const updateTravel = () => {
+      if (!isEffectActive) {
+        return;
+      }
+
       elapsedMs += 16;
       const linear = Math.min(1, elapsedMs / (timings?.pathTravelDurationMs ?? TRANSITION_TRAVEL_MS));
       const eased = 0.5 - Math.cos(Math.PI * linear) / 2;
@@ -99,11 +104,17 @@ export const LilaPathAnimation = ({
       onTravelCompleteRef.current?.();
 
       const holdTimer = window.setTimeout(() => {
+        if (!isEffectActive) {
+          return;
+        }
         setPhase('fade');
         setOpacity(0);
       }, timings?.pathPostHoldMs ?? TRANSITION_POST_HOLD_MS);
 
       const doneTimer = window.setTimeout(() => {
+        if (!isEffectActive) {
+          return;
+        }
         setVisible(false);
         onCompleteRef.current?.();
       }, (timings?.pathPostHoldMs ?? TRANSITION_POST_HOLD_MS) + (timings?.pathFadeOutMs ?? TRANSITION_FADE_OUT_MS));
@@ -115,6 +126,7 @@ export const LilaPathAnimation = ({
     travelIntervalRef.current = window.setInterval(updateTravel, 16);
 
     return () => {
+      isEffectActive = false;
       if (travelIntervalRef.current !== undefined) {
         window.clearInterval(travelIntervalRef.current);
         travelIntervalRef.current = undefined;
