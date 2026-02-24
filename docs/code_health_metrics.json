@@ -1,0 +1,81 @@
+{
+  "summary": {
+    "overall_score": 78,
+    "last_updated": "2026-02-24T19:53:06Z",
+    "generated_by": "Codex"
+  },
+  "thresholds": {
+    "overall_score_drop_max": 3,
+    "solid_compliance_drop_max": 2,
+    "smells_growth_percent_max": 10,
+    "complexity_growth_percent_max": 10
+  },
+  "metrics": {
+    "files_total": 130,
+    "source_files_total": 118,
+    "lines_total": 7646,
+    "frontend": {
+      "files": 106,
+      "lines": 7185
+    },
+    "backend": {
+      "files": 12,
+      "lines": 461
+    },
+    "tests": {
+      "files": 26,
+      "lines": 1209,
+      "test_file_ratio_vs_source_percent": 22.0,
+      "source_files_with_direct_test_match_percent": 24.5,
+      "coverage_estimate_percent": 64,
+      "coverage_band": "medium"
+    },
+    "smells": {
+      "long_files_over_500_loc": 1,
+      "long_files_over_300_loc": 3,
+      "long_functions_over_50_loc": 18,
+      "duplicate_code_blocks_estimate": 6,
+      "solid_violations_estimate": 11,
+      "smells_per_1k_loc": 4.71
+    },
+    "risk_modules": [
+      {
+        "path": "frontend/src/pages/GamePage.tsx",
+        "risk": "high",
+        "reason": "Large UI + orchestration surface (784 LOC)."
+      },
+      {
+        "path": "frontend/src/pages/HistoryPage.tsx",
+        "risk": "medium",
+        "reason": "UI logic mixed with persistence reads/writes."
+      },
+      {
+        "path": "frontend/src/context/GameContext.tsx",
+        "risk": "high",
+        "reason": "High responsibility concentration for session lifecycle."
+      },
+      {
+        "path": "frontend/src/features/telegram/ui/TelegramAppShell.tsx",
+        "risk": "medium",
+        "reason": "Environment branching + auth orchestration in one component."
+      }
+    ]
+  },
+  "scores": {
+    "architecture_clarity": 81,
+    "solid_compliance": 76,
+    "test_coverage": 64,
+    "complexity": 72,
+    "consistency": 83
+  },
+  "methods": {
+    "loc": "wc -l over frontend/src + backend/src ts/tsx/js/jsx",
+    "test_inventory": "glob for *.test.* and *.spec.* in frontend/src + backend/test",
+    "long_file_thresholds": [
+      300,
+      500
+    ],
+    "long_function_threshold": 50,
+    "duplicate_detection": "normalized 6-line sliding window estimate"
+  }
+}
