@@ -3,7 +3,7 @@ import { FULL_BOARD_COORDS } from '../fullBoardCoordinates';
 import { createTransitionPaths } from './pathFactory';
 import type { BoardProfile } from './types';
 
-const FULL_BOARD_IMAGE = '/field/НОВИЙ ДИЗАЙН.png';
+const FULL_BOARD_IMAGE = '/field/НОВИЙ ДИЗАЙН.png';
 
 export const fullBoardProfile: BoardProfile = {
   boardType: 'full',
