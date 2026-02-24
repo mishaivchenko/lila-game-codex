@@ -1,8 +1,7 @@
 {
   "summary": {
-    "overall_score": 79,
-    "last_updated": "2026-02-24T20:28:45Z",
-    "last_updated": "2026-02-24T20:17:46Z",
+    "overall_score": 80,
+    "last_updated": "2026-02-24T21:07:13Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -12,23 +11,23 @@
     "complexity_growth_percent_max": 10
   },
   "metrics": {
-    "files_total": 130,
-    "source_files_total": 119,
-    "lines_total": 7802,
+    "files_total": 132,
+    "source_files_total": 122,
+    "lines_total": 8275,
     "frontend": {
-      "files": 107,
-      "lines": 7341
+      "files": 110,
+      "lines": 7814
     },
     "backend": {
       "files": 12,
       "lines": 461
     },
     "tests": {
-      "files": 26,
-      "lines": 1265,
-      "test_file_ratio_vs_source_percent": 21.8,
+      "files": 28,
+      "lines": 1481,
+      "test_file_ratio_vs_source_percent": 23.0,
       "source_files_with_direct_test_match_percent": 24.2,
-      "coverage_estimate_percent": 65,
+      "coverage_estimate_percent": 67,
       "coverage_band": "medium"
     },
     "smells": {
@@ -65,7 +64,7 @@
   "scores": {
     "architecture_clarity": 81,
     "solid_compliance": 77,
-    "test_coverage": 65,
+    "test_coverage": 67,
     "complexity": 72,
     "consistency": 84
   },

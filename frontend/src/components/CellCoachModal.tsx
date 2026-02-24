@@ -63,6 +63,21 @@ export const CellCoachModal = ({
     setValidationError(undefined);
   }, [initialText]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      event.preventDefault();
+      onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
   const handleSave = () => {
     if (!readOnly) {
       const error = getNoteValidationError(text);

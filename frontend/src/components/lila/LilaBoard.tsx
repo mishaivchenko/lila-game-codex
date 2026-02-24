@@ -22,6 +22,8 @@ interface LilaBoardProps {
   animationMove?: LilaTransition;
   animationTimings?: AnimationTimingSettings;
   onMoveAnimationComplete?: (moveId: string) => void;
+  onCellSelect?: (cellNumber: number) => void;
+  disableCellSelect?: boolean;
 }
 
 export const LilaBoard = ({
@@ -32,6 +34,8 @@ export const LilaBoard = ({
   animationMove,
   animationTimings,
   onMoveAnimationComplete,
+  onCellSelect,
+  disableCellSelect = false,
 }: LilaBoardProps) => {
   return (
     <section className="rounded-3xl bg-stone-100 p-4 shadow-inner">
@@ -48,6 +52,8 @@ export const LilaBoard = ({
         animationMove={animationMove}
         animationTimings={animationTimings}
         onMoveAnimationComplete={onMoveAnimationComplete}
+        onCellSelect={onCellSelect}
+        disableCellSelect={disableCellSelect}
       />
 
       {animationMove?.type && (
