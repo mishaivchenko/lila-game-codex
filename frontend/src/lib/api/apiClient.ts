@@ -31,6 +31,11 @@ export const resolveApiUrl = (path: string): string => {
     return path;
   }
 
+  // Avoid duplicating prefixes like "/api" + "/api/auth" => "/api/api/auth".
+  if (runtimeApiBaseUrl.startsWith('/') && path.startsWith(runtimeApiBaseUrl)) {
+    return path;
+  }
+
   if (path.startsWith('/')) {
     return `${runtimeApiBaseUrl}${path}`;
   }
