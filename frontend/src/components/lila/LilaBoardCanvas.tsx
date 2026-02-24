@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { motion } from 'framer-motion';
 import type { BoardType } from '../../domain/types';
 import { BOARD_DEFINITIONS } from '../../content/boards';
@@ -14,6 +14,7 @@ import {
 import { getBoardProfile, getBoardTransitionPath } from '../../lib/lila/boardProfiles';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
+import { resolveCellFromBoardPercent } from '../../lib/lila/resolveCellFromBoardPointer';
 import type { LilaTransition } from './LilaBoard';
 import { LilaPathAnimation } from './LilaPathAnimation';
 
@@ -25,6 +26,8 @@ interface LilaBoardCanvasProps {
   animationMove?: LilaTransition;
   animationTimings?: AnimationTimingSettings;
   onMoveAnimationComplete?: (moveId: string) => void;
+  onCellSelect?: (cellNumber: number) => void;
+  disableCellSelect?: boolean;
 }
 
 export const LilaBoardCanvas = ({
@@ -35,6 +38,8 @@ export const LilaBoardCanvas = ({
   animationMove,
   animationTimings,
   onMoveAnimationComplete,
+  onCellSelect,
+  disableCellSelect = false,
 }: LilaBoardCanvasProps) => {
   const [tokenCell, setTokenCell] = useState(currentCell);
   const [pulseCell, setPulseCell] = useState<number | null>(null);
@@ -133,10 +138,32 @@ export const LilaBoardCanvas = ({
     ...token,
     position: mapCellToBoardPosition(boardType, token.cell),
   }));
+  const handleBoardPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    if (disableCellSelect || !onCellSelect) {
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return;
+    }
+
+    const xPercent = ((event.clientX - rect.left) / rect.width) * 100;
+    const yPercent = ((event.clientY - rect.top) / rect.height) * 100;
+    const cell = resolveCellFromBoardPercent(boardType, { xPercent, yPercent });
+    if (cell) {
+      onCellSelect(cell);
+    }
+  };
 
   return (
     <div className="relative mx-auto w-full max-w-[520px] rounded-3xl bg-stone-200/70 p-2 shadow-inner">
-      <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio }} data-testid="lila-board-canvas">
+      <div
+        className="relative w-full overflow-hidden rounded-2xl"
+        style={{ aspectRatio }}
+        data-testid="lila-board-canvas"
+        onPointerUp={handleBoardPointerUp}
+      >
         <img
           src={resolveAssetUrl(boardProfile.imageSrc)}
           alt={boardType === 'full' ? 'Lila full board' : 'Lila short board'}
