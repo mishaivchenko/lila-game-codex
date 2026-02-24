@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
+import { getLilaVisualAssets } from '../../config/visualThemes';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
-import { buildSmoothPath, buildStepSamples, samplePathByProgress } from './pathAnimationMath';
+import { buildSmoothPath, buildStepSamples, sampleAngleByProgress, samplePathByProgress } from './pathAnimationMath';
 
 interface AnimationRendererLadderProps {
   points: BoardPathPoint[];
@@ -11,8 +12,11 @@ interface AnimationRendererLadderProps {
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 
 export const AnimationRendererLadder = ({ points, progress, opacity }: AnimationRendererLadderProps) => {
+  const stairsLight = useMemo(() => getLilaVisualAssets().stairsLight, []);
   const path = useMemo(() => buildSmoothPath(points), [points]);
   const steps = useMemo(() => buildStepSamples(points), [points]);
+  const glyphPoint = useMemo(() => samplePathByProgress(points, Math.max(0.1, progress * 0.72)), [points, progress]);
+  const glyphAngle = useMemo(() => sampleAngleByProgress(points, Math.max(0.1, progress * 0.72)), [points, progress]);
   const climber = useMemo(() => samplePathByProgress(points, progress), [points, progress]);
 
   return (
@@ -28,6 +32,20 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
         strokeDasharray={`${Math.max(0.0001, progress)} 1`}
         data-testid="lila-ladder-rail-glow"
       />
+
+      <g
+        transform={`translate(${glyphPoint.xPercent} ${glyphPoint.yPercent}) rotate(${glyphAngle}) scale(${0.58 + progress * 0.36})`}
+        style={{ opacity: 0.22 + progress * 0.44 }}
+      >
+        <image
+          href={stairsLight}
+          x={-5.2}
+          y={-5.2}
+          width={10.4}
+          height={10.4}
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </g>
       <path
         d={path}
         fill="none"

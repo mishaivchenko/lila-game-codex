@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { getLilaVisualAssets } from '../../config/visualThemes';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { buildSmoothPath, sampleAngleByProgress, samplePathByProgress } from './pathAnimationMath';
 
@@ -9,6 +10,7 @@ interface AnimationRendererSnakeProps {
 }
 
 export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationRendererSnakeProps) => {
+  const snakeSpirit = useMemo(() => getLilaVisualAssets().snakeSpirit, []);
   const path = useMemo(() => buildSmoothPath(points), [points]);
   const head = useMemo(() => samplePathByProgress(points, progress), [points, progress]);
   const angle = useMemo(() => sampleAngleByProgress(points, progress), [points, progress]);
@@ -47,6 +49,15 @@ export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationR
         transform={`translate(${head.xPercent} ${head.yPercent}) rotate(${angle}) scale(${headScale})`}
         data-testid="lila-snake-head"
       >
+        <image
+          href={snakeSpirit}
+          x={-4.2}
+          y={-3.2}
+          width={8.4}
+          height={6.4}
+          preserveAspectRatio="xMidYMid meet"
+          opacity={0.36 + progress * 0.44}
+        />
         <ellipse
           cx="0"
           cy="0"
