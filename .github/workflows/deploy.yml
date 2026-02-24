@@ -61,7 +61,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push
-
+    environment: HF_SPACE_ID
     steps:
       - name: Deploy on VPS via SSH
         uses: appleboy/ssh-action@v1.2.0
