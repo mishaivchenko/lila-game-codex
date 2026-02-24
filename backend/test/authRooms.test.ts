@@ -57,7 +57,11 @@ describe('Telegram auth + rooms', () => {
 
   it('rejects invalid Telegram signature', async () => {
     const validInitData = buildTelegramInitData(BOT_TOKEN);
-    const initData = validInitData.replace(/hash=([a-f0-9])/, 'hash=0');
+    const params = new URLSearchParams(validInitData);
+    const originalHash = params.get('hash') ?? '';
+    const corruptedHash = `${originalHash.slice(0, -1)}${originalHash.endsWith('0') ? '1' : '0'}`;
+    params.set('hash', corruptedHash);
+    const initData = params.toString();
 
     const response = await request(app).post('/api/auth/telegram/webapp').send({ initData });
 
