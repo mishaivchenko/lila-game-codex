@@ -63,12 +63,23 @@ export const getTelegramWebApp = (): TelegramWebApp | undefined => {
 
 export const getTelegramInitData = (): string => {
   const webApp = getTelegramWebApp();
-  if (webApp?.initData) {
+  if (webApp?.initData && webApp.initData.includes('hash=')) {
     return webApp.initData;
   }
 
-  const params = new URLSearchParams(window.location.search);
-  return params.get('tgWebAppData') ?? '';
+  const extractFromUrl = (): string => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash);
+    return searchParams.get('tgWebAppData') ?? hashParams.get('tgWebAppData') ?? '';
+  };
+
+  const rawFallback = extractFromUrl();
+  if (!rawFallback) {
+    return '';
+  }
+
+  const decodedFallback = rawFallback.includes('%') ? decodeURIComponent(rawFallback) : rawFallback;
+  return decodedFallback.includes('hash=') ? decodedFallback : '';
 };
 
 export const applyTelegramThemeToRoot = (theme?: TelegramThemeParams): void => {

@@ -14,7 +14,7 @@ export const AppRouter = () => {
       <TelegramAppShell>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/telegram" element={<Navigate to="/" replace />} />
+          <Route path="/telegram" element={<HomePage />} />
           <Route path="/setup" element={<GameSetupPage />} />
           <Route path="/game" element={<GamePage />} />
           <Route path="/history" element={<HistoryPage />} />
