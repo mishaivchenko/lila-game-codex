@@ -20,7 +20,7 @@ export const Board = ({ board, currentCell }: BoardProps) => {
             <div
               key={cellNumber}
               className={`relative flex h-10 items-center justify-center rounded-lg text-xs ${
-                isCurrent ? 'bg-emerald-500 text-white' : 'bg-white text-stone-700'
+                isCurrent ? 'bg-[#c57b5d] text-white' : 'bg-white text-stone-700'
               }`}
             >
               {cellNumber}

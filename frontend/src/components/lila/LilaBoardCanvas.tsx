@@ -3,14 +3,16 @@ import { motion } from 'framer-motion';
 import type { BoardType } from '../../domain/types';
 import { BOARD_DEFINITIONS } from '../../content/boards';
 import { resolveAssetUrl } from '../../content/assetBase';
+import type { AnimationTimingSettings } from '../../lib/animations/animationTimingSettings';
 import {
-  PATH_DRAW_DURATION_MS,
   PULSE_DURATION_MS,
   TOKEN_MOVE_DURATION_MS,
   activeCellGlowTransition,
   specialCellGlowTransition,
   tokenMoveTransition,
 } from '../../lib/animations/lilaMotion';
+import { getBoardProfile, getBoardTransitionPath } from '../../lib/lila/boardProfiles';
+import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
 import type { LilaTransition } from './LilaBoard';
 import { LilaPathAnimation } from './LilaPathAnimation';
@@ -21,16 +23,9 @@ interface LilaBoardCanvasProps {
   tokenColor?: string;
   otherTokens?: { id: string; cell: number; color: string }[];
   animationMove?: LilaTransition;
+  animationTimings?: AnimationTimingSettings;
   onMoveAnimationComplete?: (moveId: string) => void;
 }
-
-const PATH_DURATION_MS = PATH_DRAW_DURATION_MS;
-
-const FULL_BOARD_IMAGE = '/field/НОВИЙ ДИЗАЙН.png';
-const SHORT_BOARD_IMAGE = '/field/lila-board-short.png';
-
-const getBoardImage = (boardType: BoardType): string =>
-  resolveAssetUrl(boardType === 'full' ? encodeURI(FULL_BOARD_IMAGE) : SHORT_BOARD_IMAGE);
 
 export const LilaBoardCanvas = ({
   boardType,
@@ -38,13 +33,17 @@ export const LilaBoardCanvas = ({
   tokenColor = '#1c1917',
   otherTokens = [],
   animationMove,
+  animationTimings,
   onMoveAnimationComplete,
 }: LilaBoardCanvasProps) => {
   const [tokenCell, setTokenCell] = useState(currentCell);
   const [pulseCell, setPulseCell] = useState<number | null>(null);
   const [aspectRatio, setAspectRatio] = useState(0.64);
   const [activePath, setActivePath] = useState<LilaTransition | undefined>();
+  const [tokenPathPosition, setTokenPathPosition] = useState<BoardPathPoint | undefined>();
+  const [tokenStepDurationMs, setTokenStepDurationMs] = useState(TOKEN_MOVE_DURATION_MS);
   const timersRef = useRef<number[]>([]);
+  const boardProfile = useMemo(() => getBoardProfile(boardType), [boardType]);
   const specialTransitions = useMemo(() => {
     const board = BOARD_DEFINITIONS[boardType];
     const transitionByCell = new Map<number, 'snake' | 'arrow'>();
@@ -57,37 +56,62 @@ export const LilaBoardCanvas = ({
     if (!animationMove) {
       setTokenCell(currentCell);
       setActivePath(undefined);
+      setTokenPathPosition(undefined);
       return;
     }
 
     timersRef.current.forEach((timer) => window.clearTimeout(timer));
     timersRef.current = [];
 
-    setPulseCell(animationMove.fromCell);
+    const specialEntryCell = animationMove.entryCell ?? animationMove.fromCell;
+    const tokenPathCells = animationMove.tokenPathCells && animationMove.tokenPathCells.length >= 2
+      ? animationMove.tokenPathCells
+      : animationMove.type && specialEntryCell !== animationMove.fromCell
+        ? [animationMove.fromCell, specialEntryCell]
+        : [animationMove.fromCell, animationMove.toCell];
+    const pathStepCount = Math.max(1, tokenPathCells.length - 1);
+    const tokenMoveDurationMs = animationTimings?.tokenMoveDurationMs ?? TOKEN_MOVE_DURATION_MS;
+    const stepDurationMs = Math.max(140, tokenMoveDurationMs / pathStepCount);
+    setTokenStepDurationMs(stepDurationMs);
+    const transitionPath =
+      animationMove.pathPoints ??
+      (animationMove.type
+        ? getBoardTransitionPath(boardType, animationMove.type, specialEntryCell, animationMove.toCell)?.points
+        : undefined);
+
+    setPulseCell(animationMove.type ? specialEntryCell : animationMove.fromCell);
     setTokenCell(animationMove.fromCell);
+    setTokenPathPosition(undefined);
 
-    if (animationMove.type) {
-      setActivePath(animationMove);
+    tokenPathCells.slice(1).forEach((cell, index) => {
+      const stepTimer = window.setTimeout(() => {
+        setTokenCell(cell);
+      }, Math.round((index + 1) * stepDurationMs));
+      timersRef.current.push(stepTimer);
+    });
+
+    if (animationMove.type && transitionPath && transitionPath.length >= 2) {
       const pulseTimer = window.setTimeout(() => setPulseCell(null), PULSE_DURATION_MS);
-      const moveTimer = window.setTimeout(() => setTokenCell(animationMove.toCell), PATH_DURATION_MS);
-      const completeTimer = window.setTimeout(() => {
-        setActivePath(undefined);
-        onMoveAnimationComplete?.(animationMove.id);
-      }, PATH_DURATION_MS + TOKEN_MOVE_DURATION_MS);
+      const startPathTimer = window.setTimeout(() => {
+        setActivePath({
+          ...animationMove,
+          fromCell: specialEntryCell,
+          pathPoints: transitionPath,
+        });
+      }, tokenMoveDurationMs);
 
-      timersRef.current.push(pulseTimer, moveTimer, completeTimer);
+      timersRef.current.push(pulseTimer, startPathTimer);
       return;
     }
 
     setPulseCell(null);
     setActivePath(undefined);
-    const moveTimer = window.setTimeout(() => setTokenCell(animationMove.toCell), 0);
     const completeTimer = window.setTimeout(() => {
       onMoveAnimationComplete?.(animationMove.id);
-    }, TOKEN_MOVE_DURATION_MS);
+    }, tokenMoveDurationMs);
 
-    timersRef.current.push(moveTimer, completeTimer);
-  }, [animationMove, currentCell, onMoveAnimationComplete]);
+    timersRef.current.push(completeTimer);
+  }, [animationMove, animationTimings?.tokenMoveDurationMs, boardType, currentCell, onMoveAnimationComplete]);
 
   useEffect(() => {
     return () => {
@@ -100,10 +124,11 @@ export const LilaBoardCanvas = ({
     () => mapCellToBoardPosition(boardType, tokenCell),
     [boardType, tokenCell],
   );
+  const effectiveTokenPosition = tokenPathPosition ?? tokenPosition;
 
   const pulsePosition = pulseCell ? mapCellToBoardPosition(boardType, pulseCell) : undefined;
   const activeCellType = specialTransitions.get(currentCell);
-  const shouldAnimateToken = Boolean(animationMove);
+  const shouldAnimateToken = Boolean(animationMove) && !tokenPathPosition;
   const passiveTokens = otherTokens.map((token) => ({
     ...token,
     position: mapCellToBoardPosition(boardType, token.cell),
@@ -113,7 +138,7 @@ export const LilaBoardCanvas = ({
     <div className="relative mx-auto w-full max-w-[520px] rounded-3xl bg-stone-200/70 p-2 shadow-inner">
       <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio }} data-testid="lila-board-canvas">
         <img
-          src={getBoardImage(boardType)}
+          src={resolveAssetUrl(boardProfile.imageSrc)}
           alt={boardType === 'full' ? 'Lila full board' : 'Lila short board'}
           className="h-full w-full object-cover"
           onLoad={(event) => {
@@ -131,6 +156,19 @@ export const LilaBoardCanvas = ({
             fromCell={activePath.fromCell}
             toCell={activePath.toCell}
             type={activePath.type}
+            points={activePath.pathPoints}
+            timings={animationTimings}
+            onProgress={(_, point) => {
+              setTokenPathPosition(point);
+            }}
+            onTravelComplete={() => {
+              setTokenPathPosition(undefined);
+              setTokenCell(activePath.toCell);
+            }}
+            onComplete={() => {
+              setActivePath(undefined);
+              onMoveAnimationComplete?.(activePath.id);
+            }}
           />
         )}
 
@@ -176,8 +214,8 @@ export const LilaBoardCanvas = ({
         <motion.div
           className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white bg-stone-900 shadow-md"
           style={{
-            left: `${tokenPosition.xPercent}%`,
-            top: `${tokenPosition.yPercent}%`,
+            left: `${effectiveTokenPosition.xPercent}%`,
+            top: `${effectiveTokenPosition.yPercent}%`,
             backgroundColor: tokenColor,
             boxShadow:
               activePath?.type === 'arrow'
@@ -187,11 +225,15 @@ export const LilaBoardCanvas = ({
                   : undefined,
           }}
           animate={{
-            left: `${tokenPosition.xPercent}%`,
-            top: `${tokenPosition.yPercent}%`,
+            left: `${effectiveTokenPosition.xPercent}%`,
+            top: `${effectiveTokenPosition.yPercent}%`,
             scale: activePath?.type ? [1, 1.08, 1] : 1,
           }}
-          transition={shouldAnimateToken ? tokenMoveTransition : { duration: 0 }}
+          transition={
+            shouldAnimateToken
+              ? { ...tokenMoveTransition, duration: tokenStepDurationMs / 1000 }
+              : { duration: 0 }
+          }
           aria-label="token"
         />
 

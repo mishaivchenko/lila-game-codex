@@ -1,135 +1,148 @@
-import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import snakeSpirit from '../../assets/lila/snake-spirit.svg';
-import stairsLight from '../../assets/lila/stairs-light.svg';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BoardType } from '../../domain/types';
-import {
-  PATH_DRAW_DURATION_MS,
-  pathDrawTransition,
-  pathGlideTransition,
-} from '../../lib/animations/lilaMotion';
+import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
+import type { AnimationTimingSettings } from '../../lib/animations/animationTimingSettings';
 import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
+import { AnimationRendererLadder } from './AnimationRendererLadder';
+import { AnimationRendererSnake } from './AnimationRendererSnake';
+import { samplePathByProgress } from './pathAnimationMath';
+import {
+  TRANSITION_FADE_OUT_MS,
+  TRANSITION_POST_HOLD_MS,
+  TRANSITION_TRAVEL_MS,
+} from './transitionAnimationConfig';
 
 interface LilaPathAnimationProps {
   boardType: BoardType;
   fromCell: number;
   toCell: number;
   type: 'snake' | 'arrow';
+  points?: BoardPathPoint[];
+  onProgress?: (progress: number, point: BoardPathPoint) => void;
+  onTravelComplete?: () => void;
+  onComplete?: () => void;
+  timings?: AnimationTimingSettings;
 }
 
-const CLEAR_AFTER_MS = 1200;
-
-const buildSnakePath = (fromX: number, fromY: number, toX: number, toY: number): string => {
-  const midX = (fromX + toX) / 2;
-  const midY = (fromY + toY) / 2;
-  const direction = toX > fromX ? 1 : -1;
-  const arc = 6.4 * direction;
-
-  return [
-    `M ${fromX} ${fromY}`,
-    `Q ${midX - arc} ${midY - 5}, ${midX} ${midY}`,
-    `Q ${midX + arc} ${midY + 5}, ${toX} ${toY}`,
-  ].join(' ');
-};
-
-const buildArrowPath = (fromX: number, fromY: number, toX: number, toY: number): string => {
-  const controlX = (fromX + toX) / 2;
-  const controlY = Math.min(fromY, toY) - 4.5;
-  return `M ${fromX} ${fromY} Q ${controlX} ${controlY}, ${toX} ${toY}`;
-};
-
-export const LilaPathAnimation = ({ boardType, fromCell, toCell, type }: LilaPathAnimationProps) => {
+export const LilaPathAnimation = ({
+  boardType,
+  fromCell,
+  toCell,
+  type,
+  points,
+  onProgress,
+  onTravelComplete,
+  onComplete,
+  timings,
+}: LilaPathAnimationProps) => {
   const [visible, setVisible] = useState(true);
-  const [drawn, setDrawn] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [opacity, setOpacity] = useState(1);
+  const [phase, setPhase] = useState<'travel' | 'hold' | 'fade'>('travel');
+  const travelIntervalRef = useRef<number | undefined>(undefined);
+  const timersRef = useRef<number[]>([]);
+  const onProgressRef = useRef(onProgress);
+  const onTravelCompleteRef = useRef(onTravelComplete);
+  const onCompleteRef = useRef(onComplete);
 
   const from = useMemo(() => mapCellToBoardPosition(boardType, fromCell), [boardType, fromCell]);
   const to = useMemo(() => mapCellToBoardPosition(boardType, toCell), [boardType, toCell]);
 
+  const pathPoints = useMemo(
+    () =>
+      points && points.length >= 2
+        ? points
+        : [
+            { xPercent: from.xPercent, yPercent: from.yPercent },
+            { xPercent: to.xPercent, yPercent: to.yPercent },
+          ],
+    [points, from.xPercent, from.yPercent, to.xPercent, to.yPercent],
+  );
+
   useEffect(() => {
-    const raf = window.requestAnimationFrame(() => setDrawn(true));
-    const timer = window.setTimeout(() => setVisible(false), CLEAR_AFTER_MS);
+    onProgressRef.current = onProgress;
+  }, [onProgress]);
+
+  useEffect(() => {
+    onTravelCompleteRef.current = onTravelComplete;
+  }, [onTravelComplete]);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  useEffect(() => {
+    setVisible(true);
+    setProgress(0);
+    setOpacity(1);
+    setPhase('travel');
+
+    let elapsedMs = 0;
+    const updateTravel = () => {
+      elapsedMs += 16;
+      const linear = Math.min(1, elapsedMs / (timings?.pathTravelDurationMs ?? TRANSITION_TRAVEL_MS));
+      const eased = 0.5 - Math.cos(Math.PI * linear) / 2;
+      const nextProgress = eased;
+      setProgress(nextProgress);
+      onProgressRef.current?.(nextProgress, samplePathByProgress(pathPoints, nextProgress));
+
+      if (nextProgress < 1) {
+        return;
+      }
+
+      if (travelIntervalRef.current !== undefined) {
+        window.clearInterval(travelIntervalRef.current);
+        travelIntervalRef.current = undefined;
+      }
+
+      setPhase('hold');
+      onTravelCompleteRef.current?.();
+
+      const holdTimer = window.setTimeout(() => {
+        setPhase('fade');
+        setOpacity(0);
+      }, timings?.pathPostHoldMs ?? TRANSITION_POST_HOLD_MS);
+
+      const doneTimer = window.setTimeout(() => {
+        setVisible(false);
+        onCompleteRef.current?.();
+      }, (timings?.pathPostHoldMs ?? TRANSITION_POST_HOLD_MS) + (timings?.pathFadeOutMs ?? TRANSITION_FADE_OUT_MS));
+
+      timersRef.current.push(holdTimer, doneTimer);
+    };
+
+    onProgressRef.current?.(0, samplePathByProgress(pathPoints, 0));
+    travelIntervalRef.current = window.setInterval(updateTravel, 16);
 
     return () => {
-      window.cancelAnimationFrame(raf);
-      window.clearTimeout(timer);
+      if (travelIntervalRef.current !== undefined) {
+        window.clearInterval(travelIntervalRef.current);
+        travelIntervalRef.current = undefined;
+      }
+      timersRef.current.forEach((timer) => window.clearTimeout(timer));
+      timersRef.current = [];
     };
-  }, [boardType, fromCell, toCell, type]);
+  }, [boardType, fromCell, pathPoints, toCell, timings?.pathFadeOutMs, timings?.pathPostHoldMs, timings?.pathTravelDurationMs, type]);
 
   if (!visible) {
     return null;
   }
 
-  const path =
-    type === 'snake'
-      ? buildSnakePath(from.xPercent, from.yPercent, to.xPercent, to.yPercent)
-      : buildArrowPath(from.xPercent, from.yPercent, to.xPercent, to.yPercent);
-
-  const color = type === 'arrow' ? '#2CBFAF' : '#D18A43';
-  const shadowColor = type === 'arrow' ? 'rgba(44,191,175,0.38)' : 'rgba(209,138,67,0.38)';
-  const artIcon = type === 'arrow' ? stairsLight : snakeSpirit;
-  const midpoint = {
-    x: (from.xPercent + to.xPercent) / 2,
-    y: (from.yPercent + to.yPercent) / 2,
-  };
-
   return (
-    <svg className="absolute inset-0 h-full w-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-      <motion.path
-        d={path}
-        fill="none"
-        stroke={color}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        pathLength={100}
-        strokeDasharray={100}
-        strokeDashoffset={100}
-        initial={{ strokeDashoffset: 100, opacity: 0.52 }}
-        animate={{ strokeDashoffset: drawn ? 0 : 100, opacity: drawn ? 0.96 : 0.52 }}
-        transition={pathDrawTransition}
-        style={{
-          filter: `drop-shadow(0 0 8px ${shadowColor})`,
-        }}
-        data-testid={`lila-path-${type}`}
-      />
-
-      <motion.circle
-        cx={from.xPercent}
-        cy={from.yPercent}
-        r={1.1}
-        fill={type === 'arrow' ? '#6AE4D5' : '#F0BA6D'}
-        initial={{ opacity: 0 }}
-        animate={{
-          cx: drawn ? to.xPercent : from.xPercent,
-          cy: drawn ? to.yPercent : from.yPercent,
-          opacity: drawn ? [0, 0.95, 0.15] : 0,
-        }}
-        transition={pathGlideTransition}
-      />
-
-      <image
-        href={artIcon}
-        x={midpoint.x - 2.2}
-        y={midpoint.y - 2.2}
-        width="4.4"
-        height="4.4"
-        style={{
-          opacity: drawn ? 1 : 0,
-          animation: drawn ? 'lila-soft-float 1200ms ease-in-out infinite' : undefined,
-        }}
-        data-testid={`lila-art-${type}`}
-      />
-
-      {type === 'arrow' && (
-        <motion.circle
-          cx={to.xPercent}
-          cy={to.yPercent}
-          r={1.2}
-          fill={color}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: drawn ? 1 : 0 }}
-          transition={{ duration: PATH_DRAW_DURATION_MS / 1000 }}
-        />
+    <svg
+      className="absolute inset-0 h-full w-full pointer-events-none"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      style={{
+        opacity,
+        transition: phase === 'fade' ? `opacity ${timings?.pathFadeOutMs ?? TRANSITION_FADE_OUT_MS}ms ease-out` : undefined,
+      }}
+      data-testid={`lila-transition-${type}`}
+    >
+      {type === 'snake' ? (
+        <AnimationRendererSnake points={pathPoints} progress={progress} opacity={opacity} />
+      ) : (
+        <AnimationRendererLadder points={pathPoints} progress={progress} opacity={opacity} />
       )}
     </svg>
   );

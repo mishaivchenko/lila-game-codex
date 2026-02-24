@@ -5,6 +5,7 @@ import { LilaBoard, type LilaTransition } from '../components/lila/LilaBoard';
 import { Dice } from '../components/Dice';
 import { Dice3D } from '../components/dice3d/Dice3D';
 import { ChakraNotification } from '../components/ChakraNotification';
+import { AnimationSettingsModal } from '../components/AnimationSettingsModal';
 import { CellCoachModal } from '../components/CellCoachModal';
 import { FinalScreen } from '../components/FinalScreen';
 import { computeNextPosition } from '../domain/gameEngine';
@@ -13,6 +14,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { buttonHoverScale, buttonTapScale } from '../lib/animations/lilaMotion';
+import { formatMovePathWithEntry, getMovePresentation, resolveMoveType } from '../lib/lila/historyFormat';
+import { getBoardTransitionPath } from '../lib/lila/boardProfiles';
+import { buildStepwiseCellPath, resolveTransitionEntryCell } from '../lib/lila/moveVisualization';
+import {
+  DEFAULT_ANIMATION_TIMINGS,
+  normalizeAnimationTimings,
+  saveAnimationTimings,
+} from '../lib/animations/animationTimingSettings';
+import { DeepModeCard } from '../features/deep-mode';
+import { TelegramRoomsPanel } from '../features/telegram';
 
 const chakras = chakrasRaw as ChakraInfo[];
 const SIMPLE_COLOR_HEX: Record<string, string> = {
@@ -57,9 +68,20 @@ interface SimpleMultiplayerPayload {
   historyByPlayer: Record<string, SimplePlayerHistoryEntry[]>;
 }
 
+type TurnState = 'idle' | 'rolling' | 'animating';
+
 export const GamePage = () => {
   const navigate = useNavigate();
-  const { currentSession, performMove, saveInsight, updateSessionRequest, resumeLastSession, loading, error } = useGameContext();
+  const {
+    currentSession,
+    performMove,
+    finishSession,
+    saveInsight,
+    updateSessionRequest,
+    resumeLastSession,
+    loading,
+    error,
+  } = useGameContext();
   const [lastMove, setLastMove] = useState<GameMove | undefined>();
   const [showCoach, setShowCoach] = useState(false);
   const [showDeepRequestModal, setShowDeepRequestModal] = useState(false);
@@ -70,13 +92,16 @@ export const GamePage = () => {
   const [activeSimplePlayerIndex, setActiveSimplePlayerIndex] = useState(0);
   const [diceRollToken, setDiceRollToken] = useState(0);
   const [diceRequestedValue, setDiceRequestedValue] = useState<number | undefined>(undefined);
-  const [diceRollingVisible, setDiceRollingVisible] = useState(false);
-  const [isAnimatingMove, setIsAnimatingMove] = useState(false);
+  const [turnState, setTurnState] = useState<TurnState>('idle');
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [showAnimationSettings, setShowAnimationSettings] = useState(false);
+  const [animationTimings, setAnimationTimings] = useState(DEFAULT_ANIMATION_TIMINGS);
   const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>();
   const pendingMoveIdRef = useRef<string | undefined>(undefined);
   const pendingModalCellRef = useRef<number | undefined>(undefined);
   const pendingEntryMoveIdRef = useRef<string | undefined>(undefined);
   const pendingEntryResultRef = useRef<'retry' | 'entered' | undefined>(undefined);
+  const animationFallbackTimerRef = useRef<number | undefined>(undefined);
   const multiplayerInitializedSessionIdRef = useRef<string | undefined>(undefined);
   const resumeAttemptedRef = useRef(false);
   const pendingSimpleMoveRef = useRef<{
@@ -188,8 +213,22 @@ export const GamePage = () => {
     board.maxCell,
   );
   const cellContent = board.cells[modalCellNumber - 1] ?? board.cells[0];
+  const isAnimatingMove = turnState === 'animating';
+  const lastMoveType = lastMove ? resolveMoveType(lastMove) : 'normal';
+  const lastMovePresentation = getMovePresentation(lastMoveType);
+  const openCoachWithDelay = useCallback(() => {
+    if (animationTimings.cardOpenDelayMs <= 0) {
+      setShowCoach(true);
+      return;
+    }
+    window.setTimeout(() => setShowCoach(true), animationTimings.cardOpenDelayMs);
+  }, [animationTimings.cardOpenDelayMs]);
 
   const onMoveAnimationComplete = useCallback((moveId: string) => {
+    if (animationFallbackTimerRef.current !== undefined) {
+      window.clearTimeout(animationFallbackTimerRef.current);
+      animationFallbackTimerRef.current = undefined;
+    }
     if (pendingMoveIdRef.current !== moveId) {
       return;
     }
@@ -257,15 +296,15 @@ export const GamePage = () => {
       }
       pendingModalCellRef.current = pending.toCell;
       pendingSimpleMoveRef.current = undefined;
-      setIsAnimatingMove(false);
+      setTurnState('idle');
       setAnimationMove(undefined);
-      setShowCoach(true);
+      openCoachWithDelay();
       return;
     }
 
     if (pendingEntryMoveIdRef.current === moveId) {
       const result = pendingEntryResultRef.current;
-      setIsAnimatingMove(false);
+      setTurnState('idle');
       setAnimationMove(undefined);
       pendingEntryMoveIdRef.current = undefined;
       pendingEntryResultRef.current = undefined;
@@ -279,10 +318,10 @@ export const GamePage = () => {
       return;
     }
 
-    setIsAnimatingMove(false);
-    setShowCoach(true);
+    setTurnState('idle');
+    openCoachWithDelay();
     setAnimationMove(undefined);
-  }, [activeSimplePlayerIndex, updateSessionRequest]);
+  }, [activeSimplePlayerIndex, openCoachWithDelay, updateSessionRequest]);
 
   useEffect(() => {
     setDeepRequestDraft(currentSession?.request.simpleRequest ?? '');
@@ -296,6 +335,18 @@ export const GamePage = () => {
     void resumeLastSession();
   }, [currentSession, resumeLastSession]);
 
+  useEffect(() => {
+    return () => {
+      if (animationFallbackTimerRef.current !== undefined) {
+        window.clearTimeout(animationFallbackTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    saveAnimationTimings(animationTimings);
+  }, [animationTimings]);
+
   if (!currentSession) {
     return (
       <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-6">
@@ -305,14 +356,14 @@ export const GamePage = () => {
             : 'Немає активної сесії. Поверніться в налаштування.'}
         </p>
         {!loading && (
-          <Link to="/setup" className="mt-3 inline-block text-sm text-emerald-700">До налаштувань</Link>
+          <Link to="/setup" className="mt-3 inline-block text-sm text-[#8d6b5a]">До налаштувань</Link>
         )}
       </main>
     );
   }
 
   const applyRolledValue = async (diceValue: number): Promise<void> => {
-    if (isAnimatingMove || multiplayerFinished) {
+    if (isAnimatingMove || multiplayerFinished || currentSession.finished || currentSession.sessionStatus === 'completed') {
       return;
     }
 
@@ -344,7 +395,7 @@ export const GamePage = () => {
         snakeOrArrow: computed.snakeOrArrow,
         createdAt: new Date().toISOString(),
       });
-      setIsAnimatingMove(true);
+      setTurnState('animating');
       pendingMoveIdRef.current = moveId;
       pendingSimpleMoveRef.current = {
         moveId,
@@ -363,11 +414,26 @@ export const GamePage = () => {
         hasEnteredGame: computed.hasEnteredGame,
         createdAt: new Date().toISOString(),
       };
+      const entryCell = resolveTransitionEntryCell(
+        computed.fromCell,
+        computed.dice,
+        board,
+        computed.snakeOrArrow,
+        computed.toCell,
+      );
+      const transitionPath =
+        computed.snakeOrArrow && entryCell
+          ? getBoardTransitionPath(currentSession.boardType, computed.snakeOrArrow, entryCell, computed.toCell)?.points
+          : undefined;
+      const tokenPathCells = buildStepwiseCellPath(computed.fromCell, computed.dice, board.maxCell);
       setAnimationMove({
         id: moveId,
         fromCell: computed.fromCell,
         toCell: computed.toCell,
         type: computed.snakeOrArrow ?? null,
+        entryCell,
+        pathPoints: transitionPath,
+        tokenPathCells,
       });
       return;
     }
@@ -379,7 +445,7 @@ export const GamePage = () => {
 
     const isDeepEntryRoll = currentSession.request.isDeepEntry && !currentSession.hasEnteredGame;
     setLastMove(move);
-    setIsAnimatingMove(true);
+    setTurnState('animating');
 
     pendingMoveIdRef.current = move.id;
     pendingModalCellRef.current = move.toCell;
@@ -390,22 +456,53 @@ export const GamePage = () => {
       pendingEntryMoveIdRef.current = move.id;
       pendingEntryResultRef.current = move.dice === 6 ? 'entered' : 'retry';
     }
+    const entryCell = resolveTransitionEntryCell(
+      move.fromCell,
+      move.dice,
+      board,
+      move.snakeOrArrow ?? null,
+      move.toCell,
+    );
+    const transitionPath =
+      move.snakeOrArrow && entryCell
+        ? getBoardTransitionPath(currentSession.boardType, move.snakeOrArrow, entryCell, move.toCell)?.points
+        : undefined;
+    const tokenPathCells = buildStepwiseCellPath(move.fromCell, move.dice, board.maxCell);
 
     setAnimationMove({
       id: move.id,
       fromCell: move.fromCell,
       toCell: move.toCell,
       type: move.snakeOrArrow ?? null,
+      entryCell,
+      pathPoints: transitionPath,
+      tokenPathCells,
     });
+
+    if (!isDeepEntryRoll) {
+      const specialDuration =
+        move.snakeOrArrow
+          ? animationTimings.pathTravelDurationMs + animationTimings.pathPostHoldMs + animationTimings.pathFadeOutMs
+          : 0;
+      const fallbackMs = animationTimings.tokenMoveDurationMs + specialDuration + animationTimings.cardOpenDelayMs;
+      animationFallbackTimerRef.current = window.setTimeout(() => {
+        if (pendingMoveIdRef.current !== move.id) {
+          return;
+        }
+        setTurnState('idle');
+        openCoachWithDelay();
+        setAnimationMove(undefined);
+      }, fallbackMs);
+    }
   };
 
   const triggerDiceRoll = (requestedValue?: number): void => {
-    if (isAnimatingMove || multiplayerFinished || diceRollingVisible) {
+    if (turnState !== 'idle' || multiplayerFinished || currentSession.finished || currentSession.sessionStatus === 'completed') {
       return;
     }
     setShowCoach(false);
     setDiceRequestedValue(requestedValue);
-    setDiceRollingVisible(true);
+    setTurnState('rolling');
     setDiceRollToken((prev) => prev + 1);
   };
 
@@ -418,8 +515,8 @@ export const GamePage = () => {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-5">
-      <header className="mb-3 rounded-3xl bg-white p-4 shadow-sm">
+    <main className="mx-auto min-h-screen max-w-lg bg-[var(--lila-bg-main)] px-4 py-5">
+      <header className="mb-3 rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4 shadow-[0_12px_30px_rgba(98,76,62,0.1)]">
         <div className="flex items-start justify-between gap-3">
           <p className="text-sm text-stone-800">
             {isSimpleMultiplayer
@@ -460,7 +557,7 @@ export const GamePage = () => {
             Щоб увійти в глибоку гру, потрібно викинути 6.
           </p>
         )}
-        {entryHint && <p className="mt-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-800">{entryHint}</p>}
+        {entryHint && <p className="mt-2 rounded-xl bg-[#f4e6dc] px-3 py-2 text-xs text-[#6f4a3a]">{entryHint}</p>}
         {showHintInfo && (
           <p className="mt-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-700">
             Змії — це уроки. Стріли — це ресурси.
@@ -487,10 +584,11 @@ export const GamePage = () => {
             : undefined
         }
         animationMove={animationMove}
+        animationTimings={animationTimings}
         onMoveAnimationComplete={onMoveAnimationComplete}
       />
 
-      <section className="mt-4 rounded-3xl bg-white p-4 shadow-sm">
+      <section className="mt-4 rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4 shadow-[0_12px_30px_rgba(98,76,62,0.1)]">
         <div className="mb-3 flex items-center justify-between">
           <Dice value={lastMove?.dice} />
           <div className="text-right text-xs text-stone-600">
@@ -498,22 +596,39 @@ export const GamePage = () => {
             {error && <p className="text-red-600">{error}</p>}
           </div>
         </div>
+        {lastMove && lastMoveType !== 'normal' && (
+          <p className={`mb-3 rounded-xl px-3 py-2 text-xs font-medium ${lastMovePresentation.badgeClassName}`}>
+            {lastMovePresentation.icon} Спецхід: {lastMovePresentation.label} · {formatMovePathWithEntry(lastMove, board.maxCell)}
+          </p>
+        )}
         <motion.button
           onClick={() => {
             triggerDiceRoll();
           }}
           type="button"
-          disabled={isAnimatingMove || diceRollingVisible}
-          className="w-full rounded-xl bg-emerald-600 px-4 py-4 text-base font-semibold text-white transition duration-300 ease-out disabled:opacity-70"
+          disabled={turnState !== 'idle'}
+          className="w-full rounded-xl bg-[var(--lila-accent)] px-4 py-4 text-base font-semibold text-white transition duration-300 ease-out hover:bg-[var(--lila-accent-hover)] disabled:opacity-70"
           whileTap={buttonTapScale}
           whileHover={buttonHoverScale}
         >
           Кинути кубик
         </motion.button>
+        <button
+          type="button"
+          onClick={() => setShowFinishConfirm(true)}
+          disabled={turnState !== 'idle'}
+          className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 text-sm font-medium text-stone-700 transition disabled:opacity-50"
+        >
+          Завершити подорож
+        </button>
         <div className="mt-3 flex items-center justify-between text-xs text-stone-600">
-          <Link className="transition duration-200 ease-out hover:scale-[1.02] active:scale-[0.99]" to="/settings">
+          <button
+            type="button"
+            onClick={() => setShowAnimationSettings(true)}
+            className="transition duration-200 ease-out hover:scale-[1.02] active:scale-[0.99]"
+          >
             Налаштування
-          </Link>
+          </button>
           <Link className="transition duration-200 ease-out hover:scale-[1.02] active:scale-[0.99]" to="/history">
             Мій шлях
           </Link>
@@ -521,7 +636,53 @@ export const GamePage = () => {
         </div>
       </section>
 
+      <section className="mt-4">
+        <DeepModeCard />
+      </section>
+
+      <section className="mt-4">
+        <TelegramRoomsPanel />
+      </section>
+
       <AnimatePresence>
+        {showFinishConfirm && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="w-full max-w-md rounded-3xl bg-white p-4 shadow-xl"
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.99 }}
+            >
+              <h3 className="text-lg font-semibold text-stone-900">Завершити подорож?</h3>
+              <p className="mt-2 text-sm text-stone-600">
+                Поточну сесію буде позначено завершеною. Нові ходи стануть недоступними.
+              </p>
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void finishSession().then(() => setShowFinishConfirm(false));
+                  }}
+                  className="flex-1 rounded-xl bg-[var(--lila-accent)] px-3 py-2.5 text-sm font-medium text-white"
+                >
+                  Так, завершити
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowFinishConfirm(false)}
+                  className="rounded-xl border border-stone-300 px-3 py-2.5 text-sm text-stone-700"
+                >
+                  Повернутись
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
         {showDeepRequestModal && (
           <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
@@ -545,7 +706,7 @@ export const GamePage = () => {
                 placeholder={
                   'Сформулюй його чітко за формулою:\nПотреба + Питання\n(“Хочу відчувати гармонію у стосунках” +\n“Що мені заважає це відчувати?”)'
                 }
-                className="mt-3 min-h-32 w-full rounded-2xl border border-stone-200 px-3 py-3 text-sm text-stone-700 outline-none focus:border-emerald-300"
+                className="mt-3 min-h-32 w-full rounded-2xl border border-stone-200 px-3 py-3 text-sm text-stone-700 outline-none focus:border-[#d6b29c]"
               />
               <div className="mt-3 flex gap-2">
                 <button
@@ -555,7 +716,7 @@ export const GamePage = () => {
                       setShowDeepRequestModal(false);
                     });
                   }}
-                  className="flex-1 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white"
+                  className="flex-1 rounded-xl bg-[var(--lila-accent)] px-3 py-2.5 text-sm font-medium text-white"
                 >
                   Зберегти намір
                 </button>
@@ -580,15 +741,16 @@ export const GamePage = () => {
                 ? {
                     fromCell: lastMove.fromCell,
                     toCell: lastMove.toCell,
-                    type:
+                  type:
                       lastMove.moveType ??
                       (lastMove.snakeOrArrow === 'snake'
                         ? 'snake'
                         : lastMove.snakeOrArrow === 'arrow'
                           ? 'ladder'
                           : 'normal'),
-                  }
-                : undefined
+                  pathLabel: formatMovePathWithEntry(lastMove, board.maxCell),
+                }
+              : undefined
             }
             onSave={(text) => {
               void saveInsight(modalCellNumber, text).then(() => setShowCoach(false));
@@ -597,6 +759,13 @@ export const GamePage = () => {
             onClose={() => setShowCoach(false)}
           />
         )}
+        <AnimationSettingsModal
+          open={showAnimationSettings}
+          settings={animationTimings}
+          onChange={(next) => setAnimationTimings(normalizeAnimationTimings(next))}
+          onReset={() => setAnimationTimings(DEFAULT_ANIMATION_TIMINGS)}
+          onClose={() => setShowAnimationSettings(false)}
+        />
       </AnimatePresence>
 
       <Dice3D
@@ -606,7 +775,7 @@ export const GamePage = () => {
           void applyRolledValue(value);
         }}
         onFinished={() => {
-          setDiceRollingVisible(false);
+          setTurnState((prev) => (prev === 'rolling' ? 'idle' : prev));
           setDiceRequestedValue(undefined);
         }}
       />

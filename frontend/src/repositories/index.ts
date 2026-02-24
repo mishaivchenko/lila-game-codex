@@ -80,7 +80,7 @@ class InMemorySessionsRepository implements SessionsRepository {
 
   async getLastActiveSession(): Promise<GameSession | undefined> {
     const sessions = [...inMemoryStore.sessions.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-    return sessions.find((session) => !session.finished);
+    return sessions.find((session) => !session.finished && session.sessionStatus !== 'completed');
   }
 }
 

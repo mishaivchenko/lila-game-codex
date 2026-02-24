@@ -10,7 +10,7 @@ backend/dist
 npm-debug.log
 yarn-error.log
 *.log
-.env
+backend/.env
 .env.*
 docker-compose*.yml
 .DS_Store

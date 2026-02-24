@@ -1,10 +1,8 @@
 import type { BoardType } from '../../domain/types';
 import type { CellCoord } from './fullBoardCoordinates';
-import { FULL_BOARD_COORDS } from './fullBoardCoordinates';
-import { SHORT_BOARD_COORDS } from './shortBoardCoordinates';
+import { getBoardProfile } from './boardProfiles';
 
-const resolveSource = (boardType: BoardType): CellCoord[] =>
-  boardType === 'full' ? FULL_BOARD_COORDS : SHORT_BOARD_COORDS;
+const resolveSource = (boardType: BoardType): CellCoord[] => getBoardProfile(boardType).cellCoordinates;
 
 export function mapCellToBoardPosition(
   boardType: BoardType,

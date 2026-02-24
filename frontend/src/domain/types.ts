@@ -39,6 +39,7 @@ export interface GameSession {
     depth: DepthSetting;
   };
   request: GameRequest;
+  sessionStatus: 'active' | 'completed';
   finished: boolean;
   finishedAt?: string;
   hasEnteredGame: boolean;

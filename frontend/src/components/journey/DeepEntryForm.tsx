@@ -39,8 +39,8 @@ export const DeepEntryForm = ({
 }: DeepEntryFormProps) => {
   return (
     <section className="space-y-4">
-      <section className="rounded-3xl border border-white/70 bg-gradient-to-br from-white to-emerald-50/60 p-5 shadow-[0_16px_40px_rgba(40,117,100,0.12)]">
-        <p className="text-sm text-emerald-700">Глибокий вхід</p>
+      <section className="rounded-3xl border border-[#ead9cc] bg-gradient-to-br from-white to-[#f8ece2] p-5 shadow-[0_16px_40px_rgba(112,83,64,0.16)]">
+        <p className="text-sm text-[#9c6f59]">Глибокий вхід</p>
         <h2 className="mt-1 text-2xl font-semibold text-stone-900">Простір для тонкого налаштування</h2>
         <p className="mt-2 text-sm text-stone-600">
           Кожен блок підсилює наступний: сфери, емоції та потреби формують ваше фокусне питання.
@@ -73,7 +73,7 @@ export const DeepEntryForm = ({
           value={request}
           onChange={(event) => onRequestChange(event.target.value)}
           placeholder="Опишіть ситуацію, яку хочете зрозуміти глибше."
-          className="min-h-28 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-700 shadow-inner outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+          className="min-h-28 w-full rounded-2xl border border-[#e2d2c5] bg-white px-4 py-3 text-sm text-stone-700 shadow-inner outline-none transition focus:border-[#d6b29c] focus:ring-2 focus:ring-[#f3e4d9]"
         />
       </SectionCard>
 
@@ -90,9 +90,9 @@ export const DeepEntryForm = ({
           ))}
         </div>
         {emotionGuidance.length > 0 && (
-          <div className="mt-3 space-y-1 rounded-2xl bg-amber-50/80 p-3">
+          <div className="mt-3 space-y-1 rounded-2xl bg-[#f8eadf]/80 p-3">
             {emotionGuidance.map((hint) => (
-              <p key={hint} className="text-xs text-amber-800">• {hint}</p>
+              <p key={hint} className="text-xs text-[#8e5f4b]">• {hint}</p>
             ))}
           </div>
         )}
@@ -103,7 +103,7 @@ export const DeepEntryForm = ({
           value={needs}
           onChange={(event) => onNeedsChange(event.target.value)}
           placeholder="Наприклад: підтримка, ясність, безпека, близькість"
-          className="w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-700 shadow-inner outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+          className="w-full rounded-2xl border border-[#e2d2c5] bg-white px-4 py-3 text-sm text-stone-700 shadow-inner outline-none transition focus:border-[#d6b29c] focus:ring-2 focus:ring-[#f3e4d9]"
         />
       </SectionCard>
 
@@ -111,7 +111,7 @@ export const DeepEntryForm = ({
         <select
           value={outcome}
           onChange={(event) => onOutcomeChange(event.target.value)}
-          className="w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-700 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+          className="w-full rounded-2xl border border-[#e2d2c5] bg-white px-4 py-3 text-sm text-stone-700 outline-none transition focus:border-[#d6b29c] focus:ring-2 focus:ring-[#f3e4d9]"
         >
           {outcomes.map((item) => (
             <option key={item} value={item}>

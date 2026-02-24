@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CellCoachModal } from './CellCoachModal';
 
@@ -73,8 +73,32 @@ describe('CellCoachModal image layout', () => {
       />,
     );
 
-    expect(screen.getByText('Бажання')).not.toBeNull();
+    expect(screen.getAllByText('Бажання').length).toBeGreaterThan(0);
     expect(screen.getByText(/Є бажання \"хибні\"/i)).not.toBeNull();
     expect(screen.getByText(/Яке твоє головне бажання/i)).not.toBeNull();
+  });
+
+  it('prevents saving empty note and shows validation message', () => {
+    const onSave = vi.fn();
+    render(
+      <CellCoachModal
+        cellNumber={5}
+        depth="standard"
+        cellContent={{
+          title: 'Cell',
+          shortText: 'short',
+          fullText: 'full',
+          questions: ['q1'],
+        }}
+        onSave={onSave}
+        onSkip={() => {}}
+        onClose={() => {}}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Зберегти і продовжити'));
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByText('Будь ласка, напишіть хоч одну фразу або пропустіть крок.')).not.toBeNull();
   });
 });

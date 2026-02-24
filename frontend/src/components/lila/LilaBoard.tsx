@@ -1,12 +1,17 @@
 import type { BoardDefinition } from '../../domain/types';
 import { motion } from 'framer-motion';
 import { LilaBoardCanvas } from './LilaBoardCanvas';
+import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
+import type { AnimationTimingSettings } from '../../lib/animations/animationTimingSettings';
 
 export interface LilaTransition {
   id: string;
   fromCell: number;
   toCell: number;
   type: 'snake' | 'arrow' | null;
+  entryCell?: number;
+  pathPoints?: BoardPathPoint[];
+  tokenPathCells?: number[];
 }
 
 interface LilaBoardProps {
@@ -15,6 +20,7 @@ interface LilaBoardProps {
   tokenColor?: string;
   otherTokens?: { id: string; cell: number; color: string }[];
   animationMove?: LilaTransition;
+  animationTimings?: AnimationTimingSettings;
   onMoveAnimationComplete?: (moveId: string) => void;
 }
 
@@ -24,6 +30,7 @@ export const LilaBoard = ({
   tokenColor,
   otherTokens,
   animationMove,
+  animationTimings,
   onMoveAnimationComplete,
 }: LilaBoardProps) => {
   return (
@@ -39,6 +46,7 @@ export const LilaBoard = ({
         tokenColor={tokenColor}
         otherTokens={otherTokens}
         animationMove={animationMove}
+        animationTimings={animationTimings}
         onMoveAnimationComplete={onMoveAnimationComplete}
       />
 
@@ -46,7 +54,7 @@ export const LilaBoard = ({
         <motion.div
           className={`mt-3 rounded-full px-3 py-1 text-center text-[11px] font-medium ${
             animationMove.type === 'arrow'
-              ? 'bg-emerald-50 text-emerald-700'
+              ? 'bg-[#f4e6dc] text-[#7b5d4f]'
               : 'bg-amber-50 text-amber-700'
           }`}
           initial={{ opacity: 0, y: 6 }}

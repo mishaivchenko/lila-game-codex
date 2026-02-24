@@ -26,6 +26,6 @@ export class DexieSessionsRepository implements SessionsRepository {
 
   async getLastActiveSession(): Promise<GameSession | undefined> {
     const sessions = await this.dexie.sessions.orderBy('updatedAt').reverse().toArray();
-    return sessions.find((session) => !session.finished);
+    return sessions.find((session) => !session.finished && session.sessionStatus !== 'completed');
   }
 }

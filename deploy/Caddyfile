@@ -1,0 +1,12 @@
+{$CADDY_SITE_ADDR} {
+  encode zstd gzip
+
+  @backend path /api/* /health
+  handle @backend {
+    reverse_proxy backend:3001
+  }
+
+  handle {
+    reverse_proxy frontend:80
+  }
+}

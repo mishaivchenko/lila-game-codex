@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameContext } from '../../context/GameContext';
+import { MarkdownText } from '../MarkdownText';
 
 const colors = [
   { id: 'червоний', className: 'bg-red-500' },
   { id: 'помаранчевий', className: 'bg-orange-500' },
   { id: 'жовтий', className: 'bg-yellow-400' },
-  { id: 'зелений', className: 'bg-emerald-500' },
+  { id: 'зелений', className: 'bg-green-500' },
   { id: 'синій', className: 'bg-blue-500' },
   { id: 'фіолетовий', className: 'bg-violet-500' },
   { id: 'рожевий', className: 'bg-pink-500' },
@@ -21,12 +22,6 @@ interface PlayerDraft {
   color: (typeof colors)[number]['id'];
 }
 
-const deepOutcomeOptions = [
-  'Почути свій головний урок',
-  'Побачити, що блокує рух',
-  'Відчути внутрішню опору',
-] as const;
-
 const chakraLevels = [
   'Муладхара — безпека, опора, довіра до життя.',
   'Свадхістана — бажання, близькість, контакт із почуттями.',
@@ -37,6 +32,39 @@ const chakraLevels = [
   'Сахасрара — сенс, єдність, духовний погляд.',
   'Інтеграція — перенесення усвідомлень у повсякденні дії.',
 ];
+
+const rulesMarkdown = `
+## 1. Намір подорожі
+Ліла працює найкраще, коли запит звучить **чесно і конкретно**.
+
+- Формулюйте запит у форматі «Тут і зараз».
+- Обирайте тему, яку ви готові прожити діями.
+- Після кожного ходу фіксуйте короткий інсайт.
+
+## 2. Як рухається гра
+Кожен кидок показує наступний крок маршруту.
+
+- Рух іде по клітинах послідовно, з урахуванням меж поля.
+- **Змії** повертають до глибшого уроку.
+- **Стріли** підсилюють і підіймають вище.
+- На фінішній межі гра робить «відскок» і продовжує рух назад.
+
+## 3. Глибока гра
+Режим для індивідуальної роботи зараз готується.
+
+- Старт у глибокому вході відкривається після випадання 6.
+- У фокусі: патерни шляху, глибша інтерпретація клітин, AI-рефлексія.
+
+## 4. 8 рівнів шляху
+- Муладхара: безпека, опора, довіра до життя.
+- Свадхістана: бажання, почуття, близькість.
+- Маніпура: сила волі, межі, відповідальність.
+- Анахата: любов, співчуття, прийняття.
+- Вішудха: правда, голос, самовираження.
+- Аджна: бачення, інсайт, ясність.
+- Сахасрара: сенс, єдність, духовний погляд.
+- Інтеграція: перенесення досвіду в повсякденні кроки.
+`;
 
 const createPlayer = (index: number): PlayerDraft => ({
   id: `p-${index}`,
@@ -52,15 +80,6 @@ export const JourneySetupHub = () => {
 
   const [players, setPlayers] = useState<PlayerDraft[]>([createPlayer(0)]);
   const [simpleError, setSimpleError] = useState<string | undefined>(undefined);
-
-  const [deepName, setDeepName] = useState('');
-  const [deepRequest, setDeepRequest] = useState('');
-  const [deepOutcome, setDeepOutcome] = useState<string>(deepOutcomeOptions[0]);
-
-  const deepSummary = useMemo(() => {
-    const cleanRequest = deepRequest.trim() || 'почути свій наступний крок';
-    return `Ваш запит звучить так: ${cleanRequest}. Намір подорожі: ${deepOutcome}.`;
-  }, [deepOutcome, deepRequest]);
 
   const updatePlayer = (id: string, patch: Partial<PlayerDraft>) => {
     setPlayers((prev) => prev.map((player) => (player.id === id ? { ...player, ...patch } : player)));
@@ -109,7 +128,14 @@ export const JourneySetupHub = () => {
       players: playersPayload,
       historyByPlayer: {} as Record<
         string,
-        { fromCell: number; toCell: number; dice: number; snakeOrArrow: 'snake' | 'arrow' | null; createdAt: string }[]
+        {
+          fromCell: number;
+          toCell: number;
+          dice: number;
+          moveType?: 'normal' | 'snake' | 'ladder';
+          snakeOrArrow: 'snake' | 'arrow' | null;
+          createdAt: string;
+        }[]
       >,
     };
 
@@ -127,29 +153,14 @@ export const JourneySetupHub = () => {
     navigate('/game');
   };
 
-  const startDeepGame = async () => {
-    await startNewSession(
-      'full',
-      {
-        isDeepEntry: true,
-        simpleRequest: deepRequest,
-        need: deepName,
-        question: deepSummary,
-      },
-      { speed: 'normal', depth: 'deep' },
-    );
-
-    navigate('/game');
-  };
-
   return (
-    <section className="mt-5 rounded-3xl border border-emerald-100/70 bg-white/90 p-3 shadow-[0_18px_40px_rgba(23,46,35,0.08)] backdrop-blur sm:p-4">
-      <div className="grid grid-cols-3 gap-2 rounded-2xl bg-stone-100/80 p-1">
+    <section className="mt-5 rounded-3xl border border-[#ead9cc] bg-[var(--lila-surface)]/92 p-3 shadow-[0_18px_40px_rgba(98,76,62,0.12)] backdrop-blur sm:p-4">
+      <div className="grid grid-cols-3 gap-2 rounded-2xl bg-[#f3e9de]/80 p-1">
         <button
           type="button"
           onClick={() => setActiveTab('simple')}
           className={`rounded-xl px-2 py-2 text-xs sm:text-sm ${
-            activeTab === 'simple' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'
+            activeTab === 'simple' ? 'bg-white text-[#3a2b24] shadow-sm' : 'text-[#7d6a5e]'
           }`}
         >
           Проста гра
@@ -158,7 +169,7 @@ export const JourneySetupHub = () => {
           type="button"
           onClick={() => setActiveTab('deep')}
           className={`rounded-xl px-2 py-2 text-xs sm:text-sm ${
-            activeTab === 'deep' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'
+            activeTab === 'deep' ? 'bg-white text-[#3a2b24] shadow-sm' : 'text-[#7d6a5e]'
           }`}
         >
           Глибока гра
@@ -167,7 +178,7 @@ export const JourneySetupHub = () => {
           type="button"
           onClick={() => setActiveTab('rules')}
           className={`rounded-xl px-2 py-2 text-xs sm:text-sm ${
-            activeTab === 'rules' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'
+            activeTab === 'rules' ? 'bg-white text-[#3a2b24] shadow-sm' : 'text-[#7d6a5e]'
           }`}
         >
           Правила гри
@@ -189,7 +200,7 @@ export const JourneySetupHub = () => {
                 <input
                   value={player.name}
                   onChange={(event) => updatePlayer(player.id, { name: event.target.value })}
-                  className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-emerald-300"
+                  className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#d6b29c]"
                 />
               </label>
 
@@ -198,7 +209,7 @@ export const JourneySetupHub = () => {
                 <textarea
                   value={player.request}
                   onChange={(event) => updatePlayer(player.id, { request: event.target.value })}
-                  className="mt-1 min-h-20 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-emerald-300"
+                  className="mt-1 min-h-20 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#d6b29c]"
                 />
               </label>
 
@@ -240,7 +251,7 @@ export const JourneySetupHub = () => {
             onClick={() => {
               void startSimpleGame();
             }}
-            className="w-full rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-60"
+            className="w-full rounded-xl bg-[#c57b5d] px-3 py-2.5 text-sm font-medium text-white transition hover:bg-[#b96d50] disabled:opacity-60"
           >
             Почати гру
           </button>
@@ -249,97 +260,46 @@ export const JourneySetupHub = () => {
 
       {activeTab === 'deep' && (
         <div className="mt-4 space-y-3">
-          <article className="rounded-2xl border border-emerald-100 bg-gradient-to-b from-emerald-50 to-white p-4">
-            <h3 className="text-base font-semibold text-stone-900">Глибока гра</h3>
-            <p className="mt-1 text-sm text-stone-600">Індивідуальний простір трансформаційної роботи.</p>
-
-            <label className="mt-3 block text-sm text-stone-700">
-              Імʼя
-              <input
-                value={deepName}
-                onChange={(event) => setDeepName(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-emerald-300"
-              />
-            </label>
-
-            <label className="mt-3 block text-sm text-stone-700">
-              Мій запит
-              <textarea
-                value={deepRequest}
-                onChange={(event) => setDeepRequest(event.target.value)}
-                className="mt-1 min-h-24 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-emerald-300"
-                placeholder="Що в мені заважає…? Який мій урок…? Де мій ресурс…?"
-              />
-            </label>
-
-            <div className="mt-3 rounded-xl bg-white/80 p-3 text-xs leading-relaxed text-stone-600">
-              <p>Ліла має власну «граматику» і працює тільки в форматі «Тут і Зараз».</p>
-              <p className="mt-1">Не працює: «Коли я вийду заміж?», «Чи пощастить мені?»</p>
-              <p className="mt-1">Працює: «Що в мені заважає…?», «Який мій урок…?», «Де мій ресурс…?»</p>
-            </div>
-
-            <label className="mt-3 block text-sm text-stone-700">
-              Бажаний результат
-              <select
-                value={deepOutcome}
-                onChange={(event) => setDeepOutcome(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-emerald-300"
+          <article className="relative overflow-hidden rounded-2xl border border-[#ead9cc] bg-gradient-to-b from-[#fbf2e9] to-white p-4">
+            <div className="space-y-3 opacity-60 blur-[1px]">
+              <h3 className="text-base font-semibold text-stone-900">Глибока гра</h3>
+              <p className="mt-1 text-sm text-stone-600">Індивідуальний простір трансформаційної роботи.</p>
+              <div className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-500">
+                Запит, фокус і персональний формат будуть доступні після релізу AI.
+              </div>
+              <button
+                type="button"
+                disabled
+                className="w-full rounded-xl bg-[#c57b5d] px-3 py-2.5 text-sm font-medium text-white disabled:opacity-60"
               >
-                {deepOutcomeOptions.map((outcome) => (
-                  <option key={outcome} value={outcome}>
-                    {outcome}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-              {deepSummary}
+                Почати гру
+              </button>
             </div>
 
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => {
-                void startDeepGame();
-              }}
-              className="mt-4 w-full rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-60"
-            >
-              Почати гру
-            </button>
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#f7efe7]/88 p-4 backdrop-blur-[2px]">
+              <div className="w-full max-w-md rounded-2xl border border-[#e4d4c6] bg-[linear-gradient(135deg,#fff9f3,#f4e8dd)] p-4 text-center text-[#332823] shadow-[0_14px_36px_rgba(100,74,56,0.2)]">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[#8f6d5b]">Locked Section</p>
+                <h4 className="mt-1 text-lg font-semibold">Ask AI assistant (Coming soon)</h4>
+                <p className="mt-2 text-sm text-[#6f5d53]">
+                  Розділ глибокої AI-роботи ще недоступний. Ви зможете активувати його після релізу.
+                </p>
+              </div>
+            </div>
           </article>
         </div>
       )}
 
       {activeTab === 'rules' && (
-        <div className="mt-4 rounded-2xl border border-stone-200 bg-white p-4 text-sm leading-relaxed text-stone-700">
-          <p>
-            Ліла — давній інструмент самопізнання, поєднаний із сучасною коучинговою практикою.
-            Поле працює як дзеркало життя.
+        <div className="mt-4 rounded-2xl border border-[#ead9cc] bg-white p-4">
+          <MarkdownText source={rulesMarkdown} />
+          <p className="mt-3 rounded-xl bg-[#f4e6dc] p-3 text-xs leading-5 text-[#6f4a3a]">
+            Якщо щось емоційно непросто, сповільніться. У цій грі цінна не швидкість, а чесний контакт із собою.
           </p>
-          <p className="mt-2 rounded-xl bg-emerald-50 p-3 text-emerald-900">
-            Якщо щось незрозуміло або емоційно непросто — це нормально. Ви в безпечному темпі, і кожен крок тут має цінність.
-          </p>
-          <ul className="mt-3 space-y-1">
-            <li>• Змії — це уроки, які повертають до глибшого усвідомлення.</li>
-            <li>• Стріли — це ресурси, що піднімають вас вище.</li>
-            <li>• Для входу в глибоку гру потрібно викинути 6.</li>
-            <li>• Після входу рух іде за числом кубика, з урахуванням змій і стріл.</li>
-            <li>• Якщо в глибокому вході випало менше 6 — уточніть запит і киньте кубик знову.</li>
-            <li>• Клітина 68 — стан реалізації та інтеграції досвіду.</li>
-            <li>• Клітина 72 запрошує до підсумкової рефлексії та мʼякого завершення циклу.</li>
-          </ul>
-          <div className="mt-3 rounded-xl bg-stone-50 p-3">
-            <p className="text-xs uppercase tracking-wide text-stone-500">8 рівнів шляху</p>
-            <ul className="mt-2 space-y-1 text-xs text-stone-600">
-              {chakraLevels.map((item) => (
-                <li key={item}>• {item}</li>
-              ))}
-            </ul>
+          <div className="mt-3 rounded-xl border border-[#ead9cc] bg-[#fff8f2] p-3 text-xs text-[#7a6154]">
+            {chakraLevels.map((item) => (
+              <p key={item} className="mt-1 first:mt-0">{item}</p>
+            ))}
           </div>
-          <p className="mt-3 text-xs text-stone-500">
-            Записуйте інсайти після ходів. Навіть кілька чесних рядків можуть стати потужною опорою після гри.
-          </p>
         </div>
       )}
     </section>

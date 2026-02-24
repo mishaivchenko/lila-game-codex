@@ -1,7 +1,17 @@
-import { act, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LilaBoardCanvas } from '../LilaBoardCanvas';
-import { PATH_DRAW_DURATION_MS, TOKEN_MOVE_DURATION_MS } from '../../../lib/animations/lilaMotion';
+import { TOKEN_MOVE_DURATION_MS } from '../../../lib/animations/lilaMotion';
+
+vi.mock('../LilaPathAnimation', () => ({
+  LilaPathAnimation: ({ type }: { type: 'snake' | 'arrow' }) => (
+    <div data-testid={`lila-transition-${type}`} />
+  ),
+}));
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('LilaBoardCanvas', () => {
   it('renders full board image and token overlay', () => {
@@ -23,32 +33,61 @@ describe('LilaBoardCanvas', () => {
     expect(image.getAttribute('src')).toContain('lila-board-short.png');
   });
 
-  it('renders animated path and calls onMoveAnimationComplete after timing', () => {
+  it('renders transition animation layer for special move', () => {
     vi.useFakeTimers();
-    const onComplete = vi.fn();
 
     render(
       <LilaBoardCanvas
         boardType="full"
-        currentCell={14}
-        animationMove={{ id: 'm1', fromCell: 4, toCell: 14, type: 'arrow' }}
-        onMoveAnimationComplete={onComplete}
+        currentCell={23}
+        animationMove={{ id: 'm1', fromCell: 7, toCell: 23, type: 'arrow', entryCell: 10 }}
       />,
     );
 
-    expect(screen.getByTestId('lila-path-arrow')).not.toBeNull();
-    expect(onComplete).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('lila-transition-arrow')).toBeNull();
 
     act(() => {
-      vi.advanceTimersByTime(PATH_DRAW_DURATION_MS + TOKEN_MOVE_DURATION_MS - 1);
+      vi.advanceTimersByTime(TOKEN_MOVE_DURATION_MS);
     });
-    expect(onComplete).not.toHaveBeenCalled();
+    expect(screen.getByTestId('lila-transition-arrow')).not.toBeNull();
+
+    vi.useRealTimers();
+  });
+
+  it('animates through explicit step path even when start and end cells match', () => {
+    vi.useFakeTimers();
+    const onMoveAnimationComplete = vi.fn();
+
+    const { container } = render(
+      <LilaBoardCanvas
+        boardType="full"
+        currentCell={71}
+        animationMove={{
+          id: 'm-bounce',
+          fromCell: 71,
+          toCell: 71,
+          type: null,
+          tokenPathCells: [71, 72, 71],
+        }}
+        onMoveAnimationComplete={onMoveAnimationComplete}
+      />,
+    );
+
+    const token = within(container).getByLabelText('token');
+    const startLeft = token.getAttribute('style') ?? '';
 
     act(() => {
-      vi.advanceTimersByTime(1);
+      vi.advanceTimersByTime(Math.round(TOKEN_MOVE_DURATION_MS / 2));
     });
-    expect(onComplete).toHaveBeenCalledWith('m1');
 
+    const midLeft = token.getAttribute('style') ?? '';
+    expect(midLeft).not.toBe(startLeft);
+
+    act(() => {
+      vi.advanceTimersByTime(TOKEN_MOVE_DURATION_MS / 2);
+    });
+
+    expect(onMoveAnimationComplete).toHaveBeenCalledWith('m-bounce');
     vi.useRealTimers();
   });
 });
