@@ -27,6 +27,9 @@ jobs:
             build_args: ''
 
     steps:
+      - name: Debug secrets presence
+        run: |
+          [ -n "${{ secrets.VPS_HOST }}" ] && echo "VPS_HOST set" || (echo "VPS_HOST missing" && exit 1)
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -52,10 +55,6 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Debug secrets presence
-        run: |
-          [ -n "${{ secrets.VPS_HOST }}" ] && echo "VPS_HOST set" || (echo "VPS_HOST missing" && exit 1)
   
   
 
