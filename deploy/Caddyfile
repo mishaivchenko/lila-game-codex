@@ -1,21 +1,12 @@
-{
-  auto_https off
-}
-
 {$CADDY_SITE_ADDR} {
   encode zstd gzip
 
-  @api path /api/*
-  handle @api {
-    reverse_proxy backend:3001 {
-      header_up X-Forwarded-Proto {scheme}
-      header_up X-Forwarded-Host {host}
-      header_up X-Real-IP {remote_host}
-    }
+  @backend path /api/* /health
+  handle @backend {
+    reverse_proxy backend:3001
   }
 
   handle {
     reverse_proxy frontend:80
   }
-
 }

@@ -6,6 +6,7 @@ services:
     restart: unless-stopped
     ports:
       - '80:80'
+      - '443:443'
     environment:
       CADDY_SITE_ADDR: ${CADDY_SITE_ADDR}
     volumes:
