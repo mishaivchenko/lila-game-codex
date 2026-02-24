@@ -61,6 +61,43 @@ export const getTelegramWebApp = (): TelegramWebApp | undefined => {
   return window.Telegram?.WebApp;
 };
 
+export const isLocalDevHost = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local')) {
+    return true;
+  }
+
+  // Allow local LAN testing from phones/tablets on private networks.
+  if (/^10\.\d+\.\d+\.\d+$/.test(host)) {
+    return true;
+  }
+  if (/^192\.168\.\d+\.\d+$/.test(host)) {
+    return true;
+  }
+  if (/^172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+$/.test(host)) {
+    return true;
+  }
+
+  return false;
+};
+
+export const shouldBypassTelegramAuthForLocalDev = (): boolean => {
+  if (!import.meta.env.DEV && !isLocalDevHost()) {
+    return false;
+  }
+
+  const explicitBypassFlag = import.meta.env.VITE_TELEGRAM_AUTH_BYPASS_LOCAL;
+  if (explicitBypassFlag === 'false') {
+    return false;
+  }
+
+  return !getTelegramWebApp();
+};
+
 export const getTelegramInitData = (): string => {
   const webApp = getTelegramWebApp();
   if (webApp?.initData && webApp.initData.includes('hash=')) {

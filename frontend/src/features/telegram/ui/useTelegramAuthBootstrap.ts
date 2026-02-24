@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { authenticateTelegramWebApp } from '../auth/telegramAuthApi';
 import type { TelegramAuthContextValue } from '../auth/TelegramAuthContext';
-import { getTelegramInitData } from '../telegramWebApp';
+import { getTelegramInitData, isLocalDevHost, shouldBypassTelegramAuthForLocalDev } from '../telegramWebApp';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -24,6 +24,19 @@ interface UseTelegramAuthBootstrapParams {
   setAuthState: Dispatch<SetStateAction<TelegramAuthContextValue>>;
 }
 
+const createLocalDevAuthState = (): TelegramAuthContextValue => ({
+  isTelegramMode: true,
+  status: 'authenticated',
+  token: 'local-dev-token',
+  user: {
+    id: 'local-dev-user',
+    telegramId: 'local-dev',
+    displayName: 'Local Dev',
+    username: 'local-dev',
+    locale: 'uk',
+  },
+});
+
 export const useTelegramAuthBootstrap = ({
   telegramMode,
   setAuthState,
@@ -36,6 +49,14 @@ export const useTelegramAuthBootstrap = ({
     let cancelled = false;
     setAuthState((prev) => ({ ...prev, isTelegramMode: true, status: 'loading', error: undefined }));
 
+    const allowLocalBypass = shouldBypassTelegramAuthForLocalDev();
+    const allowLocalFallback = isLocalDevHost();
+
+    if (allowLocalBypass) {
+      setAuthState(createLocalDevAuthState());
+      return;
+    }
+
     void (async () => {
       const initData = await resolveTelegramInitData();
 
@@ -44,6 +65,11 @@ export const useTelegramAuthBootstrap = ({
       }
 
       if (!initData) {
+        if (allowLocalFallback) {
+          setAuthState(createLocalDevAuthState());
+          return;
+        }
+
         setAuthState({
           isTelegramMode: true,
           status: 'error',
@@ -66,6 +92,11 @@ export const useTelegramAuthBootstrap = ({
         });
       } catch {
         if (cancelled) {
+          return;
+        }
+
+        if (allowLocalFallback) {
+          setAuthState(createLocalDevAuthState());
           return;
         }
 
