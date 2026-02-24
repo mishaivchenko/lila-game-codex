@@ -25,12 +25,12 @@ export const pathGlideTransition: Transition = {
 
 export const modalBackdropVariants: Variants = {
   initial: { opacity: 0 },
-  animate: { opacity: 1, transition: { duration: 0.28, ease: easingSoft } },
+  animate: { opacity: 1, transition: { duration: 0.3, ease: easingSoft } },
   exit: { opacity: 0, transition: { duration: 0.24, ease: easingSoft } },
 };
 
 export const modalPanelVariants: Variants = {
-  initial: { opacity: 0, y: 24, scale: 0.985 },
+  initial: { opacity: 0.65, y: '105%', scale: 1 },
   animate: {
     opacity: 1,
     y: 0,
@@ -38,10 +38,10 @@ export const modalPanelVariants: Variants = {
     transition: { duration: 0.3, ease: easingCalm },
   },
   exit: {
-    opacity: 0,
-    y: 12,
-    scale: 0.988,
-    transition: { duration: 0.26, ease: easingSoft },
+    opacity: 0.55,
+    y: '105%',
+    scale: 1,
+    transition: { duration: 0.24, ease: easingSoft },
   },
 };
 
