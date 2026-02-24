@@ -1,100 +1,26 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CellCoachModal } from '../components/CellCoachModal';
 import { BOARD_DEFINITIONS } from '../content/boards';
-import { createRepositories } from '../repositories';
 import { useGameContext } from '../context/GameContext';
-import type { CellInsight, GameMove } from '../domain/types';
 import { formatMovePathWithEntry, getMovePresentation, resolveMoveType } from '../lib/lila/historyFormat';
-
-const repositories = createRepositories();
-
-type Filter = 'all' | 'insights' | 'snakes' | 'arrows';
-
-interface MultiplayerHistoryEntry {
-  fromCell: number;
-  toCell: number;
-  dice: number;
-  moveType?: 'normal' | 'snake' | 'ladder';
-  snakeOrArrow: 'snake' | 'arrow' | null;
-  createdAt: string;
-}
-
-interface MultiplayerHistoryPayload {
-  players: Array<{ id: string; name: string; color: string }>;
-  historyByPlayer: Record<string, MultiplayerHistoryEntry[]>;
-}
-
-const isMultiplayerPayload = (value: unknown): value is MultiplayerHistoryPayload => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  const maybe = value as MultiplayerHistoryPayload;
-  return Array.isArray(maybe.players) && typeof maybe.historyByPlayer === 'object' && !!maybe.historyByPlayer;
-};
+import { useHistoryData, type HistoryFilter } from './history/useHistoryData';
 
 export const HistoryPage = () => {
   const { currentSession, saveInsight } = useGameContext();
-  const [moves, setMoves] = useState<GameMove[]>([]);
-  const [insights, setInsights] = useState<CellInsight[]>([]);
-  const [filter, setFilter] = useState<Filter>('all');
+  const [filter, setFilter] = useState<HistoryFilter>('all');
   const [selectedCell, setSelectedCell] = useState<number | undefined>();
   const [selectedMoveId, setSelectedMoveId] = useState<string | undefined>();
-  const [multiplayerPayload, setMultiplayerPayload] = useState<MultiplayerHistoryPayload | undefined>();
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string | undefined>();
-  const [insightDraft, setInsightDraft] = useState('');
-
-  useEffect(() => {
-    if (!currentSession) {
-      return;
-    }
-
-    let parsedPayload: MultiplayerHistoryPayload | undefined;
-
-    if (!currentSession.request.isDeepEntry) {
-      try {
-        const parsed = JSON.parse(currentSession.request.question ?? '{}');
-        if (isMultiplayerPayload(parsed) && parsed.players.length > 1) {
-          parsedPayload = parsed;
-          setMultiplayerPayload(parsed);
-          setSelectedPlayerId((prev) => prev ?? parsed.players[0]?.id);
-        } else {
-          setMultiplayerPayload(undefined);
-          setSelectedPlayerId(undefined);
-        }
-      } catch {
-        setMultiplayerPayload(undefined);
-        setSelectedPlayerId(undefined);
-      }
-    }
-
-    if (parsedPayload && selectedPlayerId) {
-      const playerHistory = parsedPayload.historyByPlayer[selectedPlayerId] ?? [];
-      const mappedMoves: GameMove[] = playerHistory.map((entry, index) => ({
-        id: `multi-${selectedPlayerId}-${index}`,
-        sessionId: currentSession.id,
-        moveNumber: index + 1,
-        fromCell: entry.fromCell,
-        toCell: entry.toCell,
-        dice: entry.dice,
-        moveType:
-          entry.moveType ??
-          (entry.snakeOrArrow === 'snake'
-            ? 'snake'
-            : entry.snakeOrArrow === 'arrow'
-              ? 'ladder'
-              : 'normal'),
-        snakeOrArrow: entry.snakeOrArrow,
-        createdAt: entry.createdAt,
-      }));
-      setMoves(mappedMoves);
-    } else {
-      void repositories.movesRepository.getMovesBySession(currentSession.id).then(setMoves);
-    }
-
-    void repositories.insightsRepository.getInsightsBySession(currentSession.id).then(setInsights);
-  }, [currentSession, selectedPlayerId]);
+  const {
+    moves,
+    insights,
+    multiplayerPayload,
+    selectedPlayerId,
+    setSelectedPlayerId,
+    insightDraft,
+    setInsightDraft,
+    applyInsight,
+  } = useHistoryData({ currentSession, saveInsight });
 
   if (!currentSession) {
     return (
@@ -131,15 +57,6 @@ export const HistoryPage = () => {
   useEffect(() => {
     setInsightDraft(selectedInsight ?? '');
   }, [selectedInsight]);
-
-  const applyInsight = useCallback(
-    async (cellNumber: number, text: string) => {
-      await saveInsight(cellNumber, text);
-      const nextInsights = await repositories.insightsRepository.getInsightsBySession(currentSession.id);
-      setInsights(nextInsights);
-    },
-    [currentSession.id, saveInsight],
-  );
 
   return (
     <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-5">
