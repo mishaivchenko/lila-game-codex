@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CellCoachModal } from '../components/CellCoachModal';
 import { BOARD_DEFINITIONS } from '../content/boards';
@@ -43,6 +43,7 @@ export const HistoryPage = () => {
   const [selectedMoveId, setSelectedMoveId] = useState<string | undefined>();
   const [multiplayerPayload, setMultiplayerPayload] = useState<MultiplayerHistoryPayload | undefined>();
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | undefined>();
+  const [insightDraft, setInsightDraft] = useState('');
 
   useEffect(() => {
     if (!currentSession) {
@@ -126,6 +127,19 @@ export const HistoryPage = () => {
   const selectedContent = selectedCell ? board.cells[selectedCell - 1] : undefined;
   const selectedInsight = insights.find((insight) => insight.cellNumber === selectedCell)?.text;
   const selectedMove = selectedMoveId ? rows.find((move) => move.id === selectedMoveId) : undefined;
+
+  useEffect(() => {
+    setInsightDraft(selectedInsight ?? '');
+  }, [selectedInsight]);
+
+  const applyInsight = useCallback(
+    async (cellNumber: number, text: string) => {
+      await saveInsight(cellNumber, text);
+      const nextInsights = await repositories.insightsRepository.getInsightsBySession(currentSession.id);
+      setInsights(nextInsights);
+    },
+    [currentSession.id, saveInsight],
+  );
 
   return (
     <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-5">
@@ -220,9 +234,10 @@ export const HistoryPage = () => {
                 }
               : undefined
           }
-          initialText={selectedInsight}
+          initialText={insightDraft}
           onSave={(text) => {
-            void saveInsight(selectedCell, text).then(() => {
+            setInsightDraft(text);
+            void applyInsight(selectedCell, text).then(() => {
               setSelectedCell(undefined);
               setSelectedMoveId(undefined);
             });
@@ -230,10 +245,12 @@ export const HistoryPage = () => {
           onSkip={() => {
             setSelectedCell(undefined);
             setSelectedMoveId(undefined);
+            setInsightDraft('');
           }}
           onClose={() => {
             setSelectedCell(undefined);
             setSelectedMoveId(undefined);
+            setInsightDraft('');
           }}
         />
       )}
