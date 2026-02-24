@@ -21,11 +21,17 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
 
   return (
     <g style={{ opacity }} data-testid="lila-ladder-renderer">
+      <defs>
+        <linearGradient id="ladderMinimalRail" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#C3D2DE" />
+          <stop offset="100%" stopColor="#7EE5FF" />
+        </linearGradient>
+      </defs>
       <path
         d={path}
         fill="none"
-        stroke="rgba(44,191,175,0.22)"
-        strokeWidth={2.5}
+        stroke="rgba(120,171,200,0.22)"
+        strokeWidth={2.7}
         strokeLinecap="round"
         strokeLinejoin="round"
         pathLength={1}
@@ -39,18 +45,18 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
       >
         <image
           href={stairsLight}
-          x={-5.2}
-          y={-5.2}
-          width={10.4}
-          height={10.4}
+          x={-7}
+          y={-7}
+          width={14}
+          height={14}
           preserveAspectRatio="xMidYMid meet"
         />
       </g>
       <path
         d={path}
         fill="none"
-        stroke="#2CBFAF"
-        strokeWidth={1.45}
+        stroke="url(#ladderMinimalRail)"
+        strokeWidth={1.65}
         strokeLinecap="round"
         strokeLinejoin="round"
         pathLength={1}
@@ -60,8 +66,8 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
       <path
         d={path}
         fill="none"
-        stroke="rgba(134,235,223,0.76)"
-        strokeWidth={0.72}
+        stroke="rgba(208,242,255,0.72)"
+        strokeWidth={0.62}
         strokeLinecap="round"
         strokeLinejoin="round"
         pathLength={1}
@@ -81,13 +87,13 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
             data-testid={`lila-ladder-step-${index}`}
           >
             <rect
-              x={-1.7}
-              y={-0.3}
-              width={3.4}
-              height={0.6}
-              rx={0.2}
-              fill="#8BE7DE"
-              stroke="#1B8C80"
+              x={-1.8}
+              y={-0.26}
+              width={3.6}
+              height={0.52}
+              rx={0.14}
+              fill="#DDF1FF"
+              stroke="#6D94A9"
               strokeWidth={0.14}
             />
           </g>
@@ -97,8 +103,8 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
       <circle
         cx={climber.xPercent}
         cy={climber.yPercent}
-        r={0.66}
-        fill="#B9FFF7"
+        r={0.62}
+        fill="#E8F8FF"
         opacity={0.85}
       />
     </g>
