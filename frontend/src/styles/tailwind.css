@@ -1,9 +1,9 @@
+@import './typography.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: 'SF Pro Text', 'Segoe UI', sans-serif;
   --lila-bg-main: #f5efe6;
   --lila-bg-start: #fdf8f2;
   --lila-bg-end: #efe6da;
@@ -28,7 +28,29 @@
 body {
   margin: 0;
   min-height: 100vh;
+  font-family: var(--lila-font-body);
+  font-size: var(--lila-font-size-body);
+  line-height: var(--lila-line-height-body);
   background: radial-gradient(circle at top, var(--lila-bg-start), var(--lila-bg-end) 65%);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--lila-font-ui);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.lila-heading {
+  font-family: var(--lila-font-heading);
+  line-height: var(--lila-line-height-heading);
+  letter-spacing: var(--lila-letter-spacing-heading);
 }
 
 [data-telegram-mode='true'] {
