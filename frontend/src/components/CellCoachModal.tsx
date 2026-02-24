@@ -133,7 +133,7 @@ export const CellCoachModal = ({
             </div>
 
             <textarea
-              className="mt-5 min-h-28 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm"
+              className="mt-5 min-h-32 max-h-[42vh] w-full resize-y overflow-y-auto rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-[15px] leading-6 text-stone-900"
               value={text}
               onChange={(event) => {
                 setText(event.target.value);
@@ -143,6 +143,9 @@ export const CellCoachModal = ({
               }}
               placeholder="Напишіть 1-2 чесні речення. Не обов'язково ідеально."
               readOnly={readOnly}
+              lang="uk"
+              autoCapitalize="sentences"
+              spellCheck
             />
             {validationError && (
               <p className="mt-2 text-xs text-amber-700">{validationError}</p>

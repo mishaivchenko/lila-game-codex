@@ -1,7 +1,7 @@
 {
   "summary": {
-    "overall_score": 78,
-    "last_updated": "2026-02-24T19:53:06Z",
+    "overall_score": 79,
+    "last_updated": "2026-02-24T20:09:10Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -12,11 +12,11 @@
   },
   "metrics": {
     "files_total": 130,
-    "source_files_total": 118,
-    "lines_total": 7646,
+    "source_files_total": 119,
+    "lines_total": 7802,
     "frontend": {
-      "files": 106,
-      "lines": 7185
+      "files": 107,
+      "lines": 7341
     },
     "backend": {
       "files": 12,
@@ -24,10 +24,10 @@
     },
     "tests": {
       "files": 26,
-      "lines": 1209,
-      "test_file_ratio_vs_source_percent": 22.0,
-      "source_files_with_direct_test_match_percent": 24.5,
-      "coverage_estimate_percent": 64,
+      "lines": 1265,
+      "test_file_ratio_vs_source_percent": 21.8,
+      "source_files_with_direct_test_match_percent": 24.2,
+      "coverage_estimate_percent": 65,
       "coverage_band": "medium"
     },
     "smells": {
@@ -35,8 +35,8 @@
       "long_files_over_300_loc": 3,
       "long_functions_over_50_loc": 18,
       "duplicate_code_blocks_estimate": 6,
-      "solid_violations_estimate": 11,
-      "smells_per_1k_loc": 4.71
+      "solid_violations_estimate": 10,
+      "smells_per_1k_loc": 4.49
     },
     "risk_modules": [
       {
@@ -63,10 +63,10 @@
   },
   "scores": {
     "architecture_clarity": 81,
-    "solid_compliance": 76,
-    "test_coverage": 64,
+    "solid_compliance": 77,
+    "test_coverage": 65,
     "complexity": 72,
-    "consistency": 83
+    "consistency": 84
   },
   "methods": {
     "loc": "wc -l over frontend/src + backend/src ts/tsx/js/jsx",
