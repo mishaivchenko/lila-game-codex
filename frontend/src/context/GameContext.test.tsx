@@ -30,7 +30,17 @@ const TestHarness = () => {
       </button>
       <button type="button" onClick={() => { void performMove(); }}>move</button>
       <button type="button" onClick={() => { void finishSession(); }}>finish</button>
-      <button type="button" onClick={() => { void saveInsight(currentSession?.currentCell ?? 1, 'hello'); }}>insight</button>
+      <button
+        type="button"
+        onClick={() => {
+          void saveInsight(
+            currentSession?.currentCell ?? 1,
+            'Це моя думка про цю клітину.\nЭто важный шаг.\nEnglish line 🙂',
+          );
+        }}
+      >
+        insight
+      </button>
       <button type="button" onClick={() => { void resumeLastSession(); }}>resume</button>
     </div>
   );
@@ -65,6 +75,7 @@ describe('GameContext', () => {
       (await repositories.sessionsRepository.getLastActiveSession())!.id,
     );
     expect(saved).toHaveLength(1);
+    expect(saved[0]?.text).toBe('Це моя думка про цю клітину.\nЭто важный шаг.\nEnglish line 🙂');
 
     await user.click(screen.getByText('resume'));
     await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe('7'));

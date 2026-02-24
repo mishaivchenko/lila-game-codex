@@ -37,15 +37,32 @@ describe('dexie repositories', () => {
     db = new LilaDexieDb(`test_${Date.now()}`);
     const insights = new DexieInsightsRepository(db);
 
+    const firstText = 'Це моя думка про цю клітину.\nЯ відчуваю спокій 🙂';
     await insights.saveInsight({
       id: 'insight-1',
       sessionId: 'session-1',
       cellNumber: 4,
-      text: 'note',
+      text: firstText,
       createdAt: new Date().toISOString(),
     });
 
+    const firstInsight = await insights.getInsightByCell('session-1', 4);
+    expect(firstInsight?.text).toBe(firstText);
+
+    const updatedText = 'Это мой обновлённый текст.\nLine 2 in English 🚀';
+    await insights.saveInsight({
+      id: 'insight-2',
+      sessionId: 'session-1',
+      cellNumber: 4,
+      text: updatedText,
+      createdAt: new Date(Date.now() + 1000).toISOString(),
+    });
+
     const insight = await insights.getInsightByCell('session-1', 4);
-    expect(insight?.text).toBe('note');
+    const all = await insights.getInsightsBySession('session-1');
+
+    expect(insight?.text).toBe(updatedText);
+    expect(all).toHaveLength(1);
+    expect(all[0]?.text).toBe(updatedText);
   });
 });

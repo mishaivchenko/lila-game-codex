@@ -38,7 +38,21 @@ const inMemoryStore: InMemoryStore = {
 
 class InMemoryInsightsRepository implements InsightsRepository {
   async saveInsight(insight: CellInsight): Promise<void> {
-    inMemoryStore.insights.push(insight);
+    const existingIndex = inMemoryStore.insights.findIndex(
+      (entry) => entry.sessionId === insight.sessionId && entry.cellNumber === insight.cellNumber,
+    );
+
+    if (existingIndex === -1) {
+      inMemoryStore.insights.push(insight);
+      return;
+    }
+
+    const existing = inMemoryStore.insights[existingIndex];
+    inMemoryStore.insights[existingIndex] = {
+      ...existing,
+      ...insight,
+      id: existing.id,
+    };
   }
 
   async getInsightsBySession(sessionId: string): Promise<CellInsight[]> {
@@ -48,9 +62,9 @@ class InMemoryInsightsRepository implements InsightsRepository {
   }
 
   async getInsightByCell(sessionId: string, cellNumber: number): Promise<CellInsight | undefined> {
-    return inMemoryStore.insights.find(
-      (insight) => insight.sessionId === sessionId && insight.cellNumber === cellNumber,
-    );
+    return inMemoryStore.insights
+      .filter((insight) => insight.sessionId === sessionId && insight.cellNumber === cellNumber)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   }
 }
 

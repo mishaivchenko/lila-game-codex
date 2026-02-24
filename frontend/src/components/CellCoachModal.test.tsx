@@ -101,4 +101,32 @@ describe('CellCoachModal image layout', () => {
     expect(onSave).not.toHaveBeenCalled();
     expect(screen.getByText('Будь ласка, напишіть хоч одну фразу або пропустіть крок.')).not.toBeNull();
   });
+
+  it('keeps multilingual multi-line note text unchanged on save', () => {
+    const onSave = vi.fn();
+    const note = 'Це моя думка про цю клітину.\nЭто важный шаг.\nEnglish line 🙂🚀';
+
+    render(
+      <CellCoachModal
+        cellNumber={5}
+        depth="standard"
+        cellContent={{
+          title: 'Cell',
+          shortText: 'short',
+          fullText: 'full',
+          questions: ['q1'],
+        }}
+        onSave={onSave}
+        onSkip={() => {}}
+        onClose={() => {}}
+      />,
+    );
+
+    const textarea = screen.getByPlaceholderText("Напишіть 1-2 чесні речення. Не обов'язково ідеально.");
+    fireEvent.change(textarea, { target: { value: note } });
+    fireEvent.click(screen.getByText('Зберегти і продовжити'));
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onSave).toHaveBeenCalledWith(note);
+  });
 });
