@@ -6,6 +6,7 @@ import { getLilaCellContent } from '../lib/lila/cellContent';
 import { getMovePresentation } from '../lib/lila/historyFormat';
 import { getNoteValidationError } from '../lib/lila/noteValidation';
 import { MarkdownText } from './MarkdownText';
+import { useOverlayLock } from '../hooks/useOverlayLock';
 import {
   buttonHoverScale,
   buttonTapScale,
@@ -55,6 +56,7 @@ export const CellCoachModal = ({
     `### Питання для зупинки\n${displayedQuestions.map((question) => `- ${question}`).join('\n')}`;
   const combinedMarkdown = `${displayedDescriptionMarkdown}\n\n${displayedQuestionsMarkdown}`;
   const movePresentation = moveContext ? getMovePresentation(moveContext.type) : undefined;
+  useOverlayLock(true);
 
   useEffect(() => {
     setText(initialText);
@@ -80,11 +82,23 @@ export const CellCoachModal = ({
       animate="animate"
       exit="exit"
       variants={modalBackdropVariants}
+      onClick={onClose}
+      onWheel={(event) => {
+        if (event.target === event.currentTarget) {
+          event.preventDefault();
+        }
+      }}
+      onTouchMove={(event) => {
+        if (event.target === event.currentTarget) {
+          event.preventDefault();
+        }
+      }}
     >
       <motion.div
         data-testid="cell-coach-modal-shell"
         className="w-full max-h-[94vh] overflow-hidden rounded-t-3xl bg-white shadow-xl sm:max-h-[92vh] sm:max-w-4xl sm:rounded-3xl"
         variants={modalPanelVariants}
+        onClick={(event) => event.stopPropagation()}
       >
         <div className="flex max-h-[94vh] flex-col overflow-hidden sm:max-h-[92vh] sm:flex-row">
           <section className="w-full shrink-0 border-b border-stone-100 bg-stone-50 p-3 sm:w-[44%] sm:border-b-0 sm:border-r sm:p-4">
