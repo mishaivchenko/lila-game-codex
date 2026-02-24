@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
+import { getLilaVisualAssets } from '../../config/visualThemes';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { buildSmoothPath, sampleAngleByProgress, samplePathByProgress } from './pathAnimationMath';
 
@@ -9,6 +10,9 @@ interface AnimationRendererSnakeProps {
 }
 
 export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationRendererSnakeProps) => {
+  const gradientSeed = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const gradientId = `snakeMinimalCore-${gradientSeed}`;
+  const snakeSpirit = useMemo(() => getLilaVisualAssets().snakeSpirit, []);
   const path = useMemo(() => buildSmoothPath(points), [points]);
   const head = useMemo(() => samplePathByProgress(points, progress), [points, progress]);
   const angle = useMemo(() => sampleAngleByProgress(points, progress), [points, progress]);
@@ -19,11 +23,18 @@ export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationR
 
   return (
     <g style={{ opacity }} data-testid="lila-snake-renderer">
+      <defs>
+        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#D9E3EC" />
+          <stop offset="58%" stopColor="#9FB7C8" />
+          <stop offset="100%" stopColor="#79D8F2" />
+        </linearGradient>
+      </defs>
       <path
         d={path}
         fill="none"
-        stroke="rgba(209,138,67,0.36)"
-        strokeWidth={3}
+        stroke="rgba(161,190,210,0.34)"
+        strokeWidth={3.2}
         strokeLinecap="round"
         strokeLinejoin="round"
         pathLength={1}
@@ -34,8 +45,8 @@ export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationR
       <path
         d={path}
         fill="none"
-        stroke="#D18A43"
-        strokeWidth={1.8}
+        stroke={`url(#${gradientId})`}
+        strokeWidth={1.7}
         strokeLinecap="round"
         strokeLinejoin="round"
         pathLength={1}
@@ -47,16 +58,25 @@ export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationR
         transform={`translate(${head.xPercent} ${head.yPercent}) rotate(${angle}) scale(${headScale})`}
         data-testid="lila-snake-head"
       >
+        <image
+          href={snakeSpirit}
+          x={-6}
+          y={-4.8}
+          width={12}
+          height={9.6}
+          preserveAspectRatio="xMidYMid meet"
+          opacity={0.46 + progress * 0.34}
+        />
         <ellipse
           cx="0"
           cy="0"
           rx={1.58}
           ry={1.08}
-          fill="#E8B06D"
-          stroke="#A85F2A"
+          fill="#E3EDF4"
+          stroke="#6E8697"
           strokeWidth={0.22}
         />
-        <circle cx="0.42" cy="-0.14" r={0.16} fill="#2B2217" />
+        <circle cx="0.42" cy="-0.14" r={0.16} fill="#2B3F4E" />
       </g>
     </g>
   );

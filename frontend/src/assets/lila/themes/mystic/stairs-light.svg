@@ -1,52 +1,39 @@
-<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="stairsBeam" x1="36" y1="132" x2="122" y2="28" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#64FFE2" />
-      <stop offset="0.5" stop-color="#8EEBFF" />
-      <stop offset="1" stop-color="#EBF7FF" />
+    <linearGradient id="minimalLadderRail" x1="48" y1="154" x2="146" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#BDD1DF" />
+      <stop offset="1" stop-color="#83E8FF" />
     </linearGradient>
-    <linearGradient id="stairsRail" x1="42" y1="128" x2="120" y2="34" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#53DCC5" />
-      <stop offset="1" stop-color="#B2E7FF" />
+    <linearGradient id="minimalStepGlow" x1="61" y1="137" x2="127" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#EAF3FF" stop-opacity="0.8" />
+      <stop offset="1" stop-color="#B8F2FF" stop-opacity="0.9" />
     </linearGradient>
-    <filter id="stairsGlow" x="-20" y="-20" width="200" height="200" color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="5.2" result="blur" />
-      <feColorMatrix
-        in="blur"
-        type="matrix"
-        values="0 0 0 0 0.4 0 0 0 0 0.94 0 0 0 0 0.88 0 0 0 0.58 0"
-      />
+    <filter id="minimalLadderShadow" x="18" y="18" width="156" height="156" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#406176" flood-opacity="0.32" />
     </filter>
   </defs>
 
-  <path
-    d="M38 132C50 118 66 102 83 84C99 67 113 49 122 34"
-    stroke="url(#stairsBeam)"
-    stroke-width="15"
-    stroke-linecap="round"
-    filter="url(#stairsGlow)"
-    opacity="0.64"
-  />
+  <g filter="url(#minimalLadderShadow)">
+    <path
+      d="M48 154C66 134 84 113 102 91C119 71 134 55 146 44"
+      stroke="url(#minimalLadderRail)"
+      stroke-width="5"
+      stroke-linecap="round"
+    />
+    <path
+      d="M36 162C54 142 72 121 89 99C106 78 121 62 133 50"
+      stroke="url(#minimalLadderRail)"
+      stroke-width="5"
+      stroke-linecap="round"
+      opacity="0.86"
+    />
 
-  <path
-    d="M41 131C53 117 68 101 84 84C100 67 113 50 121 35"
-    stroke="url(#stairsRail)"
-    stroke-width="4.8"
-    stroke-linecap="round"
-  />
-  <path
-    d="M31 136C43 122 58 106 75 88C92 71 107 54 117 39"
-    stroke="url(#stairsRail)"
-    stroke-width="4.8"
-    stroke-linecap="round"
-    opacity="0.72"
-  />
+    <path d="M60 137H81" stroke="url(#minimalStepGlow)" stroke-width="3" stroke-linecap="round" />
+    <path d="M72 123H93" stroke="url(#minimalStepGlow)" stroke-width="3" stroke-linecap="round" />
+    <path d="M84 109H105" stroke="url(#minimalStepGlow)" stroke-width="3" stroke-linecap="round" />
+    <path d="M96 95H117" stroke="url(#minimalStepGlow)" stroke-width="3" stroke-linecap="round" />
+    <path d="M108 81H129" stroke="url(#minimalStepGlow)" stroke-width="3" stroke-linecap="round" />
+  </g>
 
-  <path d="M44 121H62" stroke="#D9FBFF" stroke-width="2.6" stroke-linecap="round" />
-  <path d="M56 106H74" stroke="#D9FBFF" stroke-width="2.6" stroke-linecap="round" />
-  <path d="M68 91H86" stroke="#D9FBFF" stroke-width="2.6" stroke-linecap="round" />
-  <path d="M80 76H98" stroke="#D9FBFF" stroke-width="2.6" stroke-linecap="round" />
-  <path d="M92 61H109" stroke="#D9FBFF" stroke-width="2.6" stroke-linecap="round" />
-
-  <path d="M120 34L126 27L128 36" stroke="#ECFCFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M146 44L152 37L156 45" stroke="#EAF7FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
 </svg>

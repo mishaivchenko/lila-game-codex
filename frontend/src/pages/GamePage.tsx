@@ -566,6 +566,7 @@ export const GamePage = () => {
         onMoveAnimationComplete={onMoveAnimationComplete}
         onCellSelect={handleBoardCellSelect}
         disableCellSelect={turnState !== 'idle' || snakeFlowPhase !== 'idle'}
+        holdTokenSync={turnState !== 'idle'}
       />
 
       <GameControlPanel

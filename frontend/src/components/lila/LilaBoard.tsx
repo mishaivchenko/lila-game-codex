@@ -24,6 +24,7 @@ interface LilaBoardProps {
   onMoveAnimationComplete?: (moveId: string) => void;
   onCellSelect?: (cellNumber: number) => void;
   disableCellSelect?: boolean;
+  holdTokenSync?: boolean;
 }
 
 export const LilaBoard = ({
@@ -36,6 +37,7 @@ export const LilaBoard = ({
   onMoveAnimationComplete,
   onCellSelect,
   disableCellSelect = false,
+  holdTokenSync = false,
 }: LilaBoardProps) => {
   return (
     <section className="rounded-3xl bg-stone-100 p-4 shadow-inner">
@@ -54,6 +56,7 @@ export const LilaBoard = ({
         onMoveAnimationComplete={onMoveAnimationComplete}
         onCellSelect={onCellSelect}
         disableCellSelect={disableCellSelect}
+        holdTokenSync={holdTokenSync}
       />
 
       {animationMove?.type && (
