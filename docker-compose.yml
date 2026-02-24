@@ -6,10 +6,8 @@ services:
     restart: unless-stopped
     ports:
       - '80:80'
-      - '443:443'
     environment:
-      DOMAIN: ${DOMAIN}
-      ACME_EMAIL: ${ACME_EMAIL}
+      CADDY_SITE_ADDR: ${CADDY_SITE_ADDR}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -21,7 +19,12 @@ services:
       - web
 
   frontend:
-    image: ${FRONTEND_IMAGE}
+    image: ${FRONTEND_IMAGE:-lila-frontend:local}
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -34,15 +37,18 @@ services:
       - web
 
   backend:
-    image: ${BACKEND_IMAGE}
+    image: ${BACKEND_IMAGE:-lila-backend:local}
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3001
       APP_AUTH_SECRET: ${APP_AUTH_SECRET}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      APP_BASE_URL: https://${DOMAIN}
-      FRONTEND_WEBAPP_URL: https://${DOMAIN}/telegram
+      APP_BASE_URL: ${PUBLIC_URL}
+      FRONTEND_WEBAPP_URL: ${PUBLIC_URL}/telegram
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432

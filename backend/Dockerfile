@@ -9,22 +9,15 @@ COPY backend/src backend/src
 RUN npm ci --workspace backend --include-workspace-root=false
 RUN npm run build --workspace backend
 
-FROM node:20-alpine AS prod-deps
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-COPY backend/package.json backend/package.json
-RUN npm ci --workspace backend --include-workspace-root=false --omit=dev
-
 FROM node:20-alpine AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3001
 
-COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=build /app/backend/dist ./backend/dist
 COPY backend/package.json ./backend/package.json
+RUN npm install --omit=dev --prefix ./backend
+COPY --from=build /app/backend/dist ./backend/dist
 COPY cards ./cards
 COPY field ./field
 

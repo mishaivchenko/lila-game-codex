@@ -1,4 +1,8 @@
-{$DOMAIN} {
+{
+  auto_https off
+}
+
+{$CADDY_SITE_ADDR} {
   encode zstd gzip
 
   @api path /api/*
@@ -14,5 +18,4 @@
     reverse_proxy frontend:80
   }
 
-  tls {$ACME_EMAIL}
 }
