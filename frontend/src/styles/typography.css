@@ -1,0 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --lila-font-body: 'Nunito', 'Noto Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --lila-font-heading: 'Nunito', 'Noto Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --lila-font-ui: 'Nunito', 'Noto Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --lila-font-size-body: 15px;
+  --lila-line-height-body: 1.62;
+  --lila-line-height-heading: 1.28;
+  --lila-letter-spacing-heading: 0.01em;
+}
