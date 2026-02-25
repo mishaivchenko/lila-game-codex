@@ -72,6 +72,9 @@ export interface SettingsEntity {
   musicEnabled: boolean;
   defaultSpeed: SpeedSetting;
   defaultDepth: DepthSetting;
+  selectedThemeId: string;
+  tokenColorId?: string;
+  animationSpeed?: SpeedSetting;
 }
 
 export interface ChakraInfo {

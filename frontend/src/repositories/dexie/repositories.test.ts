@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { LilaDexieDb } from '../../db/dexie';
 import { DexieInsightsRepository } from './DexieInsightsRepository';
 import { DexieSessionsRepository } from './DexieSessionsRepository';
+import { DexieSettingsRepository } from './DexieSettingsRepository';
 
 let db: LilaDexieDb;
 
@@ -64,5 +65,19 @@ describe('dexie repositories', () => {
     expect(insight?.text).toBe(updatedText);
     expect(all).toHaveLength(1);
     expect(all[0]?.text).toBe(updatedText);
+  });
+
+  it('persists selected board theme in settings', async () => {
+    db = new LilaDexieDb(`test_${Date.now()}`);
+    const settings = new DexieSettingsRepository(db);
+
+    const current = await settings.getSettings();
+    await settings.saveSettings({
+      ...current,
+      selectedThemeId: 'cosmic-dark',
+    });
+
+    const reloaded = await settings.getSettings();
+    expect(reloaded.selectedThemeId).toBe('cosmic-dark');
   });
 });
