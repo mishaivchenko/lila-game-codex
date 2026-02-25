@@ -472,6 +472,16 @@ export const LilaBoardCanvas = ({
             />
           ))}
         </BoardSceneContainer>
+
+        {cameraState.zoom > 1.02 && (
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: theme.layout.zoomModeGradient,
+              opacity: Math.min(0.72, (cameraState.zoom - 1) * 0.8),
+            }}
+          />
+        )}
       </div>
     </div>
   );

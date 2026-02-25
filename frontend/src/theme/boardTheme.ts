@@ -56,6 +56,7 @@ export interface ModalStyle {
   radiusClassName: string;
   panelBackground: string;
   panelBorder: string;
+  viewportMarginPx: number;
 }
 
 export interface BoardBackgroundStyle {
@@ -75,6 +76,15 @@ export interface BoardThemeTypographyRef {
   headingVar: string;
 }
 
+export interface BoardLayoutStyle {
+  pageMaxWidthPx: number;
+  boardPanelPaddingPx: number;
+  floatingControlsBackground: string;
+  floatingControlsBorder: string;
+  floatingControlsShadow: string;
+  zoomModeGradient: string;
+}
+
 export interface BoardTheme {
   id: string;
   name: string;
@@ -86,6 +96,7 @@ export interface BoardTheme {
   token: TokenStyle;
   modal: ModalStyle;
   typography: BoardThemeTypographyRef;
+  layout: BoardLayoutStyle;
 }
 
 const DEFAULT_TOKEN_PALETTE: TokenStyle['palette'] = [
@@ -163,10 +174,19 @@ export const DEFAULT_SPIRITUAL_THEME: BoardTheme = {
     radiusClassName: 'rounded-t-3xl sm:rounded-3xl',
     panelBackground: '#ffffff',
     panelBorder: '#f5f5f4',
+    viewportMarginPx: 12,
   },
   typography: {
     bodyVar: '--lila-font-body',
     headingVar: '--lila-font-heading',
+  },
+  layout: {
+    pageMaxWidthPx: 460,
+    boardPanelPaddingPx: 8,
+    floatingControlsBackground: 'rgba(255, 251, 247, 0.95)',
+    floatingControlsBorder: 'rgba(222, 208, 196, 0.9)',
+    floatingControlsShadow: '0 20px 40px rgba(63,46,34,0.25)',
+    zoomModeGradient: 'radial-gradient(circle at center, rgba(241, 221, 180, 0.16), rgba(241, 221, 180, 0))',
   },
 };
 
@@ -225,6 +245,13 @@ export const COSMIC_DARK_THEME: BoardTheme = {
     panelBackground: '#f4f1eb',
     panelBorder: '#3a3f53',
   },
+  layout: {
+    ...DEFAULT_SPIRITUAL_THEME.layout,
+    floatingControlsBackground: 'rgba(31, 35, 49, 0.92)',
+    floatingControlsBorder: 'rgba(74, 84, 104, 0.84)',
+    floatingControlsShadow: '0 20px 42px rgba(13,15,24,0.46)',
+    zoomModeGradient: 'radial-gradient(circle at center, rgba(166, 197, 255, 0.14), rgba(166, 197, 255, 0))',
+  },
 };
 
 export const MINIMAL_CREAM_THEME: BoardTheme = {
@@ -270,6 +297,13 @@ export const MINIMAL_CREAM_THEME: BoardTheme = {
       { id: 'rose', label: 'Rose', value: '#b97178' },
       { id: 'gold', label: 'Gold', value: '#b58a4f' },
     ],
+  },
+  layout: {
+    ...DEFAULT_SPIRITUAL_THEME.layout,
+    floatingControlsBackground: 'rgba(249, 242, 234, 0.95)',
+    floatingControlsBorder: 'rgba(223, 207, 190, 0.9)',
+    floatingControlsShadow: '0 18px 36px rgba(120, 95, 76, 0.22)',
+    zoomModeGradient: 'radial-gradient(circle at center, rgba(131, 200, 190, 0.14), rgba(131, 200, 190, 0))',
   },
 };
 
