@@ -1,7 +1,7 @@
 {
   "summary": {
     "overall_score": 85,
-    "last_updated": "2026-02-25T18:20:00Z",
+    "last_updated": "2026-02-25T18:45:00Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -24,9 +24,9 @@
     },
     "tests": {
       "files": 30,
-      "lines": 1593,
+      "lines": 1622,
       "test_file_ratio_vs_source_percent": 18.3,
-      "source_files_with_direct_test_match_percent": 27.4,
+      "source_files_with_direct_test_match_percent": 28.0,
       "coverage_estimate_percent": 70,
       "coverage_band": "medium"
     },

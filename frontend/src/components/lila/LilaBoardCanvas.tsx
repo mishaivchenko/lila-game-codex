@@ -487,7 +487,6 @@ export const LilaBoardCanvas = ({
               transform: `scale(${1 / imageOversampleFactor})`,
               transformOrigin: 'top left',
               imageRendering: 'auto',
-              WebkitUserDrag: 'none',
             }}
             onLoad={(event) => {
               const { naturalWidth, naturalHeight } = event.currentTarget;
