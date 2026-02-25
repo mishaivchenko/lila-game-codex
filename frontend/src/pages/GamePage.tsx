@@ -531,7 +531,7 @@ export const GamePage = () => {
         type: 'snake',
         entryCell: specialFlow.headCell,
         pathPoints: specialFlow.pathPoints,
-        tokenPathCells: [specialFlow.headCell, specialFlow.tailCell],
+        tokenPathCells: [specialFlow.headCell],
       });
       return;
     }
