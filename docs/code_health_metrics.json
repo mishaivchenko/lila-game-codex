@@ -1,7 +1,7 @@
 {
   "summary": {
     "overall_score": 86,
-    "last_updated": "2026-02-25T17:59:11Z",
+    "last_updated": "2026-02-25T18:13:23Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -11,22 +11,22 @@
     "complexity_growth_percent_max": 10
   },
   "metrics": {
-    "files_total": 168,
-    "source_files_total": 168,
-    "lines_total": 10976,
+    "files_total": 166,
+    "source_files_total": 166,
+    "lines_total": 10980,
     "frontend": {
-      "files": 156,
-      "lines": 10515
+      "files": 154,
+      "lines": 10519
     },
     "backend": {
       "files": 12,
       "lines": 461
     },
     "tests": {
-      "files": 32,
-      "lines": 1708,
-      "test_file_ratio_vs_source_percent": 19.0,
-      "source_files_with_direct_test_match_percent": 28.8,
+      "files": 31,
+      "lines": 1689,
+      "test_file_ratio_vs_source_percent": 18.7,
+      "source_files_with_direct_test_match_percent": 28.4,
       "coverage_estimate_percent": 71,
       "coverage_band": "medium"
     },
@@ -36,7 +36,7 @@
       "long_functions_over_50_loc": 16,
       "duplicate_code_blocks_estimate": 6,
       "solid_violations_estimate": 7,
-      "smells_per_1k_loc": 2.96
+      "smells_per_1k_loc": 2.95
     },
     "risk_modules": [
       {
@@ -47,7 +47,7 @@
       {
         "path": "frontend/src/components/lila/LilaBoardCanvas.tsx",
         "risk": "medium",
-        "reason": "Camera follow, drag pan, token/path sync, and pointer hit mapping remain concentrated, but movement sequencing now delegates to MovementEngine."
+        "reason": "Camera follow, pointer hit mapping, token/path sync and DPR-aware background canvas rendering are concentrated in one component."
       },
       {
         "path": "frontend/src/theme/BoardThemeProvider.tsx",
@@ -62,10 +62,10 @@
     ]
   },
   "scores": {
-    "architecture_clarity": 88,
+    "architecture_clarity": 87,
     "solid_compliance": 85,
     "test_coverage": 71,
-    "complexity": 81,
+    "complexity": 80,
     "consistency": 86
   },
   "methods": {

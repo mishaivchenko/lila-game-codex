@@ -11,7 +11,7 @@ export const BoardSceneContainer = ({ camera, children }: BoardSceneContainerPro
     <div
       className="absolute inset-0 origin-top-left"
       style={{
-        transform: `translate(${camera.panX}px, ${camera.panY}px) scale(${camera.zoom})`,
+        transform: `translate3d(${camera.panX}px, ${camera.panY}px, 0) scale3d(${camera.zoom}, ${camera.zoom}, 1)`,
         willChange: camera.zoom > 1.001 ? 'transform' : 'auto',
         backfaceVisibility: 'hidden',
       }}

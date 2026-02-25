@@ -18,19 +18,19 @@ describe('LilaBoardCanvas', () => {
     render(<LilaBoardCanvas boardType="full" currentCell={10} />);
 
     const board = screen.getByTestId('lila-board-canvas');
-    const image = screen.getByAltText('Lila full board');
+    const background = screen.getByTestId('lila-board-background');
     const token = screen.getByLabelText('token');
 
     expect(board).not.toBeNull();
-    expect(image.getAttribute('src')).toContain('/field/');
+    expect(background.getAttribute('data-board-src')).toContain('/field/');
     expect(token).not.toBeNull();
   });
 
   it('renders short board with dedicated short-board PNG', () => {
     render(<LilaBoardCanvas boardType="short" currentCell={10} />);
 
-    const image = screen.getByAltText('Lila short board');
-    expect(image.getAttribute('src')).toContain('lila-board-short.png');
+    const background = screen.getByTestId('lila-board-background');
+    expect(background.getAttribute('data-board-src')).toContain('lila-board-short.png');
   });
 
   it('renders transition animation layer for special move', () => {

@@ -15,7 +15,6 @@ import {
 import { getBoardProfile, getBoardTransitionPath } from '../../lib/lila/boardProfiles';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
-import { resolveBoardImageRenderScale } from '../../lib/lila/boardImageQuality';
 import { resolveCellFromBoardPercent } from '../../lib/lila/resolveCellFromBoardPointer';
 import type { LilaTransition } from './LilaBoard';
 import { LilaPathAnimation } from './LilaPathAnimation';
@@ -75,8 +74,11 @@ export const LilaBoardCanvas = ({
     panY: 0,
   }));
   const [viewportSize, setViewportSize] = useState({ width: 100, height: 100 });
+  const [isBoardImageReady, setIsBoardImageReady] = useState(false);
   const timersRef = useRef<number[]>([]);
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  const backgroundCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const boardImageRef = useRef<HTMLImageElement | null>(null);
   const followModeRef = useRef(false);
   const cameraSnapshotRef = useRef(cameraState);
   const followPointRef = useRef({ x: 50, y: 50 });
@@ -102,14 +104,6 @@ export const LilaBoardCanvas = ({
     }),
   );
   const boardProfile = useMemo(() => getBoardProfile(boardType), [boardType]);
-  const devicePixelRatio = useMemo(
-    () => (typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1),
-    [],
-  );
-  const boardImageRenderScale = useMemo(
-    () => resolveBoardImageRenderScale({ zoom: cameraState.zoom, devicePixelRatio }),
-    [cameraState.zoom, devicePixelRatio],
-  );
   const specialTransitions = useMemo(() => {
     const board = BOARD_DEFINITIONS[boardType];
     const transitionByCell = new Map<number, 'snake' | 'arrow'>();
@@ -151,6 +145,25 @@ export const LilaBoardCanvas = ({
   }, []);
 
   useEffect(() => {
+    const image = new Image();
+    image.decoding = 'async';
+    const src = resolveAssetUrl(boardProfile.imageSrc);
+    setIsBoardImageReady(false);
+    image.onload = () => {
+      boardImageRef.current = image;
+      setIsBoardImageReady(true);
+      if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+        setAspectRatio(image.naturalWidth / image.naturalHeight);
+      }
+    };
+    image.src = src;
+    return () => {
+      boardImageRef.current = null;
+      setIsBoardImageReady(false);
+    };
+  }, [boardProfile.imageSrc]);
+
+  useEffect(() => {
     const element = canvasRef.current;
     if (!element) {
       return;
@@ -174,6 +187,52 @@ export const LilaBoardCanvas = ({
       observer.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    if (!isBoardImageReady) {
+      return;
+    }
+
+    const canvas = backgroundCanvasRef.current;
+    const image = boardImageRef.current;
+    if (!canvas || !image) {
+      return;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return;
+    }
+
+    const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
+    const zoomScale = Math.min(1.8, Math.max(1, cameraState.zoom));
+    const renderScale = Math.min(4, Math.max(1, dpr * zoomScale));
+    const pixelWidth = Math.max(1, Math.round(rect.width * renderScale));
+    const pixelHeight = Math.max(1, Math.round(rect.height * renderScale));
+
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+    }
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+    context.scale(renderScale, renderScale);
+    context.drawImage(
+      image,
+      cameraState.panX,
+      cameraState.panY,
+      rect.width * cameraState.zoom,
+      rect.height * cameraState.zoom,
+    );
+  }, [cameraState.panX, cameraState.panY, cameraState.zoom, isBoardImageReady]);
 
   const isMovingWithCamera = Boolean(animationMove || activePath);
 
@@ -482,28 +541,14 @@ export const LilaBoardCanvas = ({
         }}
         ref={canvasRef}
       >
+        <canvas
+          ref={backgroundCanvasRef}
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          data-testid="lila-board-background"
+          data-board-src={resolveAssetUrl(boardProfile.imageSrc)}
+        />
+
         <BoardSceneContainer camera={cameraState}>
-          <img
-            src={resolveAssetUrl(boardProfile.imageSrc)}
-            alt={boardType === 'full' ? 'Lila full board' : 'Lila short board'}
-            className="block select-none object-cover"
-            style={{
-              width: `${100 * boardImageRenderScale}%`,
-              height: `${100 * boardImageRenderScale}%`,
-              transform: `scale(${1 / boardImageRenderScale}) translateZ(0)`,
-              transformOrigin: 'top left',
-              imageRendering: 'auto',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              willChange: boardImageRenderScale > 1.01 ? 'transform' : 'auto',
-            }}
-            onLoad={(event) => {
-              const { naturalWidth, naturalHeight } = event.currentTarget;
-              if (naturalWidth > 0 && naturalHeight > 0) {
-                setAspectRatio(naturalWidth / naturalHeight);
-              }
-            }}
-          />
 
           {activePath?.type && (
             <LilaPathAnimation
