@@ -33,7 +33,6 @@ COPY --from=build /app/backend/dist ./backend/dist
 COPY --from=build /app/backend/package.json ./backend/package.json
 COPY --from=build /app/frontend/dist ./frontend/dist
 COPY --from=build /app/cards ./cards
-COPY --from=build /app/field ./field
 
 USER node
 

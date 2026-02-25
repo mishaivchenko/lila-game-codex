@@ -19,7 +19,6 @@ COPY backend/package.json ./backend/package.json
 RUN npm install --omit=dev --prefix ./backend
 COPY --from=build /app/backend/dist ./backend/dist
 COPY cards ./cards
-COPY field ./field
 
 USER node
 EXPOSE 3001

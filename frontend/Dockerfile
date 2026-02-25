@@ -9,7 +9,6 @@ COPY frontend/package.json frontend/package.json
 RUN npm ci --workspace frontend --include-workspace-root=false
 
 COPY frontend/. ./frontend/
-RUN rm -rf ./frontend/public/cards ./frontend/public/field && mkdir -p ./frontend/public/cards ./frontend/public/field
 RUN npm run build --workspace frontend
 
 FROM nginx:1.27-alpine AS runtime
