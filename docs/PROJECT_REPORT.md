@@ -81,6 +81,13 @@ The timeline below is reconstructed from `git log --first-parent` and merged fea
 - `d10ad51`: overlay interaction lock and My Path apply bug fix.
 - `01a60ae`: code health dashboard baseline (`docs/code_health_dashboard.md`, `docs/code_health_metrics.json`).
 
+### Phase I: Board theming and player customization
+- `2922c01`, `45b5b59`, `c1a75ce`, `7673f7f`:
+  - introduced `BoardTheme` abstraction and provider,
+  - added 3 board themes (`default-spiritual`, `cosmic-dark`, `minimal-cream`),
+  - made snake/ladder renderers theme-driven with dedicated path components,
+  - added persisted user preferences for theme, token color and animation speed.
+
 ## 3. Architecture Overview
 
 ### 3.1 Frontend
@@ -167,6 +174,10 @@ Data model highlights:
 - moves: from/to/dice/moveType with sequence number,
 - insights: note text bound to session+cell,
 - settings: animation and app-level settings.
+- settings now also include visual preferences:
+  - `selectedThemeId`,
+  - `tokenColorId`,
+  - `animationSpeed`.
 
 Backend persistence:
 - currently volatile in-memory stores for users and rooms.

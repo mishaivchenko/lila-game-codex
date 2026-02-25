@@ -43,8 +43,8 @@ export interface SimpleMultiplayerPayload {
 }
 
 export type TurnState = 'idle' | 'rolling' | 'animating';
-export type ModalMode = 'inspect' | 'move' | 'snake-head' | 'snake-tail';
-export type SnakeFlowPhase = 'idle' | 'head-card' | 'tail-animation' | 'tail-card';
+export type ModalMode = 'inspect' | 'move' | 'special-head' | 'special-tail';
+export type SpecialFlowPhase = 'idle' | 'head-card' | 'tail-animation' | 'tail-card';
 
 export interface CoachMoveContext {
   fromCell: number;
@@ -53,8 +53,9 @@ export interface CoachMoveContext {
   pathLabel?: string;
 }
 
-export interface SnakeFlowState {
+export interface SpecialFlowState {
   moveId: string;
+  type: 'snake' | 'arrow';
   headCell: number;
   tailCell: number;
   pathPoints?: BoardPathPoint[];

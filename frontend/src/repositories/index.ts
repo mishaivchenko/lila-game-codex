@@ -8,6 +8,7 @@ import { DexieInsightsRepository } from './dexie/DexieInsightsRepository';
 import { DexieMovesRepository } from './dexie/DexieMovesRepository';
 import { DexieSessionsRepository } from './dexie/DexieSessionsRepository';
 import { DexieSettingsRepository } from './dexie/DexieSettingsRepository';
+import { DEFAULT_SPIRITUAL_THEME } from '../theme/boardTheme';
 
 export interface RepositoryContainer {
   insightsRepository: InsightsRepository;
@@ -33,6 +34,12 @@ const inMemoryStore: InMemoryStore = {
     musicEnabled: true,
     defaultSpeed: 'normal',
     defaultDepth: 'standard',
+    selectedThemeId: DEFAULT_SPIRITUAL_THEME.id,
+    animationSpeed: 'normal',
+    snakeStyleId: 'flow',
+    snakeColorId: 'amber-violet',
+    stairsStyleId: 'steps',
+    stairsColorId: 'sand-light',
   },
 };
 

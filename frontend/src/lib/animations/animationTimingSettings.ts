@@ -20,7 +20,7 @@ export const DEFAULT_ANIMATION_TIMINGS: AnimationTimingSettings = {
   pathTravelDurationMs: PATH_GLIDE_DURATION_MS,
   pathPostHoldMs: TRANSITION_POST_HOLD_MS,
   pathFadeOutMs: TRANSITION_FADE_OUT_MS,
-  cardOpenDelayMs: 0,
+  cardOpenDelayMs: 180,
 };
 
 const STORAGE_KEY = 'lila-animation-timings-v1';

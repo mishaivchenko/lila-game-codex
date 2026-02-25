@@ -97,6 +97,47 @@ export const buildSmoothPath = (points: BoardPathPoint[]): string => {
   return d;
 };
 
+export const buildPolylinePath = (points: BoardPathPoint[]): string => {
+  if (points.length < 2) {
+    return '';
+  }
+  let d = `M ${points[0].xPercent} ${points[0].yPercent}`;
+  for (let i = 1; i < points.length; i += 1) {
+    d += ` L ${points[i].xPercent} ${points[i].yPercent}`;
+  }
+  return d;
+};
+
+export const buildOrthogonalStepPoints = (points: BoardPathPoint[]): BoardPathPoint[] => {
+  if (points.length <= 1) {
+    return points;
+  }
+
+  const orthogonal: BoardPathPoint[] = [points[0]];
+  let horizontalFirst = true;
+
+  for (let i = 1; i < points.length; i += 1) {
+    const prev = orthogonal[orthogonal.length - 1] ?? points[i - 1];
+    const next = points[i];
+    const dx = next.xPercent - prev.xPercent;
+    const dy = next.yPercent - prev.yPercent;
+
+    if (Math.abs(dx) < 0.01 || Math.abs(dy) < 0.01) {
+      orthogonal.push(next);
+      continue;
+    }
+
+    const corner = horizontalFirst
+      ? { xPercent: next.xPercent, yPercent: prev.yPercent }
+      : { xPercent: prev.xPercent, yPercent: next.yPercent };
+    horizontalFirst = !horizontalFirst;
+
+    orthogonal.push(corner, next);
+  }
+
+  return orthogonal;
+};
+
 export const buildStepSamples = (
   points: BoardPathPoint[],
   spacing = 4.8,

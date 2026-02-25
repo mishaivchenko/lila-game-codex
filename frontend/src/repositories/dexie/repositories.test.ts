@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { LilaDexieDb } from '../../db/dexie';
 import { DexieInsightsRepository } from './DexieInsightsRepository';
 import { DexieSessionsRepository } from './DexieSessionsRepository';
+import { DexieSettingsRepository } from './DexieSettingsRepository';
 
 let db: LilaDexieDb;
 
@@ -64,5 +65,31 @@ describe('dexie repositories', () => {
     expect(insight?.text).toBe(updatedText);
     expect(all).toHaveLength(1);
     expect(all[0]?.text).toBe(updatedText);
+  });
+
+  it('persists selected board theme in settings', async () => {
+    db = new LilaDexieDb(`test_${Date.now()}`);
+    const settings = new DexieSettingsRepository(db);
+
+    const current = await settings.getSettings();
+    await settings.saveSettings({
+      ...current,
+      selectedThemeId: 'cosmic-dark',
+      tokenColorId: 'glacier',
+      animationSpeed: 'fast',
+      snakeStyleId: 'ribbon',
+      snakeColorId: 'obsidian-cyan',
+      stairsStyleId: 'beam',
+      stairsColorId: 'silver-cyan',
+    });
+
+    const reloaded = await settings.getSettings();
+    expect(reloaded.selectedThemeId).toBe('cosmic-dark');
+    expect(reloaded.tokenColorId).toBe('glacier');
+    expect(reloaded.animationSpeed).toBe('fast');
+    expect(reloaded.snakeStyleId).toBe('ribbon');
+    expect(reloaded.snakeColorId).toBe('obsidian-cyan');
+    expect(reloaded.stairsStyleId).toBe('beam');
+    expect(reloaded.stairsColorId).toBe('silver-cyan');
   });
 });

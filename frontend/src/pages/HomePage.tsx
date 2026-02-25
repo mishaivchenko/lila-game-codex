@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useGameContext } from '../context/GameContext';
 import { JourneySetupHub } from '../components/journey/JourneySetupHub';
 import { TelegramRoomsPanel, useTelegramAuth } from '../features/telegram';
+import { AppearanceCustomizationPanel } from '../components/AppearanceCustomizationPanel';
 
 export const HomePage = () => {
   const { resumeLastSession } = useGameContext();
@@ -48,6 +49,10 @@ export const HomePage = () => {
           </Link>
         )}
       </section>
+
+      <div className="mt-4">
+        <AppearanceCustomizationPanel defaultExpanded={false} title="Налаштуйте атмосферу перед стартом" />
+      </div>
 
       {showSetup && <JourneySetupHub />}
 

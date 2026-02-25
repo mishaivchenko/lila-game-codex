@@ -17,6 +17,7 @@ import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
 import { resolveCellFromBoardPercent } from '../../lib/lila/resolveCellFromBoardPointer';
 import type { LilaTransition } from './LilaBoard';
 import { LilaPathAnimation } from './LilaPathAnimation';
+import { useBoardTheme } from '../../theme';
 
 interface LilaBoardCanvasProps {
   boardType: BoardType;
@@ -34,7 +35,7 @@ interface LilaBoardCanvasProps {
 export const LilaBoardCanvas = ({
   boardType,
   currentCell,
-  tokenColor = '#1c1917',
+  tokenColor,
   otherTokens = [],
   animationMove,
   animationTimings,
@@ -43,6 +44,7 @@ export const LilaBoardCanvas = ({
   disableCellSelect = false,
   holdTokenSync = false,
 }: LilaBoardCanvasProps) => {
+  const { theme } = useBoardTheme();
   const [tokenCell, setTokenCell] = useState(currentCell);
   const [pulseCell, setPulseCell] = useState<number | null>(null);
   const [aspectRatio, setAspectRatio] = useState(0.64);
@@ -80,7 +82,7 @@ export const LilaBoardCanvas = ({
         : [animationMove.fromCell, animationMove.toCell];
     const pathStepCount = Math.max(1, tokenPathCells.length - 1);
     const tokenMoveDurationMs = animationTimings?.tokenMoveDurationMs ?? TOKEN_MOVE_DURATION_MS;
-    const stepDurationMs = Math.max(140, tokenMoveDurationMs / pathStepCount);
+    const stepDurationMs = Math.max(190, tokenMoveDurationMs / pathStepCount);
     setTokenStepDurationMs(stepDurationMs);
     const transitionPath =
       animationMove.pathPoints ??
@@ -138,6 +140,7 @@ export const LilaBoardCanvas = ({
   const pulsePosition = pulseCell ? mapCellToBoardPosition(boardType, pulseCell) : undefined;
   const activeCellType = specialTransitions.get(currentCell);
   const shouldAnimateToken = Boolean(animationMove) && !tokenPathPosition;
+  const snakeCarriesToken = activePath?.type === 'snake' && Boolean(tokenPathPosition);
   const passiveTokens = otherTokens.map((token) => ({
     ...token,
     position: mapCellToBoardPosition(boardType, token.cell),
@@ -161,10 +164,19 @@ export const LilaBoardCanvas = ({
   };
 
   return (
-    <div className="relative mx-auto w-full max-w-[520px] rounded-3xl bg-stone-200/70 p-2 shadow-inner">
+    <div
+      className="relative mx-auto w-full max-w-[520px] rounded-3xl p-2"
+      style={{
+        background: theme.boardBackground.canvasShellBackground,
+        boxShadow: theme.boardBackground.canvasShellShadow,
+      }}
+    >
       <div
         className="relative w-full overflow-hidden rounded-2xl"
-        style={{ aspectRatio }}
+        style={{
+          aspectRatio,
+          background: theme.boardBackground.canvasFrameBackground,
+        }}
         data-testid="lila-board-canvas"
         onPointerUp={handleBoardPointerUp}
       >
@@ -189,6 +201,7 @@ export const LilaBoardCanvas = ({
             type={activePath.type}
             points={activePath.pathPoints}
             timings={animationTimings}
+            tokenColor={tokenColor ?? theme.token.defaultColor}
             onProgress={(_, point) => {
               setTokenPathPosition(point);
             }}
@@ -209,14 +222,8 @@ export const LilaBoardCanvas = ({
             style={{
               left: `${pulsePosition.xPercent}%`,
               top: `${pulsePosition.yPercent}%`,
-              backgroundColor:
-                activePath?.type === 'arrow'
-                  ? 'rgba(44,191,175,0.22)'
-                  : 'rgba(209,138,67,0.24)',
-              border:
-                activePath?.type === 'arrow'
-                  ? '1px solid rgba(44,191,175,0.42)'
-                  : '1px solid rgba(209,138,67,0.46)',
+              backgroundColor: activePath?.type === 'arrow' ? theme.stairs.pulseFill : theme.snake.pulseFill,
+              border: activePath?.type === 'arrow' ? theme.stairs.pulseBorder : theme.snake.pulseBorder,
               animation: 'lila-soft-pulse 260ms ease-out 1',
             }}
           />
@@ -229,10 +236,10 @@ export const LilaBoardCanvas = ({
             top: `${tokenPosition.yPercent}%`,
             background:
               activeCellType === 'arrow'
-                ? 'radial-gradient(circle, rgba(44,191,175,0.2), rgba(44,191,175,0))'
+                ? theme.token.arrowCellGlow
                 : activeCellType === 'snake'
-                  ? 'radial-gradient(circle, rgba(209,138,67,0.24), rgba(209,138,67,0))'
-                  : 'radial-gradient(circle, rgba(52,211,153,0.18), rgba(52,211,153,0))',
+                  ? theme.token.snakeCellGlow
+                  : theme.token.neutralGlow,
           }}
           animate={
             activeCellType
@@ -242,31 +249,34 @@ export const LilaBoardCanvas = ({
           transition={activeCellType ? specialCellGlowTransition : activeCellGlowTransition}
         />
 
-        <motion.div
-          className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white bg-stone-900 shadow-md"
-          style={{
-            left: `${effectiveTokenPosition.xPercent}%`,
-            top: `${effectiveTokenPosition.yPercent}%`,
-            backgroundColor: tokenColor,
-            boxShadow:
-              activePath?.type === 'arrow'
-                ? '0 0 14px rgba(44,191,175,0.36)'
-                : activePath?.type === 'snake'
-                  ? '0 0 14px rgba(209,138,67,0.36)'
-                  : undefined,
-          }}
-          animate={{
-            left: `${effectiveTokenPosition.xPercent}%`,
-            top: `${effectiveTokenPosition.yPercent}%`,
-            scale: activePath?.type ? [1, 1.08, 1] : 1,
-          }}
-          transition={
-            shouldAnimateToken
-              ? { ...tokenMoveTransition, duration: tokenStepDurationMs / 1000 }
-              : { duration: 0 }
-          }
-          aria-label="token"
-        />
+        {!snakeCarriesToken && (
+          <motion.div
+            className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white bg-stone-900 shadow-md"
+            style={{
+              left: `${effectiveTokenPosition.xPercent}%`,
+              top: `${effectiveTokenPosition.yPercent}%`,
+              backgroundColor: tokenColor ?? theme.token.defaultColor,
+              borderColor: theme.token.borderColor,
+              boxShadow:
+                activePath?.type === 'arrow'
+                  ? theme.token.glowArrow
+                  : activePath?.type === 'snake'
+                    ? theme.token.glowSnake
+                    : undefined,
+            }}
+            animate={{
+              left: `${effectiveTokenPosition.xPercent}%`,
+              top: `${effectiveTokenPosition.yPercent}%`,
+              scale: activePath?.type ? [1, 1.08, 1] : 1,
+            }}
+            transition={
+              shouldAnimateToken
+                ? { ...tokenMoveTransition, duration: tokenStepDurationMs / 1000 }
+                : { duration: 0 }
+            }
+            aria-label="token"
+          />
+        )}
 
         {passiveTokens.map((token) => (
           <div

@@ -72,6 +72,13 @@ export interface SettingsEntity {
   musicEnabled: boolean;
   defaultSpeed: SpeedSetting;
   defaultDepth: DepthSetting;
+  selectedThemeId: string;
+  tokenColorId?: string;
+  animationSpeed?: SpeedSetting;
+  snakeStyleId?: 'flow' | 'ribbon' | 'sigil';
+  snakeColorId?: 'amber-violet' | 'teal-indigo' | 'rose-gold' | 'obsidian-cyan';
+  stairsStyleId?: 'steps' | 'beam' | 'arc';
+  stairsColorId?: 'sand-light' | 'mint-sky' | 'plum-rose' | 'silver-cyan';
 }
 
 export interface ChakraInfo {

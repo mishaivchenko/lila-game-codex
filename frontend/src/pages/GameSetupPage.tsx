@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { JourneySetupHub } from '../components/journey/JourneySetupHub';
 import { TelegramRoomsPanel } from '../features/telegram';
+import { AppearanceCustomizationPanel } from '../components/AppearanceCustomizationPanel';
 
 export const GameSetupPage = () => {
   return (
@@ -14,6 +15,8 @@ export const GameSetupPage = () => {
           Назад
         </Link>
       </header>
+
+      <AppearanceCustomizationPanel className="mb-4" defaultExpanded title="Кастомізуйте гру перед запуском" />
 
       <JourneySetupHub />
       <div className="mt-5">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createRepositories } from '../repositories';
+import { AppearanceCustomizationPanel } from '../components/AppearanceCustomizationPanel';
 
 const repositories = createRepositories();
 
@@ -55,6 +56,8 @@ export const SettingsPage = () => {
             />
           </label>
         </div>
+
+        <AppearanceCustomizationPanel className="mt-5" defaultExpanded title="Вигляд і анімації" />
         <Link className="mt-4 inline-block text-sm text-[#9b6d57]" to="/game">
           Повернутися до гри
         </Link>
