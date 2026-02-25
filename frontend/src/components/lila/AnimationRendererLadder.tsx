@@ -22,6 +22,7 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
 
   return (
     <StairsPath
+      points={orthogonalPoints}
       path={path}
       gradientId={gradientId}
       progress={progress}
