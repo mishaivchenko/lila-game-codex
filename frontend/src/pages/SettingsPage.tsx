@@ -8,7 +8,16 @@ const repositories = createRepositories();
 export const SettingsPage = () => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [musicEnabled, setMusicEnabled] = useState(true);
-  const { themeId, themes, setThemeId } = useBoardTheme();
+  const {
+    themeId,
+    theme,
+    themes,
+    tokenColorId,
+    animationSpeed,
+    setThemeId,
+    setTokenColorId,
+    setAnimationSpeed,
+  } = useBoardTheme();
 
   useEffect(() => {
     void repositories.settingsRepository.getSettings().then((settings) => {
@@ -87,6 +96,45 @@ export const SettingsPage = () => {
                     style={{ backgroundColor: themeOption.token.defaultColor }}
                   />
                 </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <p className="text-sm font-medium text-stone-700">Колір фішки</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {theme.token.palette.map((token) => (
+              <button
+                key={token.id}
+                type="button"
+                onClick={() => setTokenColorId(token.id)}
+                className={`flex items-center gap-2 rounded-full border px-2 py-1 text-xs transition ${
+                  tokenColorId === token.id
+                    ? 'border-[#c57b5d] bg-[#f9ece3] text-[#6b4a3b]'
+                    : 'border-stone-200 bg-white text-stone-600'
+                }`}
+              >
+                <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: token.value }} />
+                {token.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <p className="text-sm font-medium text-stone-700">Швидкість анімацій</p>
+          <div className="mt-2 inline-flex rounded-full border border-stone-200 bg-white p-1">
+            {(['slow', 'normal', 'fast'] as const).map((speed) => (
+              <button
+                key={speed}
+                type="button"
+                onClick={() => setAnimationSpeed(speed)}
+                className={`rounded-full px-3 py-1 text-xs transition ${
+                  animationSpeed === speed ? 'bg-[#f1dfd2] text-[#6b4a3b]' : 'text-stone-600'
+                }`}
+              >
+                {speed === 'slow' ? 'Повільно' : speed === 'normal' ? 'Нормально' : 'Швидко'}
               </button>
             ))}
           </div>

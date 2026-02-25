@@ -10,6 +10,7 @@ const defaultSettings: SettingsEntity = {
   defaultSpeed: 'normal',
   defaultDepth: 'standard',
   selectedThemeId: DEFAULT_SPIRITUAL_THEME.id,
+  animationSpeed: 'normal',
 };
 
 const normalizeSettings = (settings: Partial<SettingsEntity> | undefined): SettingsEntity => ({
@@ -25,7 +26,11 @@ export class DexieSettingsRepository implements SettingsRepository {
     const settings = await this.dexie.settings.get('global');
     if (settings) {
       const normalized = normalizeSettings(settings);
-      if (normalized.selectedThemeId !== settings.selectedThemeId || normalized.tokenColorId !== settings.tokenColorId) {
+      if (
+        normalized.selectedThemeId !== settings.selectedThemeId ||
+        normalized.tokenColorId !== settings.tokenColorId ||
+        normalized.animationSpeed !== settings.animationSpeed
+      ) {
         await this.dexie.settings.put(normalized);
       }
       return normalized;

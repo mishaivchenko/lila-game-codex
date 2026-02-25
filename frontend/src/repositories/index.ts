@@ -35,6 +35,7 @@ const inMemoryStore: InMemoryStore = {
     defaultSpeed: 'normal',
     defaultDepth: 'standard',
     selectedThemeId: DEFAULT_SPIRITUAL_THEME.id,
+    animationSpeed: 'normal',
   },
 };
 

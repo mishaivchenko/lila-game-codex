@@ -75,9 +75,13 @@ describe('dexie repositories', () => {
     await settings.saveSettings({
       ...current,
       selectedThemeId: 'cosmic-dark',
+      tokenColorId: 'glacier',
+      animationSpeed: 'fast',
     });
 
     const reloaded = await settings.getSettings();
     expect(reloaded.selectedThemeId).toBe('cosmic-dark');
+    expect(reloaded.tokenColorId).toBe('glacier');
+    expect(reloaded.animationSpeed).toBe('fast');
   });
 });

@@ -7,6 +7,7 @@ export {
   DEFAULT_SPIRITUAL_THEME,
   MINIMAL_CREAM_THEME,
   resolveBoardTheme,
+  resolveTokenColor,
   type BoardTheme,
   type BoardBackgroundStyle,
   type ModalStyle,

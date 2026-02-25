@@ -4,7 +4,7 @@ import { TelegramRoomsPanel } from '../features/telegram';
 import { useBoardTheme } from '../theme';
 
 export const GameSetupPage = () => {
-  const { themeId, themes, setThemeId } = useBoardTheme();
+  const { themeId, theme, themes, tokenColorId, animationSpeed, setThemeId, setTokenColorId, setAnimationSpeed } = useBoardTheme();
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl bg-gradient-to-b from-[var(--lila-bg-start)] to-[var(--lila-bg-end)] px-4 py-6 sm:px-6">
@@ -33,6 +33,32 @@ export const GameSetupPage = () => {
               }`}
             >
               {themeOption.name}
+            </button>
+          ))}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {theme.token.palette.map((token) => (
+            <button
+              key={token.id}
+              type="button"
+              onClick={() => setTokenColorId(token.id)}
+              className={`h-7 w-7 rounded-full border-2 transition ${
+                tokenColorId === token.id ? 'scale-110 border-[#7f4f3c]' : 'border-white'
+              }`}
+              style={{ backgroundColor: token.value }}
+              aria-label={token.label}
+            />
+          ))}
+        </div>
+        <div className="mt-3 inline-flex rounded-full border border-stone-200 bg-white p-1 text-xs">
+          {(['slow', 'normal', 'fast'] as const).map((speed) => (
+            <button
+              key={speed}
+              type="button"
+              onClick={() => setAnimationSpeed(speed)}
+              className={`rounded-full px-3 py-1 ${animationSpeed === speed ? 'bg-[#f1dfd2] text-[#6b4a3b]' : 'text-stone-600'}`}
+            >
+              {speed === 'slow' ? 'Повільно' : speed === 'normal' ? 'Нормально' : 'Швидко'}
             </button>
           ))}
         </div>

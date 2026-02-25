@@ -272,3 +272,6 @@ export const BOARD_THEME_LIST: BoardTheme[] = Object.values(BOARD_THEMES);
 
 export const resolveBoardTheme = (themeId: string | undefined): BoardTheme =>
   (themeId && BOARD_THEMES[themeId]) || DEFAULT_SPIRITUAL_THEME;
+
+export const resolveTokenColor = (theme: BoardTheme, tokenColorId: string | undefined): string =>
+  theme.token.palette.find((entry) => entry.id === tokenColorId)?.value ?? theme.token.defaultColor;

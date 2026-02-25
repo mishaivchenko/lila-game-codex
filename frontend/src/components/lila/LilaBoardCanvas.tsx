@@ -35,7 +35,7 @@ interface LilaBoardCanvasProps {
 export const LilaBoardCanvas = ({
   boardType,
   currentCell,
-  tokenColor = '#1c1917',
+  tokenColor,
   otherTokens = [],
   animationMove,
   animationTimings,

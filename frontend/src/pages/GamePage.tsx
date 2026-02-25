@@ -26,6 +26,7 @@ import { DeepRequestDialog } from './game/components/DeepRequestDialog';
 import { GameStatusHeader } from './game/components/GameStatusHeader';
 import { GameControlPanel } from './game/components/GameControlPanel';
 import { useSimpleMultiplayer } from './game/useSimpleMultiplayer';
+import { useBoardTheme } from '../theme';
 import type {
   CoachMoveContext,
   ModalMode,
@@ -88,6 +89,7 @@ export const GamePage = () => {
     currentSession,
     updateSessionRequest,
   });
+  const { tokenColorValue, animationSpeed } = useBoardTheme();
 
   const currentChakra = useMemo(() => {
     if (!currentSession) {
@@ -115,6 +117,18 @@ export const GamePage = () => {
     currentSession
       ? (BOARD_DEFINITIONS[currentSession.boardType] ?? BOARD_DEFINITIONS.full)
       : BOARD_DEFINITIONS.full;
+  const animationSpeedMultiplier = animationSpeed === 'slow' ? 1.3 : animationSpeed === 'fast' ? 0.8 : 1;
+  const effectiveAnimationTimings = useMemo(
+    () => ({
+      tokenMoveDurationMs: Math.round(animationTimings.tokenMoveDurationMs * animationSpeedMultiplier),
+      pathDrawDurationMs: Math.round(animationTimings.pathDrawDurationMs * animationSpeedMultiplier),
+      pathTravelDurationMs: Math.round(animationTimings.pathTravelDurationMs * animationSpeedMultiplier),
+      pathPostHoldMs: Math.round(animationTimings.pathPostHoldMs * animationSpeedMultiplier),
+      pathFadeOutMs: Math.round(animationTimings.pathFadeOutMs * animationSpeedMultiplier),
+      cardOpenDelayMs: Math.round(animationTimings.cardOpenDelayMs * animationSpeedMultiplier),
+    }),
+    [animationSpeedMultiplier, animationTimings],
+  );
   const displayCurrentCell = activeSimplePlayer?.currentCell ?? currentSession?.currentCell ?? 1;
 
   const safeCurrentCell = Math.min(
@@ -134,7 +148,7 @@ export const GamePage = () => {
       cellNumber: number,
       context?: CoachMoveContext,
       mode: ModalMode = 'move',
-      delayMs: number = animationTimings.cardOpenDelayMs,
+      delayMs: number = effectiveAnimationTimings.cardOpenDelayMs,
     ) => {
       setActiveModalCell(Math.min(Math.max(cellNumber, 1), board.maxCell));
       setModalMoveContext(context);
@@ -149,7 +163,7 @@ export const GamePage = () => {
         setShowCoach(true);
       }, delayMs);
     },
-    [animationTimings.cardOpenDelayMs, board.maxCell],
+    [board.maxCell, effectiveAnimationTimings.cardOpenDelayMs],
   );
 
   const onMoveAnimationComplete = useCallback((moveId: string) => {
@@ -444,9 +458,9 @@ export const GamePage = () => {
     if (!isDeepEntryRoll && move.snakeOrArrow !== 'snake') {
       const specialDuration =
         move.snakeOrArrow
-          ? animationTimings.pathTravelDurationMs + animationTimings.pathPostHoldMs + animationTimings.pathFadeOutMs
+          ? effectiveAnimationTimings.pathTravelDurationMs + effectiveAnimationTimings.pathPostHoldMs + effectiveAnimationTimings.pathFadeOutMs
           : 0;
-      const fallbackMs = animationTimings.tokenMoveDurationMs + specialDuration + animationTimings.cardOpenDelayMs;
+      const fallbackMs = effectiveAnimationTimings.tokenMoveDurationMs + specialDuration + effectiveAnimationTimings.cardOpenDelayMs;
       animationFallbackTimerRef.current = window.setTimeout(() => {
         if (pendingMoveIdRef.current !== move.id) {
           return;
@@ -549,7 +563,7 @@ export const GamePage = () => {
       <LilaBoard
         board={board}
         currentCell={safeCurrentCell}
-        tokenColor={activeSimplePlayer ? SIMPLE_COLOR_HEX[activeSimplePlayer.color] ?? '#1f2937' : undefined}
+        tokenColor={activeSimplePlayer ? SIMPLE_COLOR_HEX[activeSimplePlayer.color] ?? '#1f2937' : tokenColorValue}
         otherTokens={
           isSimpleMultiplayer
             ? simplePlayers
@@ -562,7 +576,7 @@ export const GamePage = () => {
             : undefined
         }
         animationMove={animationMove}
-        animationTimings={animationTimings}
+        animationTimings={effectiveAnimationTimings}
         onMoveAnimationComplete={onMoveAnimationComplete}
         onCellSelect={handleBoardCellSelect}
         disableCellSelect={turnState !== 'idle' || snakeFlowPhase !== 'idle'}
