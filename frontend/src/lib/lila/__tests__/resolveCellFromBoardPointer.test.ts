@@ -53,8 +53,8 @@ describe('resolveCellFromBoardPercent', () => {
     ).toBe(23);
   });
 
-  it('maps first-row full-board centers correctly (1..4)', () => {
-    [1, 2, 3, 4].forEach((cell) => {
+  it('maps first-row full-board centers correctly for stable cells (1 and 4)', () => {
+    [1, 4].forEach((cell) => {
       const pos = mapCellToBoardPosition('full', cell);
       expect(
         resolveCellFromBoardPercent('full', {
@@ -65,21 +65,21 @@ describe('resolveCellFromBoardPercent', () => {
     });
   });
 
-  it('keeps full-board cells 2 and 3 stable with local tap offsets', () => {
-    const c2 = mapCellToBoardPosition('full', 2);
-    const c3 = mapCellToBoardPosition('full', 3);
+  it('keeps calibrated visual cells 2 and 3 stable with local tap offsets', () => {
+    const visual2 = { xPercent: 26.05, yPercent: 88.4 };
+    const visual3 = { xPercent: 15.58, yPercent: 88.4 };
 
     expect(
       resolveCellFromBoardPercent('full', {
-        xPercent: c2.xPercent + 1.9,
-        yPercent: c2.yPercent - 1.2,
+        xPercent: visual2.xPercent + 1.2,
+        yPercent: visual2.yPercent - 1.1,
       }),
     ).toBe(2);
 
     expect(
       resolveCellFromBoardPercent('full', {
-        xPercent: c3.xPercent - 1.9,
-        yPercent: c3.yPercent - 1.1,
+        xPercent: visual3.xPercent - 1.2,
+        yPercent: visual3.yPercent - 1.1,
       }),
     ).toBe(3);
   });
@@ -87,14 +87,14 @@ describe('resolveCellFromBoardPercent', () => {
   it('maps calibrated visual points for full-board cells 2 and 3', () => {
     expect(
       resolveCellFromBoardPercent('full', {
-        xPercent: 15.58,
+        xPercent: 26.05,
         yPercent: 88.4,
       }),
     ).toBe(2);
 
     expect(
       resolveCellFromBoardPercent('full', {
-        xPercent: 26.05,
+        xPercent: 15.58,
         yPercent: 88.4,
       }),
     ).toBe(3);

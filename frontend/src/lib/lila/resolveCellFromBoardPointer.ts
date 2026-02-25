@@ -6,6 +6,10 @@ interface BoardPointerPoint {
   yPercent: number;
 }
 
+interface BoardPointerCellPoint extends BoardPointerPoint {
+  cell: number;
+}
+
 const distance = (left: BoardPointerPoint, right: BoardPointerPoint): number =>
   Math.hypot(left.xPercent - right.xPercent, left.yPercent - right.yPercent);
 
@@ -63,17 +67,50 @@ const resolveByGridArea = (
   return rowFromBottom * grid.columns + indexInRow + 1;
 };
 
+const buildHitTestCoordinates = (
+  boardType: BoardType,
+  profileCoordinates: BoardPointerCellPoint[],
+): BoardPointerCellPoint[] => {
+  if (boardType !== 'full') {
+    return profileCoordinates;
+  }
+
+  const cell2 = profileCoordinates.find((coord) => coord.cell === 2);
+  const cell3 = profileCoordinates.find((coord) => coord.cell === 3);
+  if (!cell2 || !cell3) {
+    return profileCoordinates;
+  }
+
+  return profileCoordinates.map((coord) => {
+    if (coord.cell === 2) {
+      return { ...coord, xPercent: cell3.xPercent, yPercent: cell3.yPercent };
+    }
+    if (coord.cell === 3) {
+      return { ...coord, xPercent: cell2.xPercent, yPercent: cell2.yPercent };
+    }
+    return coord;
+  });
+};
+
 export const resolveCellFromBoardPercent = (
   boardType: BoardType,
   point: BoardPointerPoint,
   maxDistancePercent = 6.5,
 ): number | undefined => {
   const profile = getBoardProfile(boardType);
+  const hitTestCoordinates = buildHitTestCoordinates(
+    boardType,
+    profile.cellCoordinates.map((coord) => ({
+      cell: coord.cell,
+      xPercent: coord.xPercent,
+      yPercent: coord.yPercent,
+    })),
+  );
   const gridCell = resolveByGridArea(boardType, point);
   let closestCell: number | undefined;
   let closestDistance = Number.POSITIVE_INFINITY;
 
-  for (const coord of profile.cellCoordinates) {
+  for (const coord of hitTestCoordinates) {
     const currentDistance = distance(point, coord);
     if (currentDistance < closestDistance) {
       closestDistance = currentDistance;
