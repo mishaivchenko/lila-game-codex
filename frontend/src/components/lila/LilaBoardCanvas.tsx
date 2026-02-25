@@ -37,9 +37,13 @@ interface LilaBoardCanvasProps {
 const zoomSettings = {
   baseZoom: 1,
   followZoom: 1.8,
+  manualZoom: 1.8,
   zoomInDurationMs: 250,
   zoomOutDurationMs: 400,
 };
+
+const DOUBLE_TAP_WINDOW_MS = 280;
+const DOUBLE_TAP_DISTANCE_PX = 24;
 
 export const LilaBoardCanvas = ({
   boardType,
@@ -72,15 +76,17 @@ export const LilaBoardCanvas = ({
   const followModeRef = useRef(false);
   const cameraSnapshotRef = useRef(cameraState);
   const followPointRef = useRef({ x: 50, y: 50 });
-  const longPressTimerRef = useRef<number | null>(null);
+  const lastTapRef = useRef<{
+    time: number;
+    x: number;
+    y: number;
+  } | null>(null);
+  const singleTapTimerRef = useRef<number | null>(null);
   const dragStateRef = useRef<{
     pointerId: number;
     lastX: number;
     lastY: number;
     moved: boolean;
-    holdZoomActive: boolean;
-    pressWorldX: number;
-    pressWorldY: number;
   } | null>(null);
   const cameraEngineRef = useRef(
     createBoardCameraEngine({
@@ -260,6 +266,10 @@ export const LilaBoardCanvas = ({
     return () => {
       timersRef.current.forEach((timer) => window.clearTimeout(timer));
       timersRef.current = [];
+      if (singleTapTimerRef.current !== null) {
+        window.clearTimeout(singleTapTimerRef.current);
+        singleTapTimerRef.current = null;
+      }
     };
   }, []);
 
@@ -304,28 +314,59 @@ export const LilaBoardCanvas = ({
     ...token,
     position: mapCellToBoardPosition(boardType, token.cell),
   }));
+
+  const toggleManualZoomAt = (worldPoint: { x: number; y: number }) => {
+    const camera = cameraEngineRef.current;
+    const isZoomedIn = cameraState.zoom > zoomSettings.baseZoom + 0.05;
+    if (isMovingWithCamera) {
+      return;
+    }
+    if (isZoomedIn) {
+      void camera.animateZoom(zoomSettings.baseZoom, {
+        durationMs: zoomSettings.zoomOutDurationMs,
+        easing: 'easeOut',
+      });
+      return;
+    }
+    void camera.animateTo(worldPoint, {
+      durationMs: 170,
+      easing: 'easeOut',
+    });
+    void camera.animateZoom(zoomSettings.manualZoom, {
+      durationMs: zoomSettings.zoomInDurationMs,
+      easing: 'easeOut',
+    });
+  };
+
+  const queueSingleTapCellOpen = (
+    worldPoint: { x: number; y: number },
+    rect: DOMRect,
+  ) => {
+    if (disableCellSelect || !onCellSelect) {
+      return;
+    }
+    const xPercent = (worldPoint.x / rect.width) * 100;
+    const yPercent = (worldPoint.y / rect.height) * 100;
+    const cell = resolveCellFromBoardPercent(boardType, { xPercent, yPercent });
+    if (!cell) {
+      return;
+    }
+    if (singleTapTimerRef.current !== null) {
+      window.clearTimeout(singleTapTimerRef.current);
+    }
+    singleTapTimerRef.current = window.setTimeout(() => {
+      onCellSelect(cell);
+      singleTapTimerRef.current = null;
+    }, DOUBLE_TAP_WINDOW_MS);
+  };
+
   const handleBoardPointerUp = (event: PointerEvent<HTMLDivElement>) => {
     const dragState = dragStateRef.current;
     if (dragState && dragState.pointerId === event.pointerId) {
-      if (longPressTimerRef.current !== null) {
-        window.clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
       dragStateRef.current = null;
-      if (dragState.holdZoomActive) {
-        void cameraEngineRef.current.animateZoom(zoomSettings.baseZoom, {
-          durationMs: 220,
-          easing: 'easeOut',
-        });
-        return;
-      }
       if (dragState.moved) {
         return;
       }
-    }
-
-    if (disableCellSelect || !onCellSelect) {
-      return;
     }
 
     const rect = event.currentTarget.getBoundingClientRect();
@@ -337,57 +378,47 @@ export const LilaBoardCanvas = ({
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
     });
-    const xPercent = (worldPoint.x / rect.width) * 100;
-    const yPercent = (worldPoint.y / rect.height) * 100;
-    const cell = resolveCellFromBoardPercent(boardType, { xPercent, yPercent });
-    if (cell) {
-      onCellSelect(cell);
+
+    const now = Date.now();
+    const previousTap = lastTapRef.current;
+    const isDoubleTap = Boolean(
+      previousTap
+      && now - previousTap.time <= DOUBLE_TAP_WINDOW_MS
+      && Math.hypot(worldPoint.x - previousTap.x, worldPoint.y - previousTap.y) <= DOUBLE_TAP_DISTANCE_PX,
+    );
+
+    if (isDoubleTap) {
+      if (singleTapTimerRef.current !== null) {
+        window.clearTimeout(singleTapTimerRef.current);
+        singleTapTimerRef.current = null;
+      }
+      lastTapRef.current = null;
+      toggleManualZoomAt(worldPoint);
+      event.preventDefault();
+      return;
     }
+
+    lastTapRef.current = {
+      time: now,
+      x: worldPoint.x,
+      y: worldPoint.y,
+    };
+
+    queueSingleTapCellOpen(worldPoint, rect);
   };
 
   const handleBoardPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (followModeRef.current) {
       return;
     }
-    const rect = event.currentTarget.getBoundingClientRect();
-    const worldPoint = cameraEngineRef.current.projectScreenToWorld({
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-    });
+    event.preventDefault();
     dragStateRef.current = {
       pointerId: event.pointerId,
       lastX: event.clientX,
       lastY: event.clientY,
       moved: false,
-      holdZoomActive: false,
-      pressWorldX: worldPoint.x,
-      pressWorldY: worldPoint.y,
     };
     event.currentTarget.setPointerCapture(event.pointerId);
-
-    if (disableCellSelect || isMovingWithCamera) {
-      return;
-    }
-
-    longPressTimerRef.current = window.setTimeout(() => {
-      const currentDrag = dragStateRef.current;
-      if (!currentDrag || currentDrag.pointerId !== event.pointerId || currentDrag.moved || followModeRef.current) {
-        return;
-      }
-      currentDrag.holdZoomActive = true;
-      const camera = cameraEngineRef.current;
-      void camera.animateTo(
-        { x: currentDrag.pressWorldX, y: currentDrag.pressWorldY },
-        { durationMs: 160, easing: 'easeOut' },
-      );
-      void camera.animateZoom(1.55, {
-        durationMs: 180,
-        easing: 'easeOut',
-      });
-      const next = camera.getSnapshot();
-      cameraSnapshotRef.current = next;
-      setCameraState(next);
-    }, 260);
   };
 
   const handleBoardPointerMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -402,11 +433,7 @@ export const LilaBoardCanvas = ({
     dragState.lastY = event.clientY;
     if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
       dragState.moved = true;
-      if (longPressTimerRef.current !== null) {
-        window.clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
-      if (dragState.holdZoomActive && !followModeRef.current) {
+      if (!followModeRef.current && cameraState.zoom > zoomSettings.baseZoom + 0.05) {
         cameraEngineRef.current.panBy({ x: dx, y: dy });
         const next = cameraEngineRef.current.getSnapshot();
         cameraSnapshotRef.current = next;
@@ -419,10 +446,6 @@ export const LilaBoardCanvas = ({
     const dragState = dragStateRef.current;
     if (!dragState || dragState.pointerId !== event.pointerId) {
       return;
-    }
-    if (longPressTimerRef.current !== null) {
-      window.clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
     }
     dragStateRef.current = null;
   };
@@ -437,15 +460,20 @@ export const LilaBoardCanvas = ({
     >
       <div
         className="relative w-full overflow-hidden rounded-2xl"
-        style={{
-          aspectRatio,
-          background: theme.boardBackground.canvasFrameBackground,
-        }}
         data-testid="lila-board-canvas"
         onPointerUp={handleBoardPointerUp}
         onPointerDown={handleBoardPointerDown}
         onPointerMove={handleBoardPointerMove}
         onPointerCancel={handleBoardPointerCancel}
+        onContextMenu={(event) => event.preventDefault()}
+        style={{
+          aspectRatio,
+          background: theme.boardBackground.canvasFrameBackground,
+          touchAction: 'none',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
+        }}
         ref={canvasRef}
       >
         <BoardSceneContainer camera={cameraState}>
@@ -459,6 +487,7 @@ export const LilaBoardCanvas = ({
               transform: `scale(${1 / imageOversampleFactor})`,
               transformOrigin: 'top left',
               imageRendering: 'auto',
+              WebkitUserDrag: 'none',
             }}
             onLoad={(event) => {
               const { naturalWidth, naturalHeight } = event.currentTarget;
