@@ -6,24 +6,15 @@ interface BoardPointerPoint {
   yPercent: number;
 }
 
-interface BoardPointerCellPoint extends BoardPointerPoint {
-  cell: number;
-}
-
 const distance = (left: BoardPointerPoint, right: BoardPointerPoint): number =>
   Math.hypot(left.xPercent - right.xPercent, left.yPercent - right.yPercent);
-
-const BOARD_GRID: Record<BoardType, { columns: number; rows: number }> = {
-  full: { columns: 9, rows: 8 },
-  short: { columns: 6, rows: 6 },
-};
 
 const resolveByGridArea = (
   boardType: BoardType,
   point: BoardPointerPoint,
 ): number | undefined => {
   const profile = getBoardProfile(boardType);
-  const grid = BOARD_GRID[boardType];
+  const grid = profile.hitTest;
 
   const xs = profile.cellCoordinates.map((coord) => coord.xPercent);
   const ys = profile.cellCoordinates.map((coord) => coord.yPercent);
@@ -61,35 +52,15 @@ const resolveByGridArea = (
       Math.floor((bottomBound - point.yPercent) / yStep),
     ),
   );
+
+  const rowOrder = grid.rowCellOrderFromBottom?.[rowFromBottom];
+  if (rowOrder && rowOrder.length === grid.columns) {
+    return rowOrder[colFromLeft];
+  }
+
   const isReverseRow = rowFromBottom % 2 === 1;
   const indexInRow = isReverseRow ? grid.columns - 1 - colFromLeft : colFromLeft;
-
   return rowFromBottom * grid.columns + indexInRow + 1;
-};
-
-const buildHitTestCoordinates = (
-  boardType: BoardType,
-  profileCoordinates: BoardPointerCellPoint[],
-): BoardPointerCellPoint[] => {
-  if (boardType !== 'full') {
-    return profileCoordinates;
-  }
-
-  const cell2 = profileCoordinates.find((coord) => coord.cell === 2);
-  const cell3 = profileCoordinates.find((coord) => coord.cell === 3);
-  if (!cell2 || !cell3) {
-    return profileCoordinates;
-  }
-
-  return profileCoordinates.map((coord) => {
-    if (coord.cell === 2) {
-      return { ...coord, xPercent: cell3.xPercent, yPercent: cell3.yPercent };
-    }
-    if (coord.cell === 3) {
-      return { ...coord, xPercent: cell2.xPercent, yPercent: cell2.yPercent };
-    }
-    return coord;
-  });
 };
 
 export const resolveCellFromBoardPercent = (
@@ -98,36 +69,23 @@ export const resolveCellFromBoardPercent = (
   maxDistancePercent = 6.5,
 ): number | undefined => {
   const profile = getBoardProfile(boardType);
-  const hitTestCoordinates = buildHitTestCoordinates(
-    boardType,
-    profile.cellCoordinates.map((coord) => ({
-      cell: coord.cell,
-      xPercent: coord.xPercent,
-      yPercent: coord.yPercent,
-    })),
-  );
   const gridCell = resolveByGridArea(boardType, point);
+  if (gridCell) {
+    return gridCell;
+  }
+
   let closestCell: number | undefined;
   let closestDistance = Number.POSITIVE_INFINITY;
 
-  for (const coord of hitTestCoordinates) {
+  for (const coord of profile.cellCoordinates) {
     const currentDistance = distance(point, coord);
     if (currentDistance < closestDistance) {
       closestDistance = currentDistance;
       closestCell = coord.cell;
     }
   }
-
-  // Prefer nearest calibrated cell center when it is close enough.
-  // This avoids local mis-mapping on visually dense areas where a coarse grid
-  // bucket can disagree with the actual calibrated board coordinates.
-  if (closestDistance <= maxDistancePercent && closestCell) {
-    return closestCell;
+  if (closestDistance > maxDistancePercent) {
+    return undefined;
   }
-
-  if (gridCell) {
-    return gridCell;
-  }
-
-  return undefined;
+  return closestCell;
 };

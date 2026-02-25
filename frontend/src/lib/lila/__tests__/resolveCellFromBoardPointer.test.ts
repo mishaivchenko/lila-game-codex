@@ -84,6 +84,15 @@ describe('resolveCellFromBoardPercent', () => {
     ).toBe(3);
   });
 
+  it('keeps tap on right side of a first-row cell within same logical cell', () => {
+    expect(
+      resolveCellFromBoardPercent('full', {
+        xPercent: 40.8,
+        yPercent: 88.4,
+      }),
+    ).toBe(4);
+  });
+
   it('maps calibrated visual points for full-board cells 2 and 3', () => {
     expect(
       resolveCellFromBoardPercent('full', {

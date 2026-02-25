@@ -26,10 +26,17 @@ export interface BoardImageAssetSet {
   };
 }
 
+export interface BoardHitTestConfig {
+  columns: number;
+  rows: number;
+  rowCellOrderFromBottom?: number[][];
+}
+
 export interface BoardProfile {
   boardType: BoardType;
   boardTheme: string;
   imageAssets: BoardImageAssetSet;
+  hitTest: BoardHitTestConfig;
   cellCoordinates: CellCoord[];
   snakePaths: BoardTransitionPath[];
   ladderPaths: BoardTransitionPath[];
