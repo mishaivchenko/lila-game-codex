@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { BoardType } from '../../domain/types';
 import { BOARD_DEFINITIONS } from '../../content/boards';
 import { resolveAssetUrl } from '../../content/assetBase';
+import { createBoardCameraEngine } from '../../engine/camera/BoardCameraEngine';
 import type { AnimationTimingSettings } from '../../lib/animations/animationTimingSettings';
 import {
   PULSE_DURATION_MS,
@@ -18,6 +19,7 @@ import { resolveCellFromBoardPercent } from '../../lib/lila/resolveCellFromBoard
 import type { LilaTransition } from './LilaBoard';
 import { LilaPathAnimation } from './LilaPathAnimation';
 import { useBoardTheme } from '../../theme';
+import { BoardSceneContainer } from '../../ui/board/BoardSceneContainer';
 
 interface LilaBoardCanvasProps {
   boardType: BoardType;
@@ -51,7 +53,23 @@ export const LilaBoardCanvas = ({
   const [activePath, setActivePath] = useState<LilaTransition | undefined>();
   const [tokenPathPosition, setTokenPathPosition] = useState<BoardPathPoint | undefined>();
   const [tokenStepDurationMs, setTokenStepDurationMs] = useState(TOKEN_MOVE_DURATION_MS);
+  const [cameraState, setCameraState] = useState(() => ({
+    zoom: 1,
+    targetZoom: 1,
+    panX: 0,
+    panY: 0,
+  }));
   const timersRef = useRef<number[]>([]);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  const cameraEngineRef = useRef(
+    createBoardCameraEngine({
+      viewportWidth: 100,
+      viewportHeight: 100,
+      worldWidth: 100,
+      worldHeight: 100,
+      zoom: 1,
+    }),
+  );
   const boardProfile = useMemo(() => getBoardProfile(boardType), [boardType]);
   const specialTransitions = useMemo(() => {
     const board = BOARD_DEFINITIONS[boardType];
@@ -60,6 +78,48 @@ export const LilaBoardCanvas = ({
     board.arrows.forEach((arrow) => transitionByCell.set(arrow.from, 'arrow'));
     return transitionByCell;
   }, [boardType]);
+
+  useEffect(() => {
+    const camera = cameraEngineRef.current;
+    let frameId = 0;
+    let previous = performance.now();
+
+    const tick = (now: number) => {
+      const dt = now - previous;
+      previous = now;
+      camera.update(dt);
+      setCameraState(camera.getSnapshot());
+      frameId = window.requestAnimationFrame(tick);
+    };
+    frameId = window.requestAnimationFrame(tick);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, []);
+
+  useEffect(() => {
+    const element = canvasRef.current;
+    if (!element) {
+      return;
+    }
+
+    const camera = cameraEngineRef.current;
+    const updateViewport = () => {
+      const rect = element.getBoundingClientRect();
+      camera.setViewport({ width: rect.width, height: rect.height });
+      camera.setWorldBounds({ width: rect.width, height: rect.height });
+    };
+
+    updateViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+    const observer = new ResizeObserver(updateViewport);
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     if (!animationMove) {
@@ -155,8 +215,12 @@ export const LilaBoardCanvas = ({
       return;
     }
 
-    const xPercent = ((event.clientX - rect.left) / rect.width) * 100;
-    const yPercent = ((event.clientY - rect.top) / rect.height) * 100;
+    const worldPoint = cameraEngineRef.current.projectScreenToWorld({
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    });
+    const xPercent = (worldPoint.x / rect.width) * 100;
+    const yPercent = (worldPoint.y / rect.height) * 100;
     const cell = resolveCellFromBoardPercent(boardType, { xPercent, yPercent });
     if (cell) {
       onCellSelect(cell);
@@ -179,118 +243,121 @@ export const LilaBoardCanvas = ({
         }}
         data-testid="lila-board-canvas"
         onPointerUp={handleBoardPointerUp}
+        ref={canvasRef}
       >
-        <img
-          src={resolveAssetUrl(boardProfile.imageSrc)}
-          alt={boardType === 'full' ? 'Lila full board' : 'Lila short board'}
-          className="h-full w-full object-cover"
-          onLoad={(event) => {
-            const { naturalWidth, naturalHeight } = event.currentTarget;
-            if (naturalWidth > 0 && naturalHeight > 0) {
-              setAspectRatio(naturalWidth / naturalHeight);
-            }
-          }}
-        />
-
-        {activePath?.type && (
-          <LilaPathAnimation
-            key={`${activePath.id}-${boardType}`}
-            boardType={boardType}
-            fromCell={activePath.fromCell}
-            toCell={activePath.toCell}
-            type={activePath.type}
-            points={activePath.pathPoints}
-            timings={animationTimings}
-            tokenColor={tokenColor ?? theme.token.defaultColor}
-            onProgress={(_, point) => {
-              setTokenPathPosition(point);
-            }}
-            onTravelComplete={() => {
-              setTokenPathPosition(undefined);
-              setTokenCell(activePath.toCell);
-            }}
-            onComplete={() => {
-              setActivePath(undefined);
-              onMoveAnimationComplete?.(activePath.id);
+        <BoardSceneContainer camera={cameraState}>
+          <img
+            src={resolveAssetUrl(boardProfile.imageSrc)}
+            alt={boardType === 'full' ? 'Lila full board' : 'Lila short board'}
+            className="h-full w-full object-cover"
+            onLoad={(event) => {
+              const { naturalWidth, naturalHeight } = event.currentTarget;
+              if (naturalWidth > 0 && naturalHeight > 0) {
+                setAspectRatio(naturalWidth / naturalHeight);
+              }
             }}
           />
-        )}
 
-        {pulsePosition && (
-          <div
-            className="pointer-events-none absolute h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{
-              left: `${pulsePosition.xPercent}%`,
-              top: `${pulsePosition.yPercent}%`,
-              backgroundColor: activePath?.type === 'arrow' ? theme.stairs.pulseFill : theme.snake.pulseFill,
-              border: activePath?.type === 'arrow' ? theme.stairs.pulseBorder : theme.snake.pulseBorder,
-              animation: 'lila-soft-pulse 260ms ease-out 1',
-            }}
-          />
-        )}
+          {activePath?.type && (
+            <LilaPathAnimation
+              key={`${activePath.id}-${boardType}`}
+              boardType={boardType}
+              fromCell={activePath.fromCell}
+              toCell={activePath.toCell}
+              type={activePath.type}
+              points={activePath.pathPoints}
+              timings={animationTimings}
+              tokenColor={tokenColor ?? theme.token.defaultColor}
+              onProgress={(_, point) => {
+                setTokenPathPosition(point);
+              }}
+              onTravelComplete={() => {
+                setTokenPathPosition(undefined);
+                setTokenCell(activePath.toCell);
+              }}
+              onComplete={() => {
+                setActivePath(undefined);
+                onMoveAnimationComplete?.(activePath.id);
+              }}
+            />
+          )}
 
-        <motion.div
-          className="pointer-events-none absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{
-            left: `${tokenPosition.xPercent}%`,
-            top: `${tokenPosition.yPercent}%`,
-            background:
-              activeCellType === 'arrow'
-                ? theme.token.arrowCellGlow
-                : activeCellType === 'snake'
-                  ? theme.token.snakeCellGlow
-                  : theme.token.neutralGlow,
-          }}
-          animate={
-            activeCellType
-              ? { scale: [0.92, 1.12], opacity: [0.4, 0.95] }
-              : { scale: [0.9, 1.05], opacity: [0.35, 0.7] }
-          }
-          transition={activeCellType ? specialCellGlowTransition : activeCellGlowTransition}
-        />
+          {pulsePosition && (
+            <div
+              className="pointer-events-none absolute h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{
+                left: `${pulsePosition.xPercent}%`,
+                top: `${pulsePosition.yPercent}%`,
+                backgroundColor: activePath?.type === 'arrow' ? theme.stairs.pulseFill : theme.snake.pulseFill,
+                border: activePath?.type === 'arrow' ? theme.stairs.pulseBorder : theme.snake.pulseBorder,
+                animation: 'lila-soft-pulse 260ms ease-out 1',
+              }}
+            />
+          )}
 
-        {!snakeCarriesToken && (
           <motion.div
-            className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white bg-stone-900 shadow-md"
+            className="pointer-events-none absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full"
             style={{
-              left: `${effectiveTokenPosition.xPercent}%`,
-              top: `${effectiveTokenPosition.yPercent}%`,
-              backgroundColor: tokenColor ?? theme.token.defaultColor,
-              borderColor: theme.token.borderColor,
-              boxShadow:
-                activePath?.type === 'arrow'
-                  ? theme.token.glowArrow
-                  : activePath?.type === 'snake'
-                    ? theme.token.glowSnake
-                    : undefined,
+              left: `${tokenPosition.xPercent}%`,
+              top: `${tokenPosition.yPercent}%`,
+              background:
+                activeCellType === 'arrow'
+                  ? theme.token.arrowCellGlow
+                  : activeCellType === 'snake'
+                    ? theme.token.snakeCellGlow
+                    : theme.token.neutralGlow,
             }}
-            animate={{
-              left: `${effectiveTokenPosition.xPercent}%`,
-              top: `${effectiveTokenPosition.yPercent}%`,
-              scale: activePath?.type ? [1, 1.08, 1] : 1,
-            }}
-            transition={
-              shouldAnimateToken
-                ? { ...tokenMoveTransition, duration: tokenStepDurationMs / 1000 }
-                : { duration: 0 }
+            animate={
+              activeCellType
+                ? { scale: [0.92, 1.12], opacity: [0.4, 0.95] }
+                : { scale: [0.9, 1.05], opacity: [0.35, 0.7] }
             }
-            aria-label="token"
+            transition={activeCellType ? specialCellGlowTransition : activeCellGlowTransition}
           />
-        )}
 
-        {passiveTokens.map((token) => (
-          <div
-            key={token.id}
-            className="pointer-events-none absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/80 shadow-sm"
-            style={{
-              left: `${token.position.xPercent}%`,
-              top: `${token.position.yPercent}%`,
-              backgroundColor: token.color,
-              opacity: 0.9,
-            }}
-            aria-label={`token-${token.id}`}
-          />
-        ))}
+          {!snakeCarriesToken && (
+            <motion.div
+              className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white bg-stone-900 shadow-md"
+              style={{
+                left: `${effectiveTokenPosition.xPercent}%`,
+                top: `${effectiveTokenPosition.yPercent}%`,
+                backgroundColor: tokenColor ?? theme.token.defaultColor,
+                borderColor: theme.token.borderColor,
+                boxShadow:
+                  activePath?.type === 'arrow'
+                    ? theme.token.glowArrow
+                    : activePath?.type === 'snake'
+                      ? theme.token.glowSnake
+                      : undefined,
+              }}
+              animate={{
+                left: `${effectiveTokenPosition.xPercent}%`,
+                top: `${effectiveTokenPosition.yPercent}%`,
+                scale: activePath?.type ? [1, 1.08, 1] : 1,
+              }}
+              transition={
+                shouldAnimateToken
+                  ? { ...tokenMoveTransition, duration: tokenStepDurationMs / 1000 }
+                  : { duration: 0 }
+              }
+              aria-label="token"
+            />
+          )}
+
+          {passiveTokens.map((token) => (
+            <div
+              key={token.id}
+              className="pointer-events-none absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/80 shadow-sm"
+              style={{
+                left: `${token.position.xPercent}%`,
+                top: `${token.position.yPercent}%`,
+                backgroundColor: token.color,
+                opacity: 0.9,
+              }}
+              aria-label={`token-${token.id}`}
+            />
+          ))}
+        </BoardSceneContainer>
       </div>
     </div>
   );
