@@ -5,6 +5,17 @@ import { mapCellToBoardPosition } from '../../../lib/lila/mapCellToBoardPosition
 import { LilaBoard } from '../LilaBoard';
 
 describe('LilaBoard', () => {
+  it('renders initial token exactly at cell 1 coordinates', () => {
+    const view = render(<LilaBoard board={BOARD_DEFINITIONS.full} currentCell={1} />);
+    const scoped = within(view.container);
+
+    const token = scoped.getByLabelText('token') as HTMLDivElement;
+    const expected = mapCellToBoardPosition('full', 1);
+
+    expect(token.style.left).toBe(`${expected.xPercent}%`);
+    expect(token.style.top).toBe(`${expected.yPercent}%`);
+  });
+
   it('renders full board token using full-board coordinates', () => {
     const view = render(<LilaBoard board={BOARD_DEFINITIONS.full} currentCell={46} />);
     const scoped = within(view.container);

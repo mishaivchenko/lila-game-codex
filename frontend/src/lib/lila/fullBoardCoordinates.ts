@@ -8,10 +8,10 @@ const FULL_COLUMNS = 9;
 const FULL_ROWS = 8;
 
 // Calibrated to the printed number centers on /field/НОВИЙ ДИЗАЙН.png.
-const X_MIN = 8.0;
-const X_MAX = 91.8;
-const Y_TOP = 12.0;
-const Y_BOTTOM = 88.1;
+const X_MIN = 5.1;
+const X_MAX = 88.9;
+const Y_TOP = 11.6;
+const Y_BOTTOM = 88.4;
 
 const rowY = (rowFromBottom: number): number => {
   const ratio = rowFromBottom / (FULL_ROWS - 1);

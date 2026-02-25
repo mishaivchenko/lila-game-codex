@@ -117,6 +117,7 @@ export const CellCoachModal = ({
         style={{
           background: theme.modal.panelBackground,
           border: `1px solid ${theme.modal.panelBorder}`,
+          margin: `${theme.modal.viewportMarginPx}px`,
         }}
         variants={modalPanelVariants}
         onClick={(event) => event.stopPropagation()}

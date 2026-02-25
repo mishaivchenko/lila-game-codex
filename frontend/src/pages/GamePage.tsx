@@ -19,14 +19,13 @@ import {
   normalizeAnimationTimings,
   saveAnimationTimings,
 } from '../lib/animations/animationTimingSettings';
-import { DeepModeCard } from '../features/deep-mode';
-import { TelegramRoomsPanel } from '../features/telegram';
 import { FinishSessionDialog } from './game/components/FinishSessionDialog';
 import { DeepRequestDialog } from './game/components/DeepRequestDialog';
 import { GameStatusHeader } from './game/components/GameStatusHeader';
 import { GameControlPanel } from './game/components/GameControlPanel';
 import { useSimpleMultiplayer } from './game/useSimpleMultiplayer';
 import { useBoardTheme } from '../theme';
+import { GameBoardLayout } from '../ui/layout/GameBoardLayout';
 import type {
   CoachMoveContext,
   ModalMode,
@@ -546,64 +545,63 @@ export const GamePage = () => {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-lg bg-[var(--lila-bg-main)] px-4 py-5">
-      <GameStatusHeader
-        isSimpleMultiplayer={isSimpleMultiplayer}
-        activeSimplePlayerName={activeSimplePlayer?.name}
-        safeCurrentCell={safeCurrentCell}
-        showHintInfo={showHintInfo}
-        onToggleHintInfo={() => setShowHintInfo((prev) => !prev)}
-        simplePlayers={simplePlayers}
-        activeSimplePlayerIndex={activeSimplePlayerIndex}
-        simpleColorHex={SIMPLE_COLOR_HEX}
-        currentChakra={currentChakra}
-        isDeepEntryPending={currentSession.request.isDeepEntry && !currentSession.hasEnteredGame}
-        entryHint={entryHint}
+    <>
+      <GameBoardLayout
+      header={(
+        <GameStatusHeader
+          isSimpleMultiplayer={isSimpleMultiplayer}
+          activeSimplePlayerName={activeSimplePlayer?.name}
+          safeCurrentCell={safeCurrentCell}
+          showHintInfo={showHintInfo}
+          onToggleHintInfo={() => setShowHintInfo((prev) => !prev)}
+          simplePlayers={simplePlayers}
+          activeSimplePlayerIndex={activeSimplePlayerIndex}
+          simpleColorHex={SIMPLE_COLOR_HEX}
+          currentChakra={currentChakra}
+          isDeepEntryPending={currentSession.request.isDeepEntry && !currentSession.hasEnteredGame}
+          entryHint={entryHint}
+        />
+      )}
+      board={(
+        <LilaBoard
+          board={board}
+          currentCell={safeCurrentCell}
+          tokenColor={activeSimplePlayer ? SIMPLE_COLOR_HEX[activeSimplePlayer.color] ?? '#1f2937' : tokenColorValue}
+          otherTokens={
+            isSimpleMultiplayer
+              ? simplePlayers
+                  .filter((player) => player.id !== activeSimplePlayer?.id)
+                  .map((player) => ({
+                    id: player.id,
+                    cell: player.currentCell,
+                    color: SIMPLE_COLOR_HEX[player.color] ?? '#6b7280',
+                  }))
+              : undefined
+          }
+          animationMove={animationMove}
+          animationTimings={effectiveAnimationTimings}
+          onMoveAnimationComplete={onMoveAnimationComplete}
+          onCellSelect={handleBoardCellSelect}
+          disableCellSelect={turnState !== 'idle' || specialFlowPhase !== 'idle'}
+          holdTokenSync={turnState !== 'idle'}
+        />
+      )}
+      controls={(
+        <GameControlPanel
+          lastMove={lastMove}
+          boardMaxCell={board.maxCell}
+          isSimpleMultiplayer={isSimpleMultiplayer}
+          error={error}
+          turnState={turnState}
+          lastMoveType={lastMoveType}
+          lastMovePresentation={lastMovePresentation}
+          onRoll={() => triggerDiceRoll()}
+          onOpenFinishConfirm={() => setShowFinishConfirm(true)}
+          onOpenAnimationSettings={() => setShowAnimationSettings(true)}
+        />
+      )}
+      sideContent={undefined}
       />
-
-      <LilaBoard
-        board={board}
-        currentCell={safeCurrentCell}
-        tokenColor={activeSimplePlayer ? SIMPLE_COLOR_HEX[activeSimplePlayer.color] ?? '#1f2937' : tokenColorValue}
-        otherTokens={
-          isSimpleMultiplayer
-            ? simplePlayers
-                .filter((player) => player.id !== activeSimplePlayer?.id)
-                .map((player) => ({
-                  id: player.id,
-                  cell: player.currentCell,
-                  color: SIMPLE_COLOR_HEX[player.color] ?? '#6b7280',
-                }))
-            : undefined
-        }
-        animationMove={animationMove}
-        animationTimings={effectiveAnimationTimings}
-        onMoveAnimationComplete={onMoveAnimationComplete}
-        onCellSelect={handleBoardCellSelect}
-        disableCellSelect={turnState !== 'idle' || specialFlowPhase !== 'idle'}
-        holdTokenSync={turnState !== 'idle'}
-      />
-
-      <GameControlPanel
-        lastMove={lastMove}
-        boardMaxCell={board.maxCell}
-        isSimpleMultiplayer={isSimpleMultiplayer}
-        error={error}
-        turnState={turnState}
-        lastMoveType={lastMoveType}
-        lastMovePresentation={lastMovePresentation}
-        onRoll={() => triggerDiceRoll()}
-        onOpenFinishConfirm={() => setShowFinishConfirm(true)}
-        onOpenAnimationSettings={() => setShowAnimationSettings(true)}
-      />
-
-      <section className="mt-4">
-        <DeepModeCard />
-      </section>
-
-      <section className="mt-4">
-        <TelegramRoomsPanel />
-      </section>
 
       <AnimatePresence>
         <FinishSessionDialog
@@ -655,6 +653,6 @@ export const GamePage = () => {
           setDiceRequestedValue(undefined);
         }}
       />
-    </main>
+    </>
   );
 };

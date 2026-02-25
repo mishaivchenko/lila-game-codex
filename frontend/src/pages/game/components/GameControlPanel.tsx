@@ -30,7 +30,7 @@ export const GameControlPanel = ({
   onOpenFinishConfirm,
   onOpenAnimationSettings,
 }: GameControlPanelProps) => (
-  <section className="mt-4 rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4 shadow-[0_12px_30px_rgba(98,76,62,0.1)]">
+  <section className="rounded-xl p-2">
     <div className="mb-3 flex items-center justify-between">
       <Dice value={lastMove?.dice} />
       <div className="text-right text-xs text-stone-600">
