@@ -31,8 +31,8 @@ import type {
   CoachMoveContext,
   ModalMode,
   PendingSimpleMove,
-  SnakeFlowPhase,
-  SnakeFlowState,
+  SpecialFlowPhase,
+  SpecialFlowState,
   TurnState,
 } from './game/gamePageTypes';
 import { SIMPLE_COLOR_HEX } from './game/gamePageTypes';
@@ -59,7 +59,7 @@ export const GamePage = () => {
   const [diceRollToken, setDiceRollToken] = useState(0);
   const [diceRequestedValue, setDiceRequestedValue] = useState<number | undefined>(undefined);
   const [turnState, setTurnState] = useState<TurnState>('idle');
-  const [snakeFlowPhase, setSnakeFlowPhase] = useState<SnakeFlowPhase>('idle');
+  const [specialFlowPhase, setSpecialFlowPhase] = useState<SpecialFlowPhase>('idle');
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showAnimationSettings, setShowAnimationSettings] = useState(false);
   const [animationTimings, setAnimationTimings] = useState(DEFAULT_ANIMATION_TIMINGS);
@@ -71,9 +71,9 @@ export const GamePage = () => {
   const pendingMoveContextRef = useRef<CoachMoveContext | undefined>(undefined);
   const pendingEntryMoveIdRef = useRef<string | undefined>(undefined);
   const pendingEntryResultRef = useRef<'retry' | 'entered' | undefined>(undefined);
-  const pendingSnakeHeadMoveIdRef = useRef<string | undefined>(undefined);
-  const pendingSnakeTailMoveIdRef = useRef<string | undefined>(undefined);
-  const snakeFlowRef = useRef<SnakeFlowState | undefined>(undefined);
+  const pendingSpecialHeadMoveIdRef = useRef<string | undefined>(undefined);
+  const pendingSpecialTailMoveIdRef = useRef<string | undefined>(undefined);
+  const specialFlowRef = useRef<SpecialFlowState | undefined>(undefined);
   const animationFallbackTimerRef = useRef<number | undefined>(undefined);
   const resumeAttemptedRef = useRef(false);
   const pendingSimpleMoveRef = useRef<PendingSimpleMove | undefined>(undefined);
@@ -103,10 +103,10 @@ export const GamePage = () => {
   useEffect(() => {
     if (!currentSession) {
       resetSimpleMultiplayer();
-      snakeFlowRef.current = undefined;
-      pendingSnakeHeadMoveIdRef.current = undefined;
-      pendingSnakeTailMoveIdRef.current = undefined;
-      setSnakeFlowPhase('idle');
+      specialFlowRef.current = undefined;
+      pendingSpecialHeadMoveIdRef.current = undefined;
+      pendingSpecialTailMoveIdRef.current = undefined;
+      setSpecialFlowPhase('idle');
       return;
     }
     if (currentSession.request.isDeepEntry) {
@@ -190,39 +190,39 @@ export const GamePage = () => {
       return;
     }
 
-    if (pendingSnakeHeadMoveIdRef.current === moveId && snakeFlowRef.current) {
-      pendingSnakeHeadMoveIdRef.current = undefined;
-      const flow = snakeFlowRef.current;
+    if (pendingSpecialHeadMoveIdRef.current === moveId && specialFlowRef.current) {
+      pendingSpecialHeadMoveIdRef.current = undefined;
+      const flow = specialFlowRef.current;
       setAnimationMove(undefined);
-      setSnakeFlowPhase('head-card');
+      setSpecialFlowPhase('head-card');
       openCoachCard(
         flow.headCell,
         {
           fromCell: lastMove?.fromCell ?? flow.headCell,
           toCell: flow.headCell,
-          type: 'snake',
+          type: flow.type === 'snake' ? 'snake' : 'ladder',
           pathLabel: `${lastMove?.fromCell ?? flow.headCell} → ${flow.headCell}`,
         },
-        'snake-head',
+        'special-head',
         0,
       );
       return;
     }
 
-    if (pendingSnakeTailMoveIdRef.current === moveId && snakeFlowRef.current) {
-      pendingSnakeTailMoveIdRef.current = undefined;
-      const flow = snakeFlowRef.current;
+    if (pendingSpecialTailMoveIdRef.current === moveId && specialFlowRef.current) {
+      pendingSpecialTailMoveIdRef.current = undefined;
+      const flow = specialFlowRef.current;
       setAnimationMove(undefined);
-      setSnakeFlowPhase('tail-card');
+      setSpecialFlowPhase('tail-card');
       openCoachCard(
         flow.tailCell,
         {
           fromCell: flow.headCell,
           toCell: flow.tailCell,
-          type: 'snake',
-          pathLabel: `${flow.headCell} ↘ ${flow.tailCell}`,
+          type: flow.type === 'snake' ? 'snake' : 'ladder',
+          pathLabel: flow.type === 'snake' ? `${flow.headCell} ↘ ${flow.tailCell}` : `${flow.headCell} ↗ ${flow.tailCell}`,
         },
-        'snake-tail',
+        'special-tail',
         0,
       );
       return;
@@ -403,10 +403,10 @@ export const GamePage = () => {
     pendingMoveIdRef.current = move.id;
     pendingEntryMoveIdRef.current = undefined;
     pendingEntryResultRef.current = undefined;
-    pendingSnakeHeadMoveIdRef.current = undefined;
-    pendingSnakeTailMoveIdRef.current = undefined;
-    snakeFlowRef.current = undefined;
-    setSnakeFlowPhase('idle');
+    pendingSpecialHeadMoveIdRef.current = undefined;
+    pendingSpecialTailMoveIdRef.current = undefined;
+    specialFlowRef.current = undefined;
+    setSpecialFlowPhase('idle');
 
     if (isDeepEntryRoll) {
       pendingEntryMoveIdRef.current = move.id;
@@ -425,16 +425,17 @@ export const GamePage = () => {
         : undefined;
     const tokenPathCells = buildStepwiseCellPath(move.fromCell, move.dice, board.maxCell);
 
-    if (!isDeepEntryRoll && move.snakeOrArrow === 'snake' && entryCell) {
+    if (!isDeepEntryRoll && move.snakeOrArrow && entryCell) {
       const toHeadMoveId = `${move.id}-head`;
-      snakeFlowRef.current = {
+      specialFlowRef.current = {
         moveId: move.id,
+        type: move.snakeOrArrow,
         headCell: entryCell,
         tailCell: move.toCell,
         pathPoints: transitionPath,
       };
       pendingMoveIdRef.current = toHeadMoveId;
-      pendingSnakeHeadMoveIdRef.current = toHeadMoveId;
+      pendingSpecialHeadMoveIdRef.current = toHeadMoveId;
       setAnimationMove({
         id: toHeadMoveId,
         fromCell: move.fromCell,
@@ -455,7 +456,7 @@ export const GamePage = () => {
       tokenPathCells,
     });
 
-    if (!isDeepEntryRoll && move.snakeOrArrow !== 'snake') {
+    if (!isDeepEntryRoll && !move.snakeOrArrow) {
       const specialDuration =
         move.snakeOrArrow
           ? effectiveAnimationTimings.pathTravelDurationMs + effectiveAnimationTimings.pathPostHoldMs + effectiveAnimationTimings.pathFadeOutMs
@@ -491,17 +492,17 @@ export const GamePage = () => {
     setShowCoach(false);
     setModalMoveContext(undefined);
 
-    if (modalMode === 'snake-head' && snakeFlowRef.current) {
-      const flow = snakeFlowRef.current;
+    if (modalMode === 'special-head' && specialFlowRef.current) {
+      const flow = specialFlowRef.current;
       const tailMoveId = `${flow.moveId}-tail`;
       pendingMoveIdRef.current = tailMoveId;
-      pendingSnakeTailMoveIdRef.current = tailMoveId;
-      setSnakeFlowPhase('tail-animation');
+      pendingSpecialTailMoveIdRef.current = tailMoveId;
+      setSpecialFlowPhase('tail-animation');
       setAnimationMove({
         id: tailMoveId,
         fromCell: flow.headCell,
         toCell: flow.tailCell,
-        type: 'snake',
+        type: flow.type,
         entryCell: flow.headCell,
         pathPoints: flow.pathPoints,
         tokenPathCells: [flow.headCell, flow.headCell],
@@ -509,11 +510,11 @@ export const GamePage = () => {
       return;
     }
 
-    if (modalMode === 'snake-tail') {
-      setSnakeFlowPhase('idle');
-      snakeFlowRef.current = undefined;
-      pendingSnakeTailMoveIdRef.current = undefined;
-      pendingSnakeHeadMoveIdRef.current = undefined;
+    if (modalMode === 'special-tail') {
+      setSpecialFlowPhase('idle');
+      specialFlowRef.current = undefined;
+      pendingSpecialTailMoveIdRef.current = undefined;
+      pendingSpecialHeadMoveIdRef.current = undefined;
       pendingMoveIdRef.current = undefined;
       setTurnState('idle');
     }
@@ -526,7 +527,7 @@ export const GamePage = () => {
   }, [closeCoachModal, modalCellNumber, saveInsight]);
 
   const handleBoardCellSelect = useCallback((cellNumber: number) => {
-    if (turnState !== 'idle' || snakeFlowPhase !== 'idle') {
+    if (turnState !== 'idle' || specialFlowPhase !== 'idle') {
       return;
     }
 
@@ -534,7 +535,7 @@ export const GamePage = () => {
     setModalMoveContext(undefined);
     setModalMode('inspect');
     setShowCoach(true);
-  }, [snakeFlowPhase, turnState]);
+  }, [specialFlowPhase, turnState]);
 
   if ((!isSimpleMultiplayer && currentSession.finished) || multiplayerFinished) {
     return (
@@ -579,7 +580,7 @@ export const GamePage = () => {
         animationTimings={effectiveAnimationTimings}
         onMoveAnimationComplete={onMoveAnimationComplete}
         onCellSelect={handleBoardCellSelect}
-        disableCellSelect={turnState !== 'idle' || snakeFlowPhase !== 'idle'}
+        disableCellSelect={turnState !== 'idle' || specialFlowPhase !== 'idle'}
         holdTokenSync={turnState !== 'idle'}
       />
 

@@ -140,6 +140,7 @@ export const LilaBoardCanvas = ({
   const pulsePosition = pulseCell ? mapCellToBoardPosition(boardType, pulseCell) : undefined;
   const activeCellType = specialTransitions.get(currentCell);
   const shouldAnimateToken = Boolean(animationMove) && !tokenPathPosition;
+  const snakeCarriesToken = activePath?.type === 'snake' && Boolean(tokenPathPosition);
   const passiveTokens = otherTokens.map((token) => ({
     ...token,
     position: mapCellToBoardPosition(boardType, token.cell),
@@ -200,6 +201,7 @@ export const LilaBoardCanvas = ({
             type={activePath.type}
             points={activePath.pathPoints}
             timings={animationTimings}
+            tokenColor={tokenColor ?? theme.token.defaultColor}
             onProgress={(_, point) => {
               setTokenPathPosition(point);
             }}
@@ -247,32 +249,34 @@ export const LilaBoardCanvas = ({
           transition={activeCellType ? specialCellGlowTransition : activeCellGlowTransition}
         />
 
-        <motion.div
-          className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white bg-stone-900 shadow-md"
-          style={{
-            left: `${effectiveTokenPosition.xPercent}%`,
-            top: `${effectiveTokenPosition.yPercent}%`,
-            backgroundColor: tokenColor ?? theme.token.defaultColor,
-            borderColor: theme.token.borderColor,
-            boxShadow:
-              activePath?.type === 'arrow'
-                ? theme.token.glowArrow
-                : activePath?.type === 'snake'
-                  ? theme.token.glowSnake
-                  : undefined,
-          }}
-          animate={{
-            left: `${effectiveTokenPosition.xPercent}%`,
-            top: `${effectiveTokenPosition.yPercent}%`,
-            scale: activePath?.type ? [1, 1.08, 1] : 1,
-          }}
-          transition={
-            shouldAnimateToken
-              ? { ...tokenMoveTransition, duration: tokenStepDurationMs / 1000 }
-              : { duration: 0 }
-          }
-          aria-label="token"
-        />
+        {!snakeCarriesToken && (
+          <motion.div
+            className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white bg-stone-900 shadow-md"
+            style={{
+              left: `${effectiveTokenPosition.xPercent}%`,
+              top: `${effectiveTokenPosition.yPercent}%`,
+              backgroundColor: tokenColor ?? theme.token.defaultColor,
+              borderColor: theme.token.borderColor,
+              boxShadow:
+                activePath?.type === 'arrow'
+                  ? theme.token.glowArrow
+                  : activePath?.type === 'snake'
+                    ? theme.token.glowSnake
+                    : undefined,
+            }}
+            animate={{
+              left: `${effectiveTokenPosition.xPercent}%`,
+              top: `${effectiveTokenPosition.yPercent}%`,
+              scale: activePath?.type ? [1, 1.08, 1] : 1,
+            }}
+            transition={
+              shouldAnimateToken
+                ? { ...tokenMoveTransition, duration: tokenStepDurationMs / 1000 }
+                : { duration: 0 }
+            }
+            aria-label="token"
+          />
+        )}
 
         {passiveTokens.map((token) => (
           <div

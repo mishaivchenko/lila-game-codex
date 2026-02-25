@@ -35,7 +35,7 @@ export const StairsPath = ({
   climber,
   style,
 }: StairsPathProps) => {
-  const reveal = Math.max(0.0001, progress);
+  const railOpacity = 0.25 + progress * 0.75;
 
   return (
     <g style={{ opacity }} data-testid="lila-ladder-renderer">
@@ -53,8 +53,7 @@ export const StairsPath = ({
         strokeWidth={style.glowStrokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
-        pathLength={1}
-        strokeDasharray={`${reveal} 1`}
+        opacity={railOpacity * 0.75}
         data-testid="lila-ladder-rail-glow"
       />
 
@@ -75,8 +74,7 @@ export const StairsPath = ({
         strokeWidth={style.railStrokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
-        pathLength={1}
-        strokeDasharray={`${reveal} 1`}
+        opacity={railOpacity}
         data-testid="lila-ladder-rail"
       />
       <path
@@ -86,8 +84,7 @@ export const StairsPath = ({
         strokeWidth={style.highlightStrokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
-        pathLength={1}
-        strokeDasharray={`${reveal} 1`}
+        opacity={railOpacity * 0.7}
       />
 
       {steps.map((step, index) => {

@@ -22,6 +22,7 @@ interface LilaPathAnimationProps {
   onTravelComplete?: () => void;
   onComplete?: () => void;
   timings?: AnimationTimingSettings;
+  tokenColor?: string;
 }
 
 export const LilaPathAnimation = ({
@@ -34,6 +35,7 @@ export const LilaPathAnimation = ({
   onTravelComplete,
   onComplete,
   timings,
+  tokenColor,
 }: LilaPathAnimationProps) => {
   const [visible, setVisible] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -168,7 +170,12 @@ export const LilaPathAnimation = ({
       data-testid={`lila-transition-${type}`}
     >
       {type === 'snake' ? (
-        <AnimationRendererSnake points={pathPoints} progress={Math.max(drawProgress, progress)} opacity={opacity} />
+        <AnimationRendererSnake
+          points={pathPoints}
+          progress={Math.max(drawProgress, progress)}
+          opacity={opacity}
+          carryTokenColor={tokenColor}
+        />
       ) : (
         <AnimationRendererLadder points={pathPoints} progress={Math.max(drawProgress, progress)} opacity={opacity} />
       )}

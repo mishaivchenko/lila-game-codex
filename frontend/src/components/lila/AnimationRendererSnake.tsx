@@ -8,9 +8,10 @@ interface AnimationRendererSnakeProps {
   points: BoardPathPoint[];
   progress: number;
   opacity: number;
+  carryTokenColor?: string;
 }
 
-export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationRendererSnakeProps) => {
+export const AnimationRendererSnake = ({ points, progress, opacity, carryTokenColor }: AnimationRendererSnakeProps) => {
   const gradientSeed = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const gradientId = `snakeCore-${gradientSeed}`;
   const { theme } = useBoardTheme();
@@ -32,6 +33,7 @@ export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationR
       headY={head.yPercent}
       headAngle={angle}
       headScale={headScale}
+      carryTokenColor={carryTokenColor}
       style={theme.snake}
       opacity={opacity}
     />

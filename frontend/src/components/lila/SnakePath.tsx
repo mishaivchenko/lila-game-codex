@@ -10,6 +10,7 @@ interface SnakePathProps {
   headY: number;
   headAngle: number;
   headScale: number;
+  carryTokenColor?: string;
   style: SnakeStyle;
   opacity: number;
   children?: ReactNode;
@@ -24,6 +25,7 @@ export const SnakePath = ({
   headY,
   headAngle,
   headScale,
+  carryTokenColor,
   style,
   opacity,
   children,
@@ -86,7 +88,28 @@ export const SnakePath = ({
         data-testid="lila-snake-body"
       />
       <g transform={`translate(${headX} ${headY}) rotate(${headAngle}) scale(${headScale})`} data-testid="lila-snake-head">
-        <ellipse cx="0" cy="0" rx={1.58} ry={1.08} fill={style.headFill} stroke={style.headStroke} strokeWidth={0.22} />
+        {carryTokenColor && (
+          <circle
+            cx="1.2"
+            cy="0"
+            r={0.36}
+            fill={carryTokenColor}
+            stroke="rgba(255,255,255,0.82)"
+            strokeWidth={0.08}
+            opacity={0.96}
+          />
+        )}
+        <path
+          d="M -1.62 0 C -1.1 -0.88, 0.78 -0.98, 1.72 0 C 0.82 1.02, -1.06 0.86, -1.62 0 Z"
+          fill={style.headFill}
+          stroke={style.headStroke}
+          strokeWidth={0.2}
+        />
+        <path
+          d="M 1.38 -0.14 L 1.92 -0.02 L 1.38 0.14 Z"
+          fill={style.headStroke}
+          opacity={0.72}
+        />
         {renderHeadDecoration()}
         {children}
       </g>
