@@ -12,7 +12,7 @@ COPY frontend/. ./frontend/
 # `frontend/public/cards` and `frontend/public/field` are symlinks in repo.
 # In this image we only copy `frontend/`, so these links can become dangling
 # and break Vite `prepare-out-dir` phase.
-RUN rm -f ./frontend/public/cards ./frontend/public/field \
+RUN rm -rf ./frontend/public/cards ./frontend/public/field \
   && mkdir -p ./frontend/public/cards ./frontend/public/field
 RUN npm run build --workspace frontend
 
