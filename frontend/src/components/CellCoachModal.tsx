@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { getCardImagePath } from '../content/cardAssets';
 import type { CellContent, DepthSetting } from '../domain/types';
@@ -13,6 +13,7 @@ import {
   modalBackdropVariants,
   modalPanelVariants,
 } from '../lib/animations/lilaMotion';
+import { DEFAULT_CARD_LOADING_SETTINGS } from '../lib/animations/modalSettings';
 import { useBoardTheme } from '../theme';
 
 interface CellCoachModalProps {
@@ -46,6 +47,12 @@ export const CellCoachModal = ({
   const { theme } = useBoardTheme();
   const [text, setText] = useState(initialText);
   const [validationError, setValidationError] = useState<string | undefined>(undefined);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isVeilVisible, setIsVeilVisible] = useState(false);
+  const [isVeilFading, setIsVeilFading] = useState(false);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const imageLoadHandledRef = useRef(false);
+  const veilTimersRef = useRef<number[]>([]);
   const lilaContent = getLilaCellContent(cellNumber);
   const displayedDescription =
     lilaContent.description || (depth === 'light' ? cellContent.shortText : cellContent.fullText);
@@ -58,12 +65,59 @@ export const CellCoachModal = ({
     `### Питання для зупинки\n${displayedQuestions.map((question) => `- ${question}`).join('\n')}`;
   const combinedMarkdown = `${displayedDescriptionMarkdown}\n\n${displayedQuestionsMarkdown}`;
   const movePresentation = moveContext ? getMovePresentation(moveContext.type) : undefined;
+  const isTouchDevice = typeof window !== 'undefined'
+    && (window.matchMedia?.('(pointer: coarse)').matches || 'ontouchstart' in window);
+  const useVeil = DEFAULT_CARD_LOADING_SETTINGS.veilEnabledOnMobile && isTouchDevice;
   useOverlayLock(true);
+
+  const clearVeilTimers = () => {
+    veilTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    veilTimersRef.current = [];
+  };
+
+  const handleImageLoaded = () => {
+    if (imageLoadHandledRef.current) {
+      return;
+    }
+    imageLoadHandledRef.current = true;
+    setIsImageLoaded(true);
+    if (!useVeil) {
+      setIsVeilVisible(false);
+      setIsVeilFading(false);
+      return;
+    }
+    clearVeilTimers();
+    const unveilTimer = window.setTimeout(() => {
+      setIsVeilFading(true);
+      const hideTimer = window.setTimeout(() => {
+        setIsVeilVisible(false);
+        setIsVeilFading(false);
+      }, DEFAULT_CARD_LOADING_SETTINGS.veilFadeDurationMs);
+      veilTimersRef.current.push(hideTimer);
+    }, DEFAULT_CARD_LOADING_SETTINGS.extraDelayAfterImageLoadedMs);
+    veilTimersRef.current.push(unveilTimer);
+  };
 
   useEffect(() => {
     setText(initialText);
     setValidationError(undefined);
   }, [initialText]);
+
+  useEffect(() => {
+    setIsImageLoaded(false);
+    imageLoadHandledRef.current = false;
+    setIsVeilFading(false);
+    setIsVeilVisible(useVeil);
+    clearVeilTimers();
+  }, [cellNumber, useVeil]);
+
+  useEffect(() => {
+    const image = imageRef.current;
+    if (!image || !image.complete || image.naturalWidth <= 0) {
+      return;
+    }
+    handleImageLoaded();
+  }, [cellNumber, useVeil]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -79,6 +133,10 @@ export const CellCoachModal = ({
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [onClose]);
+
+  useEffect(() => () => {
+    clearVeilTimers();
+  }, []);
 
   const handleSave = () => {
     if (!readOnly) {
@@ -113,7 +171,7 @@ export const CellCoachModal = ({
     >
       <motion.div
         data-testid="cell-coach-modal-shell"
-        className={`w-full max-h-[94vh] overflow-hidden shadow-xl sm:max-h-[92vh] sm:max-w-4xl ${theme.modal.radiusClassName}`}
+        className={`relative w-full max-h-[94vh] overflow-hidden shadow-xl sm:max-h-[92vh] sm:max-w-4xl ${theme.modal.radiusClassName}`}
         style={{
           background: theme.modal.panelBackground,
           border: `1px solid ${theme.modal.panelBorder}`,
@@ -128,11 +186,15 @@ export const CellCoachModal = ({
               Закрити
             </button>
             <div className="flex h-full items-center justify-center overflow-hidden rounded-2xl border border-stone-200 bg-white p-2 sm:p-3">
-              <img
-                src={getCardImagePath(cellNumber)}
-                alt={`Картка ${cellNumber}`}
-                className="max-h-[42vh] w-full object-contain sm:max-h-[78vh]"
-              />
+              <div className="relative w-full max-h-[42vh] aspect-[3/4] sm:max-h-[78vh]">
+                <img
+                  ref={imageRef}
+                  src={getCardImagePath(cellNumber)}
+                  alt={`Картка ${cellNumber}`}
+                  className="absolute inset-0 h-full w-full object-contain"
+                  onLoad={handleImageLoaded}
+                />
+              </div>
             </div>
           </section>
 
@@ -204,6 +266,21 @@ export const CellCoachModal = ({
             )}
           </section>
         </div>
+        {isVeilVisible && (
+          <div
+            data-testid="card-loading-veil"
+            className="pointer-events-none absolute inset-0 z-10 bg-[var(--lila-surface)]/88 backdrop-blur-[1px]"
+            style={{
+              opacity: isVeilFading ? 0 : 1,
+              transition: `opacity ${DEFAULT_CARD_LOADING_SETTINGS.veilFadeDurationMs}ms ease-out`,
+            }}
+          />
+        )}
+        {useVeil && !isImageLoaded && (
+          <div className="sr-only" aria-live="polite">
+            Завантаження картки...
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );
