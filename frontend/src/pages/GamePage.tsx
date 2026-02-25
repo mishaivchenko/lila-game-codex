@@ -26,7 +26,7 @@ import { GameControlPanel } from './game/components/GameControlPanel';
 import { useSimpleMultiplayer } from './game/useSimpleMultiplayer';
 import { useBoardTheme } from '../theme';
 import { GameBoardLayout } from '../ui/layout/GameBoardLayout';
-import { createMovementEngine, normalizeMovementSettings } from '../engine/movement/MovementEngine';
+import { createMovementEngine, DEFAULT_MOVEMENT_SETTINGS, normalizeMovementSettings } from '../engine/movement/MovementEngine';
 import type {
   CoachMoveContext,
   PendingSimpleMove,
@@ -120,10 +120,12 @@ export const GamePage = () => {
   const movementSettings = useMemo(
     () =>
       normalizeMovementSettings({
-        stepDurationMs: effectiveAnimationTimings.tokenMoveDurationMs,
-        modalOpenDelayMs: effectiveAnimationTimings.cardOpenDelayMs,
+        stepDurationMs: Math.round(DEFAULT_MOVEMENT_SETTINGS.stepDurationMs * animationSpeedMultiplier),
+        stepPauseMs: Math.round(DEFAULT_MOVEMENT_SETTINGS.stepPauseMs * animationSpeedMultiplier),
+        snakeDelayMs: Math.round(DEFAULT_MOVEMENT_SETTINGS.snakeDelayMs * animationSpeedMultiplier),
+        modalOpenDelayMs: Math.round(DEFAULT_MOVEMENT_SETTINGS.modalOpenDelayMs * animationSpeedMultiplier),
       }),
-    [effectiveAnimationTimings.cardOpenDelayMs, effectiveAnimationTimings.tokenMoveDurationMs],
+    [animationSpeedMultiplier],
   );
   const displayCurrentCell = activeSimplePlayer?.currentCell ?? currentSession?.currentCell ?? 1;
 

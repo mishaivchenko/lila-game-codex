@@ -86,7 +86,7 @@ describe('LilaBoardCanvas', () => {
 
     act(() => {
       vi.advanceTimersByTime(
-        DEFAULT_MOVEMENT_SETTINGS.stepDurationMs + Math.round(DEFAULT_MOVEMENT_SETTINGS.stepPauseMs / 2),
+        Math.round(DEFAULT_MOVEMENT_SETTINGS.stepDurationMs / 2),
       );
     });
 
@@ -95,7 +95,7 @@ describe('LilaBoardCanvas', () => {
 
     act(() => {
       vi.advanceTimersByTime(
-        DEFAULT_MOVEMENT_SETTINGS.stepDurationMs + Math.round(DEFAULT_MOVEMENT_SETTINGS.stepPauseMs / 2) + 20,
+        DEFAULT_MOVEMENT_SETTINGS.stepDurationMs + DEFAULT_MOVEMENT_SETTINGS.stepPauseMs + DEFAULT_MOVEMENT_SETTINGS.stepDurationMs + 20,
       );
     });
 

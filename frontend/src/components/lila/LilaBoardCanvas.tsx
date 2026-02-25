@@ -234,7 +234,7 @@ export const LilaBoardCanvas = ({
     movementPlan.steps.forEach((step) => {
       const stepTimer = window.setTimeout(() => {
         setTokenCell(step.toCell);
-      }, step.completeAtMs);
+      }, step.startAtMs);
       timersRef.current.push(stepTimer);
     });
 

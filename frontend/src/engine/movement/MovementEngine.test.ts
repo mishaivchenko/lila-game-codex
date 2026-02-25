@@ -7,10 +7,10 @@ describe('MovementEngine', () => {
     const plan = engine.planPath([8, 9, 10, 11]);
 
     expect(plan.steps).toHaveLength(3);
-    expect(plan.steps[0]).toMatchObject({ fromCell: 8, toCell: 9, completeAtMs: 520 });
-    expect(plan.steps[1]).toMatchObject({ fromCell: 9, toCell: 10, completeAtMs: 1230 });
-    expect(plan.steps[2]).toMatchObject({ fromCell: 10, toCell: 11, completeAtMs: 1940 });
-    expect(plan.totalDurationMs).toBe(1940);
+    expect(plan.steps[0]).toMatchObject({ fromCell: 8, toCell: 9, startAtMs: 0 });
+    expect(plan.steps[1]).toMatchObject({ fromCell: 9, toCell: 10, startAtMs: 570 });
+    expect(plan.steps[2]).toMatchObject({ fromCell: 10, toCell: 11, startAtMs: 1140 });
+    expect(plan.totalDurationMs).toBe(1560);
   });
 
   it('clamps settings to contemplative bounds', () => {
@@ -27,4 +27,3 @@ describe('MovementEngine', () => {
     expect(normalized.modalOpenDelayMs).toBeGreaterThanOrEqual(200);
   });
 });
-

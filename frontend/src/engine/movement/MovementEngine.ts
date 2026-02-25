@@ -11,7 +11,7 @@ export interface MovementSettings {
 export interface MovementStep {
   fromCell: number;
   toCell: number;
-  completeAtMs: number;
+  startAtMs: number;
 }
 
 export interface MovementPlan {
@@ -22,10 +22,10 @@ export interface MovementPlan {
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
 
 export const DEFAULT_MOVEMENT_SETTINGS: MovementSettings = {
-  stepDurationMs: 520,
-  stepPauseMs: 190,
-  snakeDelayMs: 380,
-  modalOpenDelayMs: 260,
+  stepDurationMs: 420,
+  stepPauseMs: 150,
+  snakeDelayMs: 300,
+  modalOpenDelayMs: 220,
   easing: 'easeInOut',
 };
 
@@ -48,12 +48,12 @@ export const createMovementEngine = (settings: MovementSettings) => {
     const steps: MovementStep[] = [];
     let elapsed = 0;
     for (let index = 0; index < path.length - 1; index += 1) {
-      elapsed += normalized.stepDurationMs;
       steps.push({
         fromCell: path[index],
         toCell: path[index + 1],
-        completeAtMs: elapsed,
+        startAtMs: elapsed,
       });
+      elapsed += normalized.stepDurationMs;
       if (index < path.length - 2) {
         elapsed += normalized.stepPauseMs;
       }
@@ -70,4 +70,3 @@ export const createMovementEngine = (settings: MovementSettings) => {
     planPath,
   };
 };
-
