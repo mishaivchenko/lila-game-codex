@@ -84,6 +84,22 @@ describe('resolveCellFromBoardPercent', () => {
     ).toBe(3);
   });
 
+  it('maps calibrated visual points for full-board cells 2 and 3', () => {
+    expect(
+      resolveCellFromBoardPercent('full', {
+        xPercent: 26.05,
+        yPercent: 88.4,
+      }),
+    ).toBe(2);
+
+    expect(
+      resolveCellFromBoardPercent('full', {
+        xPercent: 15.58,
+        yPercent: 88.4,
+      }),
+    ).toBe(3);
+  });
+
   it('keeps short-board first-row mapping stable for 1..4', () => {
     [1, 2, 3, 4].forEach((cell) => {
       const pos = mapCellToBoardPosition('short', cell);
