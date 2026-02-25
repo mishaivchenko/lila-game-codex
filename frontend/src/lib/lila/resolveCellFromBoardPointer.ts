@@ -81,13 +81,16 @@ export const resolveCellFromBoardPercent = (
     }
   }
 
+  // Prefer nearest calibrated cell center when it is close enough.
+  // This avoids local mis-mapping on visually dense areas where a coarse grid
+  // bucket can disagree with the actual calibrated board coordinates.
+  if (closestDistance <= maxDistancePercent && closestCell) {
+    return closestCell;
+  }
+
   if (gridCell) {
     return gridCell;
   }
 
-  if (closestDistance > maxDistancePercent) {
-    return undefined;
-  }
-
-  return closestCell;
+  return undefined;
 };

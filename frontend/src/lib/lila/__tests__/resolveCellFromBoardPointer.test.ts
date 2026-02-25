@@ -52,4 +52,47 @@ describe('resolveCellFromBoardPercent', () => {
       }),
     ).toBe(23);
   });
+
+  it('maps first-row full-board centers correctly (1..4)', () => {
+    [1, 2, 3, 4].forEach((cell) => {
+      const pos = mapCellToBoardPosition('full', cell);
+      expect(
+        resolveCellFromBoardPercent('full', {
+          xPercent: pos.xPercent,
+          yPercent: pos.yPercent,
+        }),
+      ).toBe(cell);
+    });
+  });
+
+  it('keeps full-board cells 2 and 3 stable with local tap offsets', () => {
+    const c2 = mapCellToBoardPosition('full', 2);
+    const c3 = mapCellToBoardPosition('full', 3);
+
+    expect(
+      resolveCellFromBoardPercent('full', {
+        xPercent: c2.xPercent + 1.9,
+        yPercent: c2.yPercent - 1.2,
+      }),
+    ).toBe(2);
+
+    expect(
+      resolveCellFromBoardPercent('full', {
+        xPercent: c3.xPercent - 1.9,
+        yPercent: c3.yPercent - 1.1,
+      }),
+    ).toBe(3);
+  });
+
+  it('keeps short-board first-row mapping stable for 1..4', () => {
+    [1, 2, 3, 4].forEach((cell) => {
+      const pos = mapCellToBoardPosition('short', cell);
+      expect(
+        resolveCellFromBoardPercent('short', {
+          xPercent: pos.xPercent,
+          yPercent: pos.yPercent,
+        }),
+      ).toBe(cell);
+    });
+  });
 });
