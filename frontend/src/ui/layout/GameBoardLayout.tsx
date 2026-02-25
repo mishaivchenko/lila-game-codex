@@ -33,11 +33,6 @@ export const GameBoardLayout = ({
           {board}
         </section>
 
-        {sideContent && (
-          <section className="space-y-3">
-            {sideContent}
-          </section>
-        )}
         <section
           className="rounded-2xl p-2"
           style={{
@@ -48,6 +43,11 @@ export const GameBoardLayout = ({
         >
           {controls}
         </section>
+        {sideContent && (
+          <section className="space-y-3">
+            {sideContent}
+          </section>
+        )}
       </div>
     </main>
   );

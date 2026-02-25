@@ -19,8 +19,6 @@ import {
   normalizeAnimationTimings,
   saveAnimationTimings,
 } from '../lib/animations/animationTimingSettings';
-import { DeepModeCard } from '../features/deep-mode';
-import { TelegramRoomsPanel } from '../features/telegram';
 import { FinishSessionDialog } from './game/components/FinishSessionDialog';
 import { DeepRequestDialog } from './game/components/DeepRequestDialog';
 import { GameStatusHeader } from './game/components/GameStatusHeader';
@@ -602,12 +600,7 @@ export const GamePage = () => {
           onOpenAnimationSettings={() => setShowAnimationSettings(true)}
         />
       )}
-      sideContent={(
-        <>
-          <DeepModeCard />
-          <TelegramRoomsPanel />
-        </>
-      )}
+      sideContent={undefined}
       />
 
       <AnimatePresence>
