@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { LilaBoardCanvas } from './LilaBoardCanvas';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import type { AnimationTimingSettings } from '../../lib/animations/animationTimingSettings';
+import { useBoardTheme } from '../../theme';
 
 export interface LilaTransition {
   id: string;
@@ -39,9 +40,16 @@ export const LilaBoard = ({
   disableCellSelect = false,
   holdTokenSync = false,
 }: LilaBoardProps) => {
+  const { theme } = useBoardTheme();
   return (
-    <section className="rounded-3xl bg-stone-100 p-4 shadow-inner">
-      <div className="mb-3 flex items-center justify-between text-sm text-stone-600">
+    <section
+      className="rounded-3xl p-4 shadow-inner"
+      style={{
+        background: theme.boardBackground.boardPanelBackground,
+        color: theme.boardBackground.boardPanelText,
+      }}
+    >
+      <div className="mb-3 flex items-center justify-between text-sm">
         <span>Дошка: {board.id === 'full' ? 'Повна' : 'Коротка'}</span>
         <span>Клітина {currentCell}</span>
       </div>
@@ -61,11 +69,17 @@ export const LilaBoard = ({
 
       {animationMove?.type && (
         <motion.div
-          className={`mt-3 rounded-full px-3 py-1 text-center text-[11px] font-medium ${
-            animationMove.type === 'arrow'
-              ? 'bg-[#f4e6dc] text-[#7b5d4f]'
-              : 'bg-amber-50 text-amber-700'
-          }`}
+          className="mt-3 rounded-full px-3 py-1 text-center text-[11px] font-medium"
+          style={{
+            background:
+              animationMove.type === 'arrow'
+                ? theme.boardBackground.transitionHintArrowBackground
+                : theme.boardBackground.transitionHintSnakeBackground,
+            color:
+              animationMove.type === 'arrow'
+                ? theme.boardBackground.transitionHintArrowText
+                : theme.boardBackground.transitionHintSnakeText,
+          }}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}

@@ -17,6 +17,7 @@ import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
 import { resolveCellFromBoardPercent } from '../../lib/lila/resolveCellFromBoardPointer';
 import type { LilaTransition } from './LilaBoard';
 import { LilaPathAnimation } from './LilaPathAnimation';
+import { useBoardTheme } from '../../theme';
 
 interface LilaBoardCanvasProps {
   boardType: BoardType;
@@ -43,6 +44,7 @@ export const LilaBoardCanvas = ({
   disableCellSelect = false,
   holdTokenSync = false,
 }: LilaBoardCanvasProps) => {
+  const { theme } = useBoardTheme();
   const [tokenCell, setTokenCell] = useState(currentCell);
   const [pulseCell, setPulseCell] = useState<number | null>(null);
   const [aspectRatio, setAspectRatio] = useState(0.64);
@@ -161,10 +163,19 @@ export const LilaBoardCanvas = ({
   };
 
   return (
-    <div className="relative mx-auto w-full max-w-[520px] rounded-3xl bg-stone-200/70 p-2 shadow-inner">
+    <div
+      className="relative mx-auto w-full max-w-[520px] rounded-3xl p-2"
+      style={{
+        background: theme.boardBackground.canvasShellBackground,
+        boxShadow: theme.boardBackground.canvasShellShadow,
+      }}
+    >
       <div
         className="relative w-full overflow-hidden rounded-2xl"
-        style={{ aspectRatio }}
+        style={{
+          aspectRatio,
+          background: theme.boardBackground.canvasFrameBackground,
+        }}
         data-testid="lila-board-canvas"
         onPointerUp={handleBoardPointerUp}
       >
@@ -209,14 +220,8 @@ export const LilaBoardCanvas = ({
             style={{
               left: `${pulsePosition.xPercent}%`,
               top: `${pulsePosition.yPercent}%`,
-              backgroundColor:
-                activePath?.type === 'arrow'
-                  ? 'rgba(44,191,175,0.22)'
-                  : 'rgba(209,138,67,0.24)',
-              border:
-                activePath?.type === 'arrow'
-                  ? '1px solid rgba(44,191,175,0.42)'
-                  : '1px solid rgba(209,138,67,0.46)',
+              backgroundColor: activePath?.type === 'arrow' ? theme.stairs.pulseFill : theme.snake.pulseFill,
+              border: activePath?.type === 'arrow' ? theme.stairs.pulseBorder : theme.snake.pulseBorder,
               animation: 'lila-soft-pulse 260ms ease-out 1',
             }}
           />
@@ -229,10 +234,10 @@ export const LilaBoardCanvas = ({
             top: `${tokenPosition.yPercent}%`,
             background:
               activeCellType === 'arrow'
-                ? 'radial-gradient(circle, rgba(44,191,175,0.2), rgba(44,191,175,0))'
+                ? theme.token.arrowCellGlow
                 : activeCellType === 'snake'
-                  ? 'radial-gradient(circle, rgba(209,138,67,0.24), rgba(209,138,67,0))'
-                  : 'radial-gradient(circle, rgba(52,211,153,0.18), rgba(52,211,153,0))',
+                  ? theme.token.snakeCellGlow
+                  : theme.token.neutralGlow,
           }}
           animate={
             activeCellType
@@ -247,12 +252,13 @@ export const LilaBoardCanvas = ({
           style={{
             left: `${effectiveTokenPosition.xPercent}%`,
             top: `${effectiveTokenPosition.yPercent}%`,
-            backgroundColor: tokenColor,
+            backgroundColor: tokenColor ?? theme.token.defaultColor,
+            borderColor: theme.token.borderColor,
             boxShadow:
               activePath?.type === 'arrow'
-                ? '0 0 14px rgba(44,191,175,0.36)'
+                ? theme.token.glowArrow
                 : activePath?.type === 'snake'
-                  ? '0 0 14px rgba(209,138,67,0.36)'
+                  ? theme.token.glowSnake
                   : undefined,
           }}
           animate={{

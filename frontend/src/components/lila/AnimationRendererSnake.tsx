@@ -2,6 +2,7 @@ import { useId, useMemo } from 'react';
 import { getLilaVisualAssets } from '../../config/visualThemes';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { buildSmoothPath, sampleAngleByProgress, samplePathByProgress } from './pathAnimationMath';
+import { useBoardTheme } from '../../theme';
 
 interface AnimationRendererSnakeProps {
   points: BoardPathPoint[];
@@ -11,7 +12,8 @@ interface AnimationRendererSnakeProps {
 
 export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationRendererSnakeProps) => {
   const gradientSeed = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-  const gradientId = `snakeMinimalCore-${gradientSeed}`;
+  const gradientId = `snakeCore-${gradientSeed}`;
+  const { theme } = useBoardTheme();
   const snakeSpirit = useMemo(() => getLilaVisualAssets().snakeSpirit, []);
   const path = useMemo(() => buildSmoothPath(points), [points]);
   const head = useMemo(() => samplePathByProgress(points, progress), [points, progress]);
@@ -25,16 +27,16 @@ export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationR
     <g style={{ opacity }} data-testid="lila-snake-renderer">
       <defs>
         <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#D9E3EC" />
-          <stop offset="58%" stopColor="#9FB7C8" />
-          <stop offset="100%" stopColor="#79D8F2" />
+          <stop offset="0%" stopColor={theme.snake.coreGradientStops[0]} />
+          <stop offset="58%" stopColor={theme.snake.coreGradientStops[1]} />
+          <stop offset="100%" stopColor={theme.snake.coreGradientStops[2]} />
         </linearGradient>
       </defs>
       <path
         d={path}
         fill="none"
-        stroke="rgba(161,190,210,0.34)"
-        strokeWidth={3.2}
+        stroke={theme.snake.glowStroke}
+        strokeWidth={theme.snake.glowStrokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
         pathLength={1}
@@ -46,7 +48,7 @@ export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationR
         d={path}
         fill="none"
         stroke={`url(#${gradientId})`}
-        strokeWidth={1.7}
+        strokeWidth={theme.snake.coreStrokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
         pathLength={1}
@@ -65,18 +67,18 @@ export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationR
           width={12}
           height={9.6}
           preserveAspectRatio="xMidYMid meet"
-          opacity={0.46 + progress * 0.34}
+          opacity={theme.snake.glyphOpacityBase + progress * theme.snake.glyphOpacityRange}
         />
         <ellipse
           cx="0"
           cy="0"
           rx={1.58}
           ry={1.08}
-          fill="#E3EDF4"
-          stroke="#6E8697"
+          fill={theme.snake.headFill}
+          stroke={theme.snake.headStroke}
           strokeWidth={0.22}
         />
-        <circle cx="0.42" cy="-0.14" r={0.16} fill="#2B3F4E" />
+        <circle cx="0.42" cy="-0.14" r={0.16} fill={theme.snake.eyeFill} />
       </g>
     </g>
   );

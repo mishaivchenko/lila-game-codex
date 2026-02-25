@@ -2,6 +2,7 @@ import { useId, useMemo } from 'react';
 import { getLilaVisualAssets } from '../../config/visualThemes';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { buildSmoothPath, buildStepSamples, sampleAngleByProgress, samplePathByProgress } from './pathAnimationMath';
+import { useBoardTheme } from '../../theme';
 
 interface AnimationRendererLadderProps {
   points: BoardPathPoint[];
@@ -13,7 +14,8 @@ const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 
 export const AnimationRendererLadder = ({ points, progress, opacity }: AnimationRendererLadderProps) => {
   const gradientSeed = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-  const gradientId = `ladderMinimalRail-${gradientSeed}`;
+  const gradientId = `ladderRail-${gradientSeed}`;
+  const { theme } = useBoardTheme();
   const stairsLight = useMemo(() => getLilaVisualAssets().stairsLight, []);
   const path = useMemo(() => buildSmoothPath(points), [points]);
   const steps = useMemo(() => buildStepSamples(points), [points]);
@@ -25,15 +27,15 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
     <g style={{ opacity }} data-testid="lila-ladder-renderer">
       <defs>
         <linearGradient id={gradientId} x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#C3D2DE" />
-          <stop offset="100%" stopColor="#7EE5FF" />
+          <stop offset="0%" stopColor={theme.stairs.railGradientStops[0]} />
+          <stop offset="100%" stopColor={theme.stairs.railGradientStops[1]} />
         </linearGradient>
       </defs>
       <path
         d={path}
         fill="none"
-        stroke="rgba(120,171,200,0.22)"
-        strokeWidth={2.7}
+        stroke={theme.stairs.glowStroke}
+        strokeWidth={theme.stairs.glowStrokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
         pathLength={1}
@@ -43,7 +45,7 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
 
       <g
         transform={`translate(${glyphPoint.xPercent} ${glyphPoint.yPercent}) rotate(${glyphAngle}) scale(${0.58 + progress * 0.36})`}
-        style={{ opacity: 0.22 + progress * 0.44 }}
+        style={{ opacity: theme.stairs.glyphOpacityBase + progress * theme.stairs.glyphOpacityRange }}
       >
         <image
           href={stairsLight}
@@ -58,7 +60,7 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
         d={path}
         fill="none"
         stroke={`url(#${gradientId})`}
-        strokeWidth={1.65}
+        strokeWidth={theme.stairs.railStrokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
         pathLength={1}
@@ -68,8 +70,8 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
       <path
         d={path}
         fill="none"
-        stroke="rgba(208,242,255,0.72)"
-        strokeWidth={0.62}
+        stroke={theme.stairs.highlightStroke}
+        strokeWidth={theme.stairs.highlightStrokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
         pathLength={1}
@@ -92,11 +94,11 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
               x={-1.8}
               y={-0.26}
               width={3.6}
-              height={0.52}
-              rx={0.14}
-              fill="#DDF1FF"
-              stroke="#6D94A9"
-              strokeWidth={0.14}
+              height={theme.stairs.stepHeight}
+              rx={theme.stairs.stepRadius}
+              fill={theme.stairs.stepFill}
+              stroke={theme.stairs.stepStroke}
+              strokeWidth={theme.stairs.stepStrokeWidth}
             />
           </g>
         );
@@ -105,8 +107,8 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
       <circle
         cx={climber.xPercent}
         cy={climber.yPercent}
-        r={0.62}
-        fill="#E8F8FF"
+        r={theme.stairs.climberRadius}
+        fill={theme.stairs.climberFill}
         opacity={0.85}
       />
     </g>

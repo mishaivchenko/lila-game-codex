@@ -13,6 +13,7 @@ import {
   modalBackdropVariants,
   modalPanelVariants,
 } from '../lib/animations/lilaMotion';
+import { useBoardTheme } from '../theme';
 
 interface CellCoachModalProps {
   cellNumber: number;
@@ -42,6 +43,7 @@ export const CellCoachModal = ({
   onSkip,
   onClose,
 }: CellCoachModalProps) => {
+  const { theme } = useBoardTheme();
   const [text, setText] = useState(initialText);
   const [validationError, setValidationError] = useState<string | undefined>(undefined);
   const lilaContent = getLilaCellContent(cellNumber);
@@ -111,7 +113,11 @@ export const CellCoachModal = ({
     >
       <motion.div
         data-testid="cell-coach-modal-shell"
-        className="w-full max-h-[94vh] overflow-hidden rounded-t-3xl bg-white shadow-xl sm:max-h-[92vh] sm:max-w-4xl sm:rounded-3xl"
+        className={`w-full max-h-[94vh] overflow-hidden shadow-xl sm:max-h-[92vh] sm:max-w-4xl ${theme.modal.radiusClassName}`}
+        style={{
+          background: theme.modal.panelBackground,
+          border: `1px solid ${theme.modal.panelBorder}`,
+        }}
         variants={modalPanelVariants}
         onClick={(event) => event.stopPropagation()}
       >
