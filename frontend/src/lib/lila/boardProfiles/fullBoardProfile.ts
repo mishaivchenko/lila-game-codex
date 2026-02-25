@@ -3,12 +3,24 @@ import { FULL_BOARD_COORDS } from '../fullBoardCoordinates';
 import { createTransitionPaths } from './pathFactory';
 import type { BoardProfile } from './types';
 
-const FULL_BOARD_IMAGE = '/field/НОВИЙ ДИЗАЙН.png';
+const FULL_BOARD_ASSETS = {
+  placeholderSrc: '/assets/board/web/full/board-full-placeholder.webp',
+  webp: {
+    small: '/assets/board/web/full/board-full-1024.webp',
+    medium: '/assets/board/web/full/board-full-1536.webp',
+    large: '/assets/board/web/full/board-full-2048.webp',
+  },
+  png: {
+    small: '/assets/board/web/full/board-full-1024.png',
+    medium: '/assets/board/web/full/board-full-1536.png',
+    large: '/assets/board/web/full/board-full-2048.png',
+  },
+} as const;
 
 export const fullBoardProfile: BoardProfile = {
   boardType: 'full',
   boardTheme: 'classic-full',
-  imageSrc: FULL_BOARD_IMAGE,
+  imageAssets: FULL_BOARD_ASSETS,
   cellCoordinates: FULL_BOARD_COORDS,
   snakePaths: createTransitionPaths(FULL_BOARD_COORDS, BOARD_DEFINITIONS.full.snakes, 'snake'),
   ladderPaths: createTransitionPaths(FULL_BOARD_COORDS, BOARD_DEFINITIONS.full.arrows, 'ladder'),

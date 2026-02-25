@@ -12,10 +12,24 @@ export interface BoardTransitionPath {
   points: BoardPathPoint[];
 }
 
+export interface BoardImageAssetSet {
+  placeholderSrc: string;
+  webp: {
+    small: string;
+    medium: string;
+    large: string;
+  };
+  png: {
+    small: string;
+    medium: string;
+    large: string;
+  };
+}
+
 export interface BoardProfile {
   boardType: BoardType;
   boardTheme: string;
-  imageSrc: string;
+  imageAssets: BoardImageAssetSet;
   cellCoordinates: CellCoord[];
   snakePaths: BoardTransitionPath[];
   ladderPaths: BoardTransitionPath[];
