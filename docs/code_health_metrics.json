@@ -1,7 +1,7 @@
 {
   "summary": {
-    "overall_score": 82,
-    "last_updated": "2026-02-24T23:13:21Z",
+    "overall_score": 83,
+    "last_updated": "2026-02-25T12:01:40Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -11,23 +11,23 @@
     "complexity_growth_percent_max": 10
   },
   "metrics": {
-    "files_total": 136,
-    "source_files_total": 136,
-    "lines_total": 8659,
+    "files_total": 143,
+    "source_files_total": 143,
+    "lines_total": 9535,
     "frontend": {
-      "files": 124,
-      "lines": 8198
+      "files": 131,
+      "lines": 9074
     },
     "backend": {
       "files": 12,
       "lines": 461
     },
     "tests": {
-      "files": 28,
-      "lines": 1481,
-      "test_file_ratio_vs_source_percent": 20.6,
-      "source_files_with_direct_test_match_percent": 25.5,
-      "coverage_estimate_percent": 68,
+      "files": 29,
+      "lines": 1527,
+      "test_file_ratio_vs_source_percent": 20.3,
+      "source_files_with_direct_test_match_percent": 26.0,
+      "coverage_estimate_percent": 69,
       "coverage_band": "medium"
     },
     "smells": {
@@ -35,38 +35,38 @@
       "long_files_over_300_loc": 2,
       "long_functions_over_50_loc": 15,
       "duplicate_code_blocks_estimate": 6,
-      "solid_violations_estimate": 8,
-      "smells_per_1k_loc": 3.58
+      "solid_violations_estimate": 7,
+      "smells_per_1k_loc": 3.25
     },
     "risk_modules": [
       {
         "path": "frontend/src/pages/GamePage.tsx",
         "risk": "medium",
-        "reason": "Reduced orchestration surface after extracting multiplayer and dialog/UI blocks (644 LOC)."
-      },
-      {
-        "path": "frontend/src/pages/HistoryPage.tsx",
-        "risk": "low",
-        "reason": "Data access moved into useHistoryData hook; page mostly handles rendering and interactions."
+        "reason": "Primary gameplay orchestrator remains large and stateful, now additionally handling speed multiplier wiring."
       },
       {
         "path": "frontend/src/context/GameContext.tsx",
         "risk": "low",
-        "reason": "Lifecycle logic extracted to reducer/types/action modules; provider is thin composition layer."
+        "reason": "Thin provider around reducer/actions with clear repository dependency boundary."
       },
       {
-        "path": "frontend/src/features/telegram/ui/TelegramAppShell.tsx",
+        "path": "frontend/src/pages/HistoryPage.tsx",
         "risk": "low",
-        "reason": "Runtime mode, fullscreen, auth bootstrap and Telegram UI effects split into dedicated hooks."
+        "reason": "Repository reads are isolated in useHistoryData; page is mostly presentational."
+      },
+      {
+        "path": "frontend/src/theme/BoardThemeProvider.tsx",
+        "risk": "medium",
+        "reason": "Now coordinates async preference load/save and should be kept focused while customization expands."
       }
     ]
   },
   "scores": {
-    "architecture_clarity": 84,
-    "solid_compliance": 81,
-    "test_coverage": 68,
+    "architecture_clarity": 85,
+    "solid_compliance": 82,
+    "test_coverage": 69,
     "complexity": 78,
-    "consistency": 84
+    "consistency": 85
   },
   "methods": {
     "loc": "wc -l over frontend/src + backend/src ts/tsx/js/jsx",

@@ -38,6 +38,16 @@ This implementation provides:
 - Deep Mode promo overlay integrated into active game UI.
 - Telegram shell with WebApp auth handshake and room create/join skeleton.
 - Infrastructure prepared for production VPS deployment and CI/CD.
+- BoardTheme system with persisted user customization (theme, token color, animation speed).
+
+## Board Themes & Preferences
+- `BoardTheme` is centralized in `/frontend/src/theme/boardTheme.ts`.
+- Active theme is managed by `/frontend/src/theme/BoardThemeProvider.tsx`.
+- Player preferences are persisted via `settingsRepository` (`selectedThemeId`, `tokenColorId`, `animationSpeed`).
+- Current built-in themes:
+  - `default-spiritual`
+  - `cosmic-dark`
+  - `minimal-cream`
 
 ## Screenshots / Previews
 > Replace or extend these with fresh UI captures when new visuals are shipped.
