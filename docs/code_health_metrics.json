@@ -1,7 +1,7 @@
 {
   "summary": {
-    "overall_score": 84,
-    "last_updated": "2026-02-25T13:34:24Z",
+    "overall_score": 85,
+    "last_updated": "2026-02-25T17:45:00Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -11,48 +11,48 @@
     "complexity_growth_percent_max": 10
   },
   "metrics": {
-    "files_total": 145,
-    "source_files_total": 145,
-    "lines_total": 9960,
+    "files_total": 164,
+    "source_files_total": 164,
+    "lines_total": 10673,
     "frontend": {
-      "files": 133,
-      "lines": 9499
+      "files": 152,
+      "lines": 10212
     },
     "backend": {
       "files": 12,
       "lines": 461
     },
     "tests": {
-      "files": 29,
-      "lines": 1550,
-      "test_file_ratio_vs_source_percent": 20.0,
-      "source_files_with_direct_test_match_percent": 26.2,
-      "coverage_estimate_percent": 69,
+      "files": 30,
+      "lines": 1593,
+      "test_file_ratio_vs_source_percent": 18.3,
+      "source_files_with_direct_test_match_percent": 27.4,
+      "coverage_estimate_percent": 70,
       "coverage_band": "medium"
     },
     "smells": {
       "long_files_over_500_loc": 1,
       "long_files_over_300_loc": 2,
-      "long_functions_over_50_loc": 15,
+      "long_functions_over_50_loc": 16,
       "duplicate_code_blocks_estimate": 6,
       "solid_violations_estimate": 7,
-      "smells_per_1k_loc": 3.11
+      "smells_per_1k_loc": 3
     },
     "risk_modules": [
       {
         "path": "frontend/src/pages/GamePage.tsx",
         "risk": "medium",
-        "reason": "Main gameplay orchestrator remains large though behavior is stable and now consumes centralized customization settings."
+        "reason": "Main gameplay orchestrator remains large though behavior is stable and now composes camera/layout systems."
+      },
+      {
+        "path": "frontend/src/components/lila/LilaBoardCanvas.tsx",
+        "risk": "medium",
+        "reason": "Camera follow, drag pan, token/path sync, and pointer hit mapping are concentrated in one component."
       },
       {
         "path": "frontend/src/theme/BoardThemeProvider.tsx",
-        "risk": "medium",
-        "reason": "Provider now coordinates persisted visual preferences and derived theme overrides; further splitting can reduce future coupling."
-      },
-      {
-        "path": "frontend/src/components/AppearanceCustomizationPanel.tsx",
         "risk": "low",
-        "reason": "UI-only customization controls are centralized in one collapsible panel reused across pages."
+        "reason": "Coordinates persisted visual preferences and derived theme overrides with clear context boundary."
       },
       {
         "path": "frontend/src/context/GameContext.tsx",
@@ -62,10 +62,10 @@
     ]
   },
   "scores": {
-    "architecture_clarity": 86,
-    "solid_compliance": 83,
-    "test_coverage": 69,
-    "complexity": 79,
+    "architecture_clarity": 87,
+    "solid_compliance": 84,
+    "test_coverage": 70,
+    "complexity": 80,
     "consistency": 86
   },
   "methods": {

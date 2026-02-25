@@ -70,6 +70,7 @@ export const LilaBoardCanvas = ({
   const timersRef = useRef<number[]>([]);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const followModeRef = useRef(false);
+  const cameraSnapshotRef = useRef(cameraState);
   const dragStateRef = useRef<{
     pointerId: number;
     lastX: number;
@@ -107,7 +108,16 @@ export const LilaBoardCanvas = ({
       const dt = now - previous;
       previous = now;
       camera.update(dt);
-      setCameraState(camera.getSnapshot());
+      const next = camera.getSnapshot();
+      const prev = cameraSnapshotRef.current;
+      if (
+        Math.abs(next.zoom - prev.zoom) > 0.001
+        || Math.abs(next.panX - prev.panX) > 0.25
+        || Math.abs(next.panY - prev.panY) > 0.25
+      ) {
+        cameraSnapshotRef.current = next;
+        setCameraState(next);
+      }
       frameId = window.requestAnimationFrame(tick);
     };
     frameId = window.requestAnimationFrame(tick);
@@ -326,7 +336,9 @@ export const LilaBoardCanvas = ({
     if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
       dragState.moved = true;
       cameraEngineRef.current.panBy({ x: dx, y: dy });
-      setCameraState(cameraEngineRef.current.getSnapshot());
+      const next = cameraEngineRef.current.getSnapshot();
+      cameraSnapshotRef.current = next;
+      setCameraState(next);
     }
   };
 
