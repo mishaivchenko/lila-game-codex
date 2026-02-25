@@ -37,9 +37,10 @@ export const LilaPathAnimation = ({
 }: LilaPathAnimationProps) => {
   const [visible, setVisible] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [drawProgress, setDrawProgress] = useState(0);
   const [opacity, setOpacity] = useState(1);
-  const [phase, setPhase] = useState<'travel' | 'hold' | 'fade'>('travel');
-  const travelIntervalRef = useRef<number | undefined>(undefined);
+  const [phase, setPhase] = useState<'draw' | 'travel' | 'hold' | 'fade'>('draw');
+  const rafRef = useRef<number | undefined>(undefined);
   const timersRef = useRef<number[]>([]);
   const onProgressRef = useRef(onProgress);
   const onTravelCompleteRef = useRef(onTravelComplete);
@@ -75,31 +76,46 @@ export const LilaPathAnimation = ({
     let isEffectActive = true;
     setVisible(true);
     setProgress(0);
+    setDrawProgress(0);
     setOpacity(1);
-    setPhase('travel');
+    setPhase('draw');
 
-    let elapsedMs = 0;
-    const updateTravel = () => {
+    const drawDuration = timings?.pathDrawDurationMs ?? 760;
+    const travelDuration = timings?.pathTravelDurationMs ?? TRANSITION_TRAVEL_MS;
+    const sequenceStartMs = performance.now();
+    const drawEndMs = sequenceStartMs + drawDuration;
+    let travelCompleted = false;
+
+    const tick = (nowMs: number) => {
       if (!isEffectActive) {
         return;
       }
 
-      elapsedMs += 16;
-      const linear = Math.min(1, elapsedMs / (timings?.pathTravelDurationMs ?? TRANSITION_TRAVEL_MS));
-      const eased = 0.5 - Math.cos(Math.PI * linear) / 2;
-      const nextProgress = eased;
-      setProgress(nextProgress);
-      onProgressRef.current?.(nextProgress, samplePathByProgress(pathPoints, nextProgress));
-
-      if (nextProgress < 1) {
+      if (nowMs < drawEndMs) {
+        setPhase('draw');
+        const linearDraw = Math.max(0, Math.min(1, (nowMs - sequenceStartMs) / drawDuration));
+        const easedDraw = 0.5 - Math.cos(Math.PI * linearDraw) / 2;
+        setDrawProgress(easedDraw);
+        rafRef.current = window.requestAnimationFrame(tick);
         return;
       }
 
-      if (travelIntervalRef.current !== undefined) {
-        window.clearInterval(travelIntervalRef.current);
-        travelIntervalRef.current = undefined;
+      setPhase('travel');
+      setDrawProgress(1);
+      const linearTravel = Math.max(0, Math.min(1, (nowMs - drawEndMs) / travelDuration));
+      const easedTravel = 0.5 - Math.cos(Math.PI * linearTravel) / 2;
+      setProgress(easedTravel);
+      onProgressRef.current?.(easedTravel, samplePathByProgress(pathPoints, easedTravel));
+
+      if (easedTravel < 1) {
+        rafRef.current = window.requestAnimationFrame(tick);
+        return;
       }
 
+      if (travelCompleted) {
+        return;
+      }
+      travelCompleted = true;
       setPhase('hold');
       onTravelCompleteRef.current?.();
 
@@ -123,18 +139,18 @@ export const LilaPathAnimation = ({
     };
 
     onProgressRef.current?.(0, samplePathByProgress(pathPoints, 0));
-    travelIntervalRef.current = window.setInterval(updateTravel, 16);
+    rafRef.current = window.requestAnimationFrame(tick);
 
     return () => {
       isEffectActive = false;
-      if (travelIntervalRef.current !== undefined) {
-        window.clearInterval(travelIntervalRef.current);
-        travelIntervalRef.current = undefined;
+      if (rafRef.current !== undefined) {
+        window.cancelAnimationFrame(rafRef.current);
+        rafRef.current = undefined;
       }
       timersRef.current.forEach((timer) => window.clearTimeout(timer));
       timersRef.current = [];
     };
-  }, [boardType, fromCell, pathPoints, toCell, timings?.pathFadeOutMs, timings?.pathPostHoldMs, timings?.pathTravelDurationMs, type]);
+  }, [boardType, fromCell, pathPoints, toCell, timings?.pathDrawDurationMs, timings?.pathFadeOutMs, timings?.pathPostHoldMs, timings?.pathTravelDurationMs, type]);
 
   if (!visible) {
     return null;
@@ -152,9 +168,9 @@ export const LilaPathAnimation = ({
       data-testid={`lila-transition-${type}`}
     >
       {type === 'snake' ? (
-        <AnimationRendererSnake points={pathPoints} progress={progress} opacity={opacity} />
+        <AnimationRendererSnake points={pathPoints} progress={Math.max(drawProgress, progress)} opacity={opacity} />
       ) : (
-        <AnimationRendererLadder points={pathPoints} progress={progress} opacity={opacity} />
+        <AnimationRendererLadder points={pathPoints} progress={Math.max(drawProgress, progress)} opacity={opacity} />
       )}
     </svg>
   );
