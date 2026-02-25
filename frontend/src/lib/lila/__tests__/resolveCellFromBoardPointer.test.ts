@@ -87,14 +87,14 @@ describe('resolveCellFromBoardPercent', () => {
   it('maps calibrated visual points for full-board cells 2 and 3', () => {
     expect(
       resolveCellFromBoardPercent('full', {
-        xPercent: 26.05,
+        xPercent: 15.58,
         yPercent: 88.4,
       }),
     ).toBe(2);
 
     expect(
       resolveCellFromBoardPercent('full', {
-        xPercent: 15.58,
+        xPercent: 26.05,
         yPercent: 88.4,
       }),
     ).toBe(3);
