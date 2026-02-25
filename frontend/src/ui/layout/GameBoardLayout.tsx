@@ -18,7 +18,7 @@ export const GameBoardLayout = ({
 
   return (
     <main
-      className="mx-auto min-h-screen w-full bg-[var(--lila-bg-main)] px-3 pb-28 pt-3 sm:px-4"
+      className="mx-auto min-h-screen w-full bg-[var(--lila-bg-main)] px-3 pb-6 pt-3 sm:px-4"
       style={{ maxWidth: `${theme.layout.pageMaxWidthPx}px` }}
     >
       <div className="space-y-3">
@@ -38,18 +38,17 @@ export const GameBoardLayout = ({
             {sideContent}
           </section>
         )}
+        <section
+          className="rounded-2xl p-2"
+          style={{
+            background: theme.layout.floatingControlsBackground,
+            border: `1px solid ${theme.layout.floatingControlsBorder}`,
+            boxShadow: theme.layout.floatingControlsShadow,
+          }}
+        >
+          {controls}
+        </section>
       </div>
-
-      <section
-        className="fixed inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 mx-auto w-[min(460px,calc(100%-1rem))] rounded-2xl p-2 backdrop-blur-sm"
-        style={{
-          background: theme.layout.floatingControlsBackground,
-          border: `1px solid ${theme.layout.floatingControlsBorder}`,
-          boxShadow: theme.layout.floatingControlsShadow,
-        }}
-      >
-        {controls}
-      </section>
     </main>
   );
 };
