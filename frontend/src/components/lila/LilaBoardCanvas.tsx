@@ -98,10 +98,6 @@ export const LilaBoardCanvas = ({
     }),
   );
   const boardProfile = useMemo(() => getBoardProfile(boardType), [boardType]);
-  const imageOversampleFactor = useMemo(
-    () => (typeof window === 'undefined' ? 1 : Math.min(2, Math.max(1, window.devicePixelRatio || 1))),
-    [],
-  );
   const specialTransitions = useMemo(() => {
     const board = BOARD_DEFINITIONS[boardType];
     const transitionByCell = new Map<number, 'snake' | 'arrow'>();
@@ -193,6 +189,7 @@ export const LilaBoardCanvas = ({
       return;
     }
     followModeRef.current = false;
+    camera.clearFollow();
     void camera.animateZoom(zoomSettings.baseZoom, {
       durationMs: zoomSettings.zoomOutDurationMs,
       easing: 'easeOut',
@@ -325,16 +322,14 @@ export const LilaBoardCanvas = ({
       void camera.animateZoom(zoomSettings.baseZoom, {
         durationMs: zoomSettings.zoomOutDurationMs,
         easing: 'easeOut',
+        focusPoint: worldPoint,
       });
       return;
     }
-    void camera.animateTo(worldPoint, {
-      durationMs: 170,
-      easing: 'easeOut',
-    });
     void camera.animateZoom(zoomSettings.manualZoom, {
       durationMs: zoomSettings.zoomInDurationMs,
       easing: 'easeOut',
+      focusPoint: worldPoint,
     });
   };
 
@@ -480,12 +475,8 @@ export const LilaBoardCanvas = ({
           <img
             src={resolveAssetUrl(boardProfile.imageSrc)}
             alt={boardType === 'full' ? 'Lila full board' : 'Lila short board'}
-            className="block select-none object-cover"
+            className="block h-full w-full select-none object-cover"
             style={{
-              width: `${100 * imageOversampleFactor}%`,
-              height: `${100 * imageOversampleFactor}%`,
-              transform: `scale(${1 / imageOversampleFactor})`,
-              transformOrigin: 'top left',
               imageRendering: 'auto',
             }}
             onLoad={(event) => {

@@ -11,6 +11,7 @@ export interface BoardEntity {
 export interface BoardCameraAnimationConfig {
   durationMs?: number;
   easing?: 'easeOut' | 'spring';
+  focusPoint?: CameraPoint;
 }
 
 interface BoardCameraAnimationState {
@@ -39,6 +40,7 @@ export interface BoardCameraEngine {
   panX: number;
   panY: number;
   follow(entity: BoardEntity): void;
+  clearFollow(): void;
   animateTo(point: CameraPoint, config?: BoardCameraAnimationConfig): Promise<void>;
   animateZoom(zoomLevel: number, config?: BoardCameraAnimationConfig): Promise<void>;
   setViewport(size: { width: number; height: number }): void;
@@ -126,6 +128,10 @@ export class CameraEngine implements BoardCameraEngine {
     this.followEntity = entity;
   }
 
+  clearFollow(): void {
+    this.followEntity = undefined;
+  }
+
   animateTo(point: CameraPoint, config: BoardCameraAnimationConfig = {}): Promise<void> {
     const target = this.computePanForWorldPoint(point);
     return this.startAnimation({
@@ -139,7 +145,7 @@ export class CameraEngine implements BoardCameraEngine {
 
   animateZoom(zoomLevel: number, config: BoardCameraAnimationConfig = {}): Promise<void> {
     this.targetZoom = clamp(zoomLevel, 1, 2.4);
-    const point = this.followEntity?.point ?? this.getViewportCenterWorldPoint();
+    const point = config.focusPoint ?? this.followEntity?.point ?? this.getViewportCenterWorldPoint();
     const targetPan = this.computePanForWorldPoint(point, this.targetZoom);
     return this.startAnimation({
       toX: targetPan.x,
