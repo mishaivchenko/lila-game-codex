@@ -71,11 +71,16 @@ export const LilaBoardCanvas = ({
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const followModeRef = useRef(false);
   const cameraSnapshotRef = useRef(cameraState);
+  const followPointRef = useRef({ x: 50, y: 50 });
+  const longPressTimerRef = useRef<number | null>(null);
   const dragStateRef = useRef<{
     pointerId: number;
     lastX: number;
     lastY: number;
     moved: boolean;
+    holdZoomActive: boolean;
+    pressWorldX: number;
+    pressWorldY: number;
   } | null>(null);
   const cameraEngineRef = useRef(
     createBoardCameraEngine({
@@ -87,6 +92,10 @@ export const LilaBoardCanvas = ({
     }),
   );
   const boardProfile = useMemo(() => getBoardProfile(boardType), [boardType]);
+  const imageOversampleFactor = useMemo(
+    () => (typeof window === 'undefined' ? 1 : Math.min(2, Math.max(1, window.devicePixelRatio || 1))),
+    [],
+  );
   const specialTransitions = useMemo(() => {
     const board = BOARD_DEFINITIONS[boardType];
     const transitionByCell = new Map<number, 'snake' | 'arrow'>();
@@ -152,13 +161,20 @@ export const LilaBoardCanvas = ({
     };
   }, []);
 
-  const isMovingWithCamera = Boolean(animationMove || activePath || holdTokenSync);
+  const isMovingWithCamera = Boolean(animationMove || activePath);
 
   useEffect(() => {
     const camera = cameraEngineRef.current;
     if (isMovingWithCamera) {
       if (!followModeRef.current) {
         followModeRef.current = true;
+        camera.follow({
+          id: 'token',
+          point: {
+            x: followPointRef.current.x,
+            y: followPointRef.current.y,
+          },
+        });
         void camera.animateZoom(zoomSettings.followZoom, {
           durationMs: zoomSettings.zoomInDurationMs,
           easing: 'easeOut',
@@ -175,10 +191,6 @@ export const LilaBoardCanvas = ({
       durationMs: zoomSettings.zoomOutDurationMs,
       easing: 'easeOut',
     });
-    void camera.animateTo(
-      { x: viewportSize.width / 2, y: viewportSize.height / 2 },
-      { durationMs: zoomSettings.zoomOutDurationMs, easing: 'easeOut' },
-    );
   }, [isMovingWithCamera, viewportSize.height, viewportSize.width]);
 
   useEffect(() => {
@@ -262,14 +274,26 @@ export const LilaBoardCanvas = ({
       return;
     }
 
+    followPointRef.current = {
+      x: (effectiveTokenPosition.xPercent / 100) * viewportSize.width,
+      y: (effectiveTokenPosition.yPercent / 100) * viewportSize.height,
+    };
+
     const camera = cameraEngineRef.current;
     camera.follow({
       id: 'token',
       point: {
-        x: (effectiveTokenPosition.xPercent / 100) * viewportSize.width,
-        y: (effectiveTokenPosition.yPercent / 100) * viewportSize.height,
+        x: followPointRef.current.x,
+        y: followPointRef.current.y,
       },
     });
+  }, [effectiveTokenPosition.xPercent, effectiveTokenPosition.yPercent, viewportSize.height, viewportSize.width]);
+
+  useEffect(() => {
+    followPointRef.current = {
+      x: (effectiveTokenPosition.xPercent / 100) * viewportSize.width,
+      y: (effectiveTokenPosition.yPercent / 100) * viewportSize.height,
+    };
   }, [effectiveTokenPosition.xPercent, effectiveTokenPosition.yPercent, viewportSize.height, viewportSize.width]);
 
   const pulsePosition = pulseCell ? mapCellToBoardPosition(boardType, pulseCell) : undefined;
@@ -283,7 +307,18 @@ export const LilaBoardCanvas = ({
   const handleBoardPointerUp = (event: PointerEvent<HTMLDivElement>) => {
     const dragState = dragStateRef.current;
     if (dragState && dragState.pointerId === event.pointerId) {
+      if (longPressTimerRef.current !== null) {
+        window.clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
       dragStateRef.current = null;
+      if (dragState.holdZoomActive) {
+        void cameraEngineRef.current.animateZoom(zoomSettings.baseZoom, {
+          durationMs: 220,
+          easing: 'easeOut',
+        });
+        return;
+      }
       if (dragState.moved) {
         return;
       }
@@ -311,16 +346,48 @@ export const LilaBoardCanvas = ({
   };
 
   const handleBoardPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (followModeRef.current || cameraState.zoom <= 1.01) {
+    if (followModeRef.current) {
       return;
     }
+    const rect = event.currentTarget.getBoundingClientRect();
+    const worldPoint = cameraEngineRef.current.projectScreenToWorld({
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    });
     dragStateRef.current = {
       pointerId: event.pointerId,
       lastX: event.clientX,
       lastY: event.clientY,
       moved: false,
+      holdZoomActive: false,
+      pressWorldX: worldPoint.x,
+      pressWorldY: worldPoint.y,
     };
     event.currentTarget.setPointerCapture(event.pointerId);
+
+    if (disableCellSelect || isMovingWithCamera) {
+      return;
+    }
+
+    longPressTimerRef.current = window.setTimeout(() => {
+      const currentDrag = dragStateRef.current;
+      if (!currentDrag || currentDrag.pointerId !== event.pointerId || currentDrag.moved || followModeRef.current) {
+        return;
+      }
+      currentDrag.holdZoomActive = true;
+      const camera = cameraEngineRef.current;
+      void camera.animateTo(
+        { x: currentDrag.pressWorldX, y: currentDrag.pressWorldY },
+        { durationMs: 160, easing: 'easeOut' },
+      );
+      void camera.animateZoom(1.55, {
+        durationMs: 180,
+        easing: 'easeOut',
+      });
+      const next = camera.getSnapshot();
+      cameraSnapshotRef.current = next;
+      setCameraState(next);
+    }, 260);
   };
 
   const handleBoardPointerMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -335,10 +402,16 @@ export const LilaBoardCanvas = ({
     dragState.lastY = event.clientY;
     if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
       dragState.moved = true;
-      cameraEngineRef.current.panBy({ x: dx, y: dy });
-      const next = cameraEngineRef.current.getSnapshot();
-      cameraSnapshotRef.current = next;
-      setCameraState(next);
+      if (longPressTimerRef.current !== null) {
+        window.clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      if (dragState.holdZoomActive && !followModeRef.current) {
+        cameraEngineRef.current.panBy({ x: dx, y: dy });
+        const next = cameraEngineRef.current.getSnapshot();
+        cameraSnapshotRef.current = next;
+        setCameraState(next);
+      }
     }
   };
 
@@ -346,6 +419,10 @@ export const LilaBoardCanvas = ({
     const dragState = dragStateRef.current;
     if (!dragState || dragState.pointerId !== event.pointerId) {
       return;
+    }
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
     }
     dragStateRef.current = null;
   };
@@ -375,7 +452,14 @@ export const LilaBoardCanvas = ({
           <img
             src={resolveAssetUrl(boardProfile.imageSrc)}
             alt={boardType === 'full' ? 'Lila full board' : 'Lila short board'}
-            className="h-full w-full object-cover"
+            className="block select-none object-cover"
+            style={{
+              width: `${100 * imageOversampleFactor}%`,
+              height: `${100 * imageOversampleFactor}%`,
+              transform: `scale(${1 / imageOversampleFactor})`,
+              transformOrigin: 'top left',
+              imageRendering: 'auto',
+            }}
             onLoad={(event) => {
               const { naturalWidth, naturalHeight } = event.currentTarget;
               if (naturalWidth > 0 && naturalHeight > 0) {

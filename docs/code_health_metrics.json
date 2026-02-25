@@ -1,7 +1,7 @@
 {
   "summary": {
     "overall_score": 85,
-    "last_updated": "2026-02-25T17:45:00Z",
+    "last_updated": "2026-02-25T18:00:00Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -13,10 +13,10 @@
   "metrics": {
     "files_total": 164,
     "source_files_total": 164,
-    "lines_total": 10673,
+    "lines_total": 10757,
     "frontend": {
       "files": 152,
-      "lines": 10212
+      "lines": 10296
     },
     "backend": {
       "files": 12,
@@ -36,7 +36,7 @@
       "long_functions_over_50_loc": 16,
       "duplicate_code_blocks_estimate": 6,
       "solid_violations_estimate": 7,
-      "smells_per_1k_loc": 3
+      "smells_per_1k_loc": 2.97
     },
     "risk_modules": [
       {
