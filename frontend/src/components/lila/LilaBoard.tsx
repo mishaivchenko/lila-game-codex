@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { LilaBoardCanvas } from './LilaBoardCanvas';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import type { AnimationTimingSettings } from '../../lib/animations/animationTimingSettings';
+import type { MovementSettings } from '../../engine/movement/MovementEngine';
 import { useBoardTheme } from '../../theme';
 
 export interface LilaTransition {
@@ -22,6 +23,7 @@ interface LilaBoardProps {
   otherTokens?: { id: string; cell: number; color: string }[];
   animationMove?: LilaTransition;
   animationTimings?: AnimationTimingSettings;
+  movementSettings?: MovementSettings;
   onMoveAnimationComplete?: (moveId: string) => void;
   onCellSelect?: (cellNumber: number) => void;
   disableCellSelect?: boolean;
@@ -35,6 +37,7 @@ export const LilaBoard = ({
   otherTokens,
   animationMove,
   animationTimings,
+  movementSettings,
   onMoveAnimationComplete,
   onCellSelect,
   disableCellSelect = false,
@@ -61,6 +64,7 @@ export const LilaBoard = ({
         otherTokens={otherTokens}
         animationMove={animationMove}
         animationTimings={animationTimings}
+        movementSettings={movementSettings}
         onMoveAnimationComplete={onMoveAnimationComplete}
         onCellSelect={onCellSelect}
         disableCellSelect={disableCellSelect}

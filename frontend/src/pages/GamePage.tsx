@@ -26,12 +26,10 @@ import { GameControlPanel } from './game/components/GameControlPanel';
 import { useSimpleMultiplayer } from './game/useSimpleMultiplayer';
 import { useBoardTheme } from '../theme';
 import { GameBoardLayout } from '../ui/layout/GameBoardLayout';
+import { createMovementEngine, DEFAULT_MOVEMENT_SETTINGS, normalizeMovementSettings } from '../engine/movement/MovementEngine';
 import type {
   CoachMoveContext,
-  ModalMode,
   PendingSimpleMove,
-  SpecialFlowPhase,
-  SpecialFlowState,
   TurnState,
 } from './game/gamePageTypes';
 import { SIMPLE_COLOR_HEX } from './game/gamePageTypes';
@@ -58,21 +56,16 @@ export const GamePage = () => {
   const [diceRollToken, setDiceRollToken] = useState(0);
   const [diceRequestedValue, setDiceRequestedValue] = useState<number | undefined>(undefined);
   const [turnState, setTurnState] = useState<TurnState>('idle');
-  const [specialFlowPhase, setSpecialFlowPhase] = useState<SpecialFlowPhase>('idle');
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showAnimationSettings, setShowAnimationSettings] = useState(false);
   const [animationTimings, setAnimationTimings] = useState(DEFAULT_ANIMATION_TIMINGS);
   const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>();
   const [activeModalCell, setActiveModalCell] = useState<number | undefined>(undefined);
   const [modalMoveContext, setModalMoveContext] = useState<CoachMoveContext | undefined>(undefined);
-  const [modalMode, setModalMode] = useState<ModalMode>('inspect');
   const pendingMoveIdRef = useRef<string | undefined>(undefined);
   const pendingMoveContextRef = useRef<CoachMoveContext | undefined>(undefined);
   const pendingEntryMoveIdRef = useRef<string | undefined>(undefined);
   const pendingEntryResultRef = useRef<'retry' | 'entered' | undefined>(undefined);
-  const pendingSpecialHeadMoveIdRef = useRef<string | undefined>(undefined);
-  const pendingSpecialTailMoveIdRef = useRef<string | undefined>(undefined);
-  const specialFlowRef = useRef<SpecialFlowState | undefined>(undefined);
   const animationFallbackTimerRef = useRef<number | undefined>(undefined);
   const resumeAttemptedRef = useRef(false);
   const pendingSimpleMoveRef = useRef<PendingSimpleMove | undefined>(undefined);
@@ -102,10 +95,6 @@ export const GamePage = () => {
   useEffect(() => {
     if (!currentSession) {
       resetSimpleMultiplayer();
-      specialFlowRef.current = undefined;
-      pendingSpecialHeadMoveIdRef.current = undefined;
-      pendingSpecialTailMoveIdRef.current = undefined;
-      setSpecialFlowPhase('idle');
       return;
     }
     if (currentSession.request.isDeepEntry) {
@@ -128,6 +117,16 @@ export const GamePage = () => {
     }),
     [animationSpeedMultiplier, animationTimings],
   );
+  const movementSettings = useMemo(
+    () =>
+      normalizeMovementSettings({
+        stepDurationMs: Math.round(DEFAULT_MOVEMENT_SETTINGS.stepDurationMs * animationSpeedMultiplier),
+        stepPauseMs: Math.round(DEFAULT_MOVEMENT_SETTINGS.stepPauseMs * animationSpeedMultiplier),
+        snakeDelayMs: Math.round(DEFAULT_MOVEMENT_SETTINGS.snakeDelayMs * animationSpeedMultiplier),
+        modalOpenDelayMs: Math.round(DEFAULT_MOVEMENT_SETTINGS.modalOpenDelayMs * animationSpeedMultiplier),
+      }),
+    [animationSpeedMultiplier],
+  );
   const displayCurrentCell = activeSimplePlayer?.currentCell ?? currentSession?.currentCell ?? 1;
 
   const safeCurrentCell = Math.min(
@@ -146,12 +145,10 @@ export const GamePage = () => {
     (
       cellNumber: number,
       context?: CoachMoveContext,
-      mode: ModalMode = 'move',
-      delayMs: number = effectiveAnimationTimings.cardOpenDelayMs,
+      delayMs: number = movementSettings.modalOpenDelayMs,
     ) => {
       setActiveModalCell(Math.min(Math.max(cellNumber, 1), board.maxCell));
       setModalMoveContext(context);
-      setModalMode(mode);
 
       if (delayMs <= 0) {
         setShowCoach(true);
@@ -162,7 +159,7 @@ export const GamePage = () => {
         setShowCoach(true);
       }, delayMs);
     },
-    [board.maxCell, effectiveAnimationTimings.cardOpenDelayMs],
+    [board.maxCell, movementSettings.modalOpenDelayMs],
   );
 
   const onMoveAnimationComplete = useCallback((moveId: string) => {
@@ -183,47 +180,8 @@ export const GamePage = () => {
       openCoachCard(
         pending.toCell,
         pendingMoveContextRef.current,
-        'move',
       );
       pendingMoveContextRef.current = undefined;
-      return;
-    }
-
-    if (pendingSpecialHeadMoveIdRef.current === moveId && specialFlowRef.current) {
-      pendingSpecialHeadMoveIdRef.current = undefined;
-      const flow = specialFlowRef.current;
-      setAnimationMove(undefined);
-      setSpecialFlowPhase('head-card');
-      openCoachCard(
-        flow.headCell,
-        {
-          fromCell: lastMove?.fromCell ?? flow.headCell,
-          toCell: flow.headCell,
-          type: flow.type === 'snake' ? 'snake' : 'ladder',
-          pathLabel: `${lastMove?.fromCell ?? flow.headCell} → ${flow.headCell}`,
-        },
-        'special-head',
-        0,
-      );
-      return;
-    }
-
-    if (pendingSpecialTailMoveIdRef.current === moveId && specialFlowRef.current) {
-      pendingSpecialTailMoveIdRef.current = undefined;
-      const flow = specialFlowRef.current;
-      setAnimationMove(undefined);
-      setSpecialFlowPhase('tail-card');
-      openCoachCard(
-        flow.tailCell,
-        {
-          fromCell: flow.headCell,
-          toCell: flow.tailCell,
-          type: flow.type === 'snake' ? 'snake' : 'ladder',
-          pathLabel: flow.type === 'snake' ? `${flow.headCell} ↘ ${flow.tailCell}` : `${flow.headCell} ↗ ${flow.tailCell}`,
-        },
-        'special-tail',
-        0,
-      );
       return;
     }
 
@@ -247,11 +205,10 @@ export const GamePage = () => {
     openCoachCard(
       pendingMoveContextRef.current?.toCell ?? safeCurrentCell,
       pendingMoveContextRef.current,
-      'move',
     );
     pendingMoveContextRef.current = undefined;
     setAnimationMove(undefined);
-  }, [commitPendingSimpleMove, lastMove?.fromCell, openCoachCard, safeCurrentCell]);
+  }, [commitPendingSimpleMove, openCoachCard, safeCurrentCell]);
 
   useEffect(() => {
     setDeepRequestDraft(currentSession?.request.simpleRequest ?? '');
@@ -402,10 +359,6 @@ export const GamePage = () => {
     pendingMoveIdRef.current = move.id;
     pendingEntryMoveIdRef.current = undefined;
     pendingEntryResultRef.current = undefined;
-    pendingSpecialHeadMoveIdRef.current = undefined;
-    pendingSpecialTailMoveIdRef.current = undefined;
-    specialFlowRef.current = undefined;
-    setSpecialFlowPhase('idle');
 
     if (isDeepEntryRoll) {
       pendingEntryMoveIdRef.current = move.id;
@@ -424,27 +377,6 @@ export const GamePage = () => {
         : undefined;
     const tokenPathCells = buildStepwiseCellPath(move.fromCell, move.dice, board.maxCell);
 
-    if (!isDeepEntryRoll && move.snakeOrArrow && entryCell) {
-      const toHeadMoveId = `${move.id}-head`;
-      specialFlowRef.current = {
-        moveId: move.id,
-        type: move.snakeOrArrow,
-        headCell: entryCell,
-        tailCell: move.toCell,
-        pathPoints: transitionPath,
-      };
-      pendingMoveIdRef.current = toHeadMoveId;
-      pendingSpecialHeadMoveIdRef.current = toHeadMoveId;
-      setAnimationMove({
-        id: toHeadMoveId,
-        fromCell: move.fromCell,
-        toCell: entryCell,
-        type: null,
-        tokenPathCells,
-      });
-      return;
-    }
-
     setAnimationMove({
       id: move.id,
       fromCell: move.fromCell,
@@ -455,26 +387,28 @@ export const GamePage = () => {
       tokenPathCells,
     });
 
-    if (!isDeepEntryRoll && !move.snakeOrArrow) {
-      const specialDuration =
-        move.snakeOrArrow
-          ? effectiveAnimationTimings.pathTravelDurationMs + effectiveAnimationTimings.pathPostHoldMs + effectiveAnimationTimings.pathFadeOutMs
-          : 0;
-      const fallbackMs = effectiveAnimationTimings.tokenMoveDurationMs + specialDuration + effectiveAnimationTimings.cardOpenDelayMs;
-      animationFallbackTimerRef.current = window.setTimeout(() => {
-        if (pendingMoveIdRef.current !== move.id) {
-          return;
-        }
-        setTurnState('idle');
-        openCoachCard(
-          pendingMoveContextRef.current?.toCell ?? safeCurrentCell,
-          pendingMoveContextRef.current,
-          'move',
-        );
-        pendingMoveContextRef.current = undefined;
-        setAnimationMove(undefined);
-      }, fallbackMs);
-    }
+    const movementPlan = createMovementEngine(movementSettings).planPath(tokenPathCells);
+    const specialDuration =
+      move.snakeOrArrow
+        ? movementSettings.snakeDelayMs
+          + effectiveAnimationTimings.pathDrawDurationMs
+          + effectiveAnimationTimings.pathTravelDurationMs
+          + effectiveAnimationTimings.pathPostHoldMs
+          + effectiveAnimationTimings.pathFadeOutMs
+        : 0;
+    const fallbackMs = movementPlan.totalDurationMs + specialDuration + movementSettings.modalOpenDelayMs + 220;
+    animationFallbackTimerRef.current = window.setTimeout(() => {
+      if (pendingMoveIdRef.current !== move.id) {
+        return;
+      }
+      setTurnState('idle');
+      openCoachCard(
+        pendingMoveContextRef.current?.toCell ?? safeCurrentCell,
+        pendingMoveContextRef.current,
+      );
+      pendingMoveContextRef.current = undefined;
+      setAnimationMove(undefined);
+    }, fallbackMs);
   };
 
   const triggerDiceRoll = (requestedValue?: number): void => {
@@ -490,34 +424,7 @@ export const GamePage = () => {
   const closeCoachModal = useCallback(() => {
     setShowCoach(false);
     setModalMoveContext(undefined);
-
-    if (modalMode === 'special-head' && specialFlowRef.current) {
-      const flow = specialFlowRef.current;
-      const tailMoveId = `${flow.moveId}-tail`;
-      pendingMoveIdRef.current = tailMoveId;
-      pendingSpecialTailMoveIdRef.current = tailMoveId;
-      setSpecialFlowPhase('tail-animation');
-      setAnimationMove({
-        id: tailMoveId,
-        fromCell: flow.headCell,
-        toCell: flow.tailCell,
-        type: flow.type,
-        entryCell: flow.headCell,
-        pathPoints: flow.pathPoints,
-        tokenPathCells: [flow.headCell, flow.headCell],
-      });
-      return;
-    }
-
-    if (modalMode === 'special-tail') {
-      setSpecialFlowPhase('idle');
-      specialFlowRef.current = undefined;
-      pendingSpecialTailMoveIdRef.current = undefined;
-      pendingSpecialHeadMoveIdRef.current = undefined;
-      pendingMoveIdRef.current = undefined;
-      setTurnState('idle');
-    }
-  }, [modalMode]);
+  }, []);
 
   const saveCoachModal = useCallback((text: string) => {
     void saveInsight(modalCellNumber, text).then(() => {
@@ -526,15 +433,14 @@ export const GamePage = () => {
   }, [closeCoachModal, modalCellNumber, saveInsight]);
 
   const handleBoardCellSelect = useCallback((cellNumber: number) => {
-    if (turnState !== 'idle' || specialFlowPhase !== 'idle') {
+    if (turnState !== 'idle') {
       return;
     }
 
     setActiveModalCell(cellNumber);
     setModalMoveContext(undefined);
-    setModalMode('inspect');
     setShowCoach(true);
-  }, [specialFlowPhase, turnState]);
+  }, [turnState]);
 
   if ((!isSimpleMultiplayer && currentSession.finished) || multiplayerFinished) {
     return (
@@ -580,9 +486,10 @@ export const GamePage = () => {
           }
           animationMove={animationMove}
           animationTimings={effectiveAnimationTimings}
+          movementSettings={movementSettings}
           onMoveAnimationComplete={onMoveAnimationComplete}
           onCellSelect={handleBoardCellSelect}
-          disableCellSelect={turnState !== 'idle' || specialFlowPhase !== 'idle'}
+          disableCellSelect={turnState !== 'idle'}
           holdTokenSync={turnState !== 'idle'}
         />
       )}

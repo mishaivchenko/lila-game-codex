@@ -1,7 +1,7 @@
 {
   "summary": {
-    "overall_score": 85,
-    "last_updated": "2026-02-25T18:45:00Z",
+    "overall_score": 86,
+    "last_updated": "2026-02-25T17:39:58Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -11,23 +11,23 @@
     "complexity_growth_percent_max": 10
   },
   "metrics": {
-    "files_total": 164,
-    "source_files_total": 164,
-    "lines_total": 10749,
+    "files_total": 166,
+    "source_files_total": 166,
+    "lines_total": 10922,
     "frontend": {
-      "files": 152,
-      "lines": 10288
+      "files": 154,
+      "lines": 10461
     },
     "backend": {
       "files": 12,
       "lines": 461
     },
     "tests": {
-      "files": 30,
-      "lines": 1622,
-      "test_file_ratio_vs_source_percent": 18.3,
-      "source_files_with_direct_test_match_percent": 28.0,
-      "coverage_estimate_percent": 70,
+      "files": 31,
+      "lines": 1690,
+      "test_file_ratio_vs_source_percent": 18.7,
+      "source_files_with_direct_test_match_percent": 28.4,
+      "coverage_estimate_percent": 71,
       "coverage_band": "medium"
     },
     "smells": {
@@ -42,12 +42,12 @@
       {
         "path": "frontend/src/pages/GamePage.tsx",
         "risk": "medium",
-        "reason": "Main gameplay orchestrator remains large though behavior is stable and now composes camera/layout systems."
+        "reason": "Main gameplay orchestrator remains large, but special-flow branching reduced and movement timing is now centralized."
       },
       {
         "path": "frontend/src/components/lila/LilaBoardCanvas.tsx",
         "risk": "medium",
-        "reason": "Camera follow, drag pan, token/path sync, and pointer hit mapping are concentrated in one component."
+        "reason": "Camera follow, drag pan, token/path sync, and pointer hit mapping remain concentrated, but movement sequencing now delegates to MovementEngine."
       },
       {
         "path": "frontend/src/theme/BoardThemeProvider.tsx",
@@ -62,10 +62,10 @@
     ]
   },
   "scores": {
-    "architecture_clarity": 87,
-    "solid_compliance": 84,
-    "test_coverage": 70,
-    "complexity": 80,
+    "architecture_clarity": 88,
+    "solid_compliance": 85,
+    "test_coverage": 71,
+    "complexity": 81,
     "consistency": 86
   },
   "methods": {

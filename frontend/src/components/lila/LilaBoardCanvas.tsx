@@ -20,6 +20,7 @@ import type { LilaTransition } from './LilaBoard';
 import { LilaPathAnimation } from './LilaPathAnimation';
 import { useBoardTheme } from '../../theme';
 import { BoardSceneContainer } from '../../ui/board/BoardSceneContainer';
+import { createMovementEngine, DEFAULT_MOVEMENT_SETTINGS, type MovementSettings } from '../../engine/movement/MovementEngine';
 
 interface LilaBoardCanvasProps {
   boardType: BoardType;
@@ -28,6 +29,7 @@ interface LilaBoardCanvasProps {
   otherTokens?: { id: string; cell: number; color: string }[];
   animationMove?: LilaTransition;
   animationTimings?: AnimationTimingSettings;
+  movementSettings?: MovementSettings;
   onMoveAnimationComplete?: (moveId: string) => void;
   onCellSelect?: (cellNumber: number) => void;
   disableCellSelect?: boolean;
@@ -52,6 +54,7 @@ export const LilaBoardCanvas = ({
   otherTokens = [],
   animationMove,
   animationTimings,
+  movementSettings = DEFAULT_MOVEMENT_SETTINGS,
   onMoveAnimationComplete,
   onCellSelect,
   disableCellSelect = false,
@@ -208,6 +211,7 @@ export const LilaBoardCanvas = ({
 
     timersRef.current.forEach((timer) => window.clearTimeout(timer));
     timersRef.current = [];
+    const movementEngine = createMovementEngine(movementSettings);
 
     const specialEntryCell = animationMove.entryCell ?? animationMove.fromCell;
     const tokenPathCells = animationMove.tokenPathCells && animationMove.tokenPathCells.length >= 2
@@ -215,10 +219,8 @@ export const LilaBoardCanvas = ({
       : animationMove.type && specialEntryCell !== animationMove.fromCell
         ? [animationMove.fromCell, specialEntryCell]
         : [animationMove.fromCell, animationMove.toCell];
-    const pathStepCount = Math.max(1, tokenPathCells.length - 1);
-    const tokenMoveDurationMs = animationTimings?.tokenMoveDurationMs ?? TOKEN_MOVE_DURATION_MS;
-    const stepDurationMs = Math.max(190, tokenMoveDurationMs / pathStepCount);
-    setTokenStepDurationMs(stepDurationMs);
+    const movementPlan = movementEngine.planPath(tokenPathCells);
+    setTokenStepDurationMs(movementEngine.settings.stepDurationMs);
     const transitionPath =
       animationMove.pathPoints ??
       (animationMove.type
@@ -229,10 +231,10 @@ export const LilaBoardCanvas = ({
     setTokenCell(animationMove.fromCell);
     setTokenPathPosition(undefined);
 
-    tokenPathCells.slice(1).forEach((cell, index) => {
+    movementPlan.steps.forEach((step) => {
       const stepTimer = window.setTimeout(() => {
-        setTokenCell(cell);
-      }, Math.round((index + 1) * stepDurationMs));
+        setTokenCell(step.toCell);
+      }, step.startAtMs);
       timersRef.current.push(stepTimer);
     });
 
@@ -244,7 +246,7 @@ export const LilaBoardCanvas = ({
           fromCell: specialEntryCell,
           pathPoints: transitionPath,
         });
-      }, tokenMoveDurationMs);
+      }, movementPlan.totalDurationMs + movementEngine.settings.snakeDelayMs);
 
       timersRef.current.push(pulseTimer, startPathTimer);
       return;
@@ -254,10 +256,10 @@ export const LilaBoardCanvas = ({
     setActivePath(undefined);
     const completeTimer = window.setTimeout(() => {
       onMoveAnimationComplete?.(animationMove.id);
-    }, tokenMoveDurationMs);
+    }, movementPlan.totalDurationMs);
 
     timersRef.current.push(completeTimer);
-  }, [animationMove, animationTimings?.tokenMoveDurationMs, boardType, currentCell, holdTokenSync, onMoveAnimationComplete]);
+  }, [animationMove, boardType, currentCell, holdTokenSync, movementSettings, onMoveAnimationComplete]);
 
   useEffect(() => {
     return () => {
@@ -569,7 +571,11 @@ export const LilaBoardCanvas = ({
               }}
               transition={
                 shouldAnimateToken
-                  ? { ...tokenMoveTransition, duration: tokenStepDurationMs / 1000 }
+                  ? {
+                      ...tokenMoveTransition,
+                      duration: tokenStepDurationMs / 1000,
+                      ease: movementSettings.easing,
+                    }
                   : { duration: 0 }
               }
               aria-label="token"
