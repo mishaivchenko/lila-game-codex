@@ -10,8 +10,6 @@ interface SnakePathProps {
   headY: number;
   headAngle: number;
   headScale: number;
-  glyphOpacity: number;
-  glyphHref: string;
   style: SnakeStyle;
   opacity: number;
   children?: ReactNode;
@@ -26,12 +24,34 @@ export const SnakePath = ({
   headY,
   headAngle,
   headScale,
-  glyphOpacity,
-  glyphHref,
   style,
   opacity,
   children,
 }: SnakePathProps) => {
+  const renderHeadDecoration = () => {
+    if (style.variantId === 'ribbon') {
+      return (
+        <path
+          d="M -0.8 -0.6 L 0.9 0 L -0.8 0.6"
+          fill="none"
+          stroke={style.headStroke}
+          strokeWidth={0.2}
+          strokeLinecap="round"
+          opacity={0.9}
+        />
+      );
+    }
+    if (style.variantId === 'sigil') {
+      return (
+        <>
+          <rect x={-0.55} y={-0.55} width={1.1} height={1.1} rx={0.12} fill="none" stroke={style.headStroke} strokeWidth={0.16} />
+          <circle cx="0" cy="0" r={0.2} fill={style.eyeFill} />
+        </>
+      );
+    }
+    return <circle cx="0.42" cy="-0.14" r={0.16} fill={style.eyeFill} />;
+  };
+
   return (
     <g style={{ opacity }} data-testid="lila-snake-renderer">
       <defs>
@@ -66,18 +86,8 @@ export const SnakePath = ({
         data-testid="lila-snake-body"
       />
       <g transform={`translate(${headX} ${headY}) rotate(${headAngle}) scale(${headScale})`} data-testid="lila-snake-head">
-        <image
-          href={glyphHref}
-          x={-6}
-          y={-4.8}
-          width={12}
-          height={9.6}
-          preserveAspectRatio="xMidYMid meet"
-          opacity={glyphOpacity}
-          style={{ filter: style.glyphFilter }}
-        />
         <ellipse cx="0" cy="0" rx={1.58} ry={1.08} fill={style.headFill} stroke={style.headStroke} strokeWidth={0.22} />
-        <circle cx="0.42" cy="-0.14" r={0.16} fill={style.eyeFill} />
+        {renderHeadDecoration()}
         {children}
       </g>
     </g>

@@ -1,5 +1,4 @@
 import { useId, useMemo } from 'react';
-import { getLilaVisualAssets } from '../../config/visualThemes';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { buildSmoothPath, buildStepSamples, sampleAngleByProgress, samplePathByProgress } from './pathAnimationMath';
 import { useBoardTheme } from '../../theme';
@@ -15,7 +14,6 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
   const gradientSeed = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const gradientId = `ladderRail-${gradientSeed}`;
   const { theme } = useBoardTheme();
-  const stairsLight = useMemo(() => getLilaVisualAssets(theme.visualAssetTheme).stairsLight, [theme.visualAssetTheme]);
   const path = useMemo(() => buildSmoothPath(points), [points]);
   const steps = useMemo(() => buildStepSamples(points), [points]);
   const glyphPoint = useMemo(() => samplePathByProgress(points, Math.max(0.1, progress * 0.72)), [points, progress]);
@@ -32,7 +30,6 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
       glyphAngle={glyphAngle}
       glyphScale={0.58 + progress * 0.36}
       glyphOpacity={theme.stairs.glyphOpacityBase + progress * theme.stairs.glyphOpacityRange}
-      glyphHref={stairsLight}
       steps={steps}
       climber={climber}
       style={theme.stairs}

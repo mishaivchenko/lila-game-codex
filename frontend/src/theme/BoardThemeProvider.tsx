@@ -3,6 +3,9 @@ import { BoardThemeContext } from './BoardThemeContext';
 import { BOARD_THEME_LIST, DEFAULT_SPIRITUAL_THEME, resolveBoardTheme, resolveTokenColor } from './boardTheme';
 import { createRepositories } from '../repositories';
 import type { SettingsEntity, SpeedSetting } from '../domain/types';
+import type { SnakeVariantId, StairsVariantId } from './boardTheme';
+import type { SnakeColorId, StairsColorId } from './pathCustomization';
+import { applyPathCustomization } from './pathCustomization';
 
 interface BoardThemeProviderProps {
   children: React.ReactNode;
@@ -14,6 +17,10 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   const [themeId, setThemeIdState] = useState(DEFAULT_SPIRITUAL_THEME.id);
   const [tokenColorId, setTokenColorIdState] = useState<string | undefined>(undefined);
   const [animationSpeed, setAnimationSpeedState] = useState<SpeedSetting>('normal');
+  const [snakeStyleId, setSnakeStyleIdState] = useState<SnakeVariantId>('flow');
+  const [snakeColorId, setSnakeColorIdState] = useState<SnakeColorId>('amber-violet');
+  const [stairsStyleId, setStairsStyleIdState] = useState<StairsVariantId>('steps');
+  const [stairsColorId, setStairsColorIdState] = useState<StairsColorId>('sand-light');
 
   const saveSettingsPatch = useCallback((patch: Partial<SettingsEntity>) => {
     void repositories.settingsRepository.getSettings().then((current) =>
@@ -32,6 +39,10 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
       setThemeIdState(resolveBoardTheme(settings.selectedThemeId).id);
       setTokenColorIdState(settings.tokenColorId);
       setAnimationSpeedState(settings.animationSpeed ?? 'normal');
+      setSnakeStyleIdState(settings.snakeStyleId ?? 'flow');
+      setSnakeColorIdState(settings.snakeColorId ?? 'amber-violet');
+      setStairsStyleIdState(settings.stairsStyleId ?? 'steps');
+      setStairsColorIdState(settings.stairsColorId ?? 'sand-light');
     });
     return () => {
       isActive = false;
@@ -60,7 +71,44 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
     });
   }, [saveSettingsPatch]);
 
-  const theme = useMemo(() => resolveBoardTheme(themeId), [themeId]);
+  const setSnakeStyleId = useCallback((nextStyleId: SnakeVariantId) => {
+    setSnakeStyleIdState(nextStyleId);
+    saveSettingsPatch({
+      snakeStyleId: nextStyleId,
+    });
+  }, [saveSettingsPatch]);
+
+  const setSnakeColorId = useCallback((nextColorId: SnakeColorId) => {
+    setSnakeColorIdState(nextColorId);
+    saveSettingsPatch({
+      snakeColorId: nextColorId,
+    });
+  }, [saveSettingsPatch]);
+
+  const setStairsStyleId = useCallback((nextStyleId: StairsVariantId) => {
+    setStairsStyleIdState(nextStyleId);
+    saveSettingsPatch({
+      stairsStyleId: nextStyleId,
+    });
+  }, [saveSettingsPatch]);
+
+  const setStairsColorId = useCallback((nextColorId: StairsColorId) => {
+    setStairsColorIdState(nextColorId);
+    saveSettingsPatch({
+      stairsColorId: nextColorId,
+    });
+  }, [saveSettingsPatch]);
+
+  const theme = useMemo(
+    () =>
+      applyPathCustomization(resolveBoardTheme(themeId), {
+        snakeStyleId,
+        snakeColorId,
+        stairsStyleId,
+        stairsColorId,
+      }),
+    [snakeColorId, snakeStyleId, stairsColorId, stairsStyleId, themeId],
+  );
   const tokenColorValue = useMemo(() => resolveTokenColor(theme, tokenColorId), [theme, tokenColorId]);
 
   const value = useMemo(
@@ -71,11 +119,36 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
       tokenColorId,
       tokenColorValue,
       animationSpeed,
+      snakeStyleId,
+      snakeColorId,
+      stairsStyleId,
+      stairsColorId,
       setThemeId,
       setTokenColorId,
       setAnimationSpeed,
+      setSnakeStyleId,
+      setSnakeColorId,
+      setStairsStyleId,
+      setStairsColorId,
     }),
-    [animationSpeed, setAnimationSpeed, setThemeId, setTokenColorId, theme, themeId, tokenColorId, tokenColorValue],
+    [
+      animationSpeed,
+      setAnimationSpeed,
+      setThemeId,
+      setTokenColorId,
+      setSnakeColorId,
+      setSnakeStyleId,
+      setStairsColorId,
+      setStairsStyleId,
+      snakeColorId,
+      snakeStyleId,
+      stairsColorId,
+      stairsStyleId,
+      theme,
+      themeId,
+      tokenColorId,
+      tokenColorValue,
+    ],
   );
 
   return (

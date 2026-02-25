@@ -1,7 +1,7 @@
 {
   "summary": {
-    "overall_score": 83,
-    "last_updated": "2026-02-25T12:01:40Z",
+    "overall_score": 84,
+    "last_updated": "2026-02-25T12:55:43Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -11,12 +11,12 @@
     "complexity_growth_percent_max": 10
   },
   "metrics": {
-    "files_total": 143,
-    "source_files_total": 143,
-    "lines_total": 9535,
+    "files_total": 145,
+    "source_files_total": 145,
+    "lines_total": 9960,
     "frontend": {
-      "files": 131,
-      "lines": 9074
+      "files": 133,
+      "lines": 9499
     },
     "backend": {
       "files": 12,
@@ -24,9 +24,9 @@
     },
     "tests": {
       "files": 29,
-      "lines": 1527,
-      "test_file_ratio_vs_source_percent": 20.3,
-      "source_files_with_direct_test_match_percent": 26.0,
+      "lines": 1550,
+      "test_file_ratio_vs_source_percent": 20.0,
+      "source_files_with_direct_test_match_percent": 26.2,
       "coverage_estimate_percent": 69,
       "coverage_band": "medium"
     },
@@ -36,37 +36,37 @@
       "long_functions_over_50_loc": 15,
       "duplicate_code_blocks_estimate": 6,
       "solid_violations_estimate": 7,
-      "smells_per_1k_loc": 3.25
+      "smells_per_1k_loc": 3.11
     },
     "risk_modules": [
       {
         "path": "frontend/src/pages/GamePage.tsx",
         "risk": "medium",
-        "reason": "Primary gameplay orchestrator remains large and stateful, now additionally handling speed multiplier wiring."
-      },
-      {
-        "path": "frontend/src/context/GameContext.tsx",
-        "risk": "low",
-        "reason": "Thin provider around reducer/actions with clear repository dependency boundary."
-      },
-      {
-        "path": "frontend/src/pages/HistoryPage.tsx",
-        "risk": "low",
-        "reason": "Repository reads are isolated in useHistoryData; page is mostly presentational."
+        "reason": "Main gameplay orchestrator remains large though behavior is stable and now consumes centralized customization settings."
       },
       {
         "path": "frontend/src/theme/BoardThemeProvider.tsx",
         "risk": "medium",
-        "reason": "Now coordinates async preference load/save and should be kept focused while customization expands."
+        "reason": "Provider now coordinates persisted visual preferences and derived theme overrides; further splitting can reduce future coupling."
+      },
+      {
+        "path": "frontend/src/components/AppearanceCustomizationPanel.tsx",
+        "risk": "low",
+        "reason": "UI-only customization controls are centralized in one collapsible panel reused across pages."
+      },
+      {
+        "path": "frontend/src/context/GameContext.tsx",
+        "risk": "low",
+        "reason": "Thin provider wrapper around reducer/actions with repository abstraction boundary preserved."
       }
     ]
   },
   "scores": {
-    "architecture_clarity": 85,
-    "solid_compliance": 82,
+    "architecture_clarity": 86,
+    "solid_compliance": 83,
     "test_coverage": 69,
-    "complexity": 78,
-    "consistency": 85
+    "complexity": 79,
+    "consistency": 86
   },
   "methods": {
     "loc": "wc -l over frontend/src + backend/src ts/tsx/js/jsx",

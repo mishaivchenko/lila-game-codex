@@ -82,7 +82,7 @@ export const LilaBoardCanvas = ({
         : [animationMove.fromCell, animationMove.toCell];
     const pathStepCount = Math.max(1, tokenPathCells.length - 1);
     const tokenMoveDurationMs = animationTimings?.tokenMoveDurationMs ?? TOKEN_MOVE_DURATION_MS;
-    const stepDurationMs = Math.max(140, tokenMoveDurationMs / pathStepCount);
+    const stepDurationMs = Math.max(190, tokenMoveDurationMs / pathStepCount);
     setTokenStepDurationMs(stepDurationMs);
     const transitionPath =
       animationMove.pathPoints ??

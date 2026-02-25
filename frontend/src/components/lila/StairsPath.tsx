@@ -15,7 +15,6 @@ interface StairsPathProps {
   glyphAngle: number;
   glyphScale: number;
   glyphOpacity: number;
-  glyphHref: string;
   steps: LadderStep[];
   climber: BoardPathPoint;
   style: StairsStyle;
@@ -32,7 +31,6 @@ export const StairsPath = ({
   glyphAngle,
   glyphScale,
   glyphOpacity,
-  glyphHref,
   steps,
   climber,
   style,
@@ -61,15 +59,13 @@ export const StairsPath = ({
       />
 
       <g transform={`translate(${glyphPoint.xPercent} ${glyphPoint.yPercent}) rotate(${glyphAngle}) scale(${glyphScale})`} style={{ opacity: glyphOpacity }}>
-        <image
-          href={glyphHref}
-          x={-7}
-          y={-7}
-          width={14}
-          height={14}
-          preserveAspectRatio="xMidYMid meet"
-          style={{ filter: style.glyphFilter }}
-        />
+        {style.variantId === 'beam' ? (
+          <path d="M -1.8 0 L 1.8 0 M -1.2 -0.6 L 1.2 -0.6 M -0.6 0.6 L 0.6 0.6" stroke={style.stepStroke} strokeWidth={0.24} strokeLinecap="round" />
+        ) : style.variantId === 'arc' ? (
+          <path d="M -1.4 0.7 Q 0 -1.2 1.4 0.7" fill="none" stroke={style.stepStroke} strokeWidth={0.26} strokeLinecap="round" />
+        ) : (
+          <rect x={-1.4} y={-0.4} width={2.8} height={0.8} rx={0.26} fill={style.stepFill} stroke={style.stepStroke} strokeWidth={0.18} />
+        )}
       </g>
 
       <path
@@ -106,16 +102,28 @@ export const StairsPath = ({
             style={{ opacity: stepProgress }}
             data-testid={`lila-ladder-step-${index}`}
           >
-            <rect
-              x={-1.8}
-              y={-0.26}
-              width={3.6}
-              height={style.stepHeight}
-              rx={style.stepRadius}
-              fill={style.stepFill}
-              stroke={style.stepStroke}
-              strokeWidth={style.stepStrokeWidth}
-            />
+            {style.variantId === 'beam' ? (
+              <line
+                x1={-1.85}
+                y1={0}
+                x2={1.85}
+                y2={0}
+                stroke={style.stepStroke}
+                strokeWidth={style.stepStrokeWidth + 0.18}
+                strokeLinecap="round"
+              />
+            ) : (
+              <rect
+                x={-1.8}
+                y={-0.26}
+                width={3.6}
+                height={style.stepHeight}
+                rx={style.stepRadius}
+                fill={style.stepFill}
+                stroke={style.stepStroke}
+                strokeWidth={style.stepStrokeWidth}
+              />
+            )}
           </g>
         );
       })}

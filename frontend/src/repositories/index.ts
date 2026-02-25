@@ -36,6 +36,10 @@ const inMemoryStore: InMemoryStore = {
     defaultDepth: 'standard',
     selectedThemeId: DEFAULT_SPIRITUAL_THEME.id,
     animationSpeed: 'normal',
+    snakeStyleId: 'flow',
+    snakeColorId: 'amber-violet',
+    stairsStyleId: 'steps',
+    stairsColorId: 'sand-light',
   },
 };
 

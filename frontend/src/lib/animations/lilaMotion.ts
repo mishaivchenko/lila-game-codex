@@ -1,12 +1,12 @@
 import type { Transition, Variants } from 'framer-motion';
 
-export const TOKEN_MOVE_DURATION_MS = 1080;
-export const PATH_DRAW_DURATION_MS = 560;
-export const PATH_GLIDE_DURATION_MS = 900;
-export const PULSE_DURATION_MS = 260;
+export const TOKEN_MOVE_DURATION_MS = 1480;
+export const PATH_DRAW_DURATION_MS = 760;
+export const PATH_GLIDE_DURATION_MS = 1320;
+export const PULSE_DURATION_MS = 420;
 
 const easingCalm: [number, number, number, number] = [0.22, 1, 0.36, 1];
-const easingSoft: [number, number, number, number] = [0.4, 0, 0.2, 1];
+const easingSoft: [number, number, number, number] = [0.35, 0.03, 0.2, 1];
 
 export const tokenMoveTransition: Transition = {
   duration: TOKEN_MOVE_DURATION_MS / 1000,

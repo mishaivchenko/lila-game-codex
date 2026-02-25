@@ -1,6 +1,10 @@
 import type { LilaVisualTheme } from '../config/visualThemes';
 
+export type SnakeVariantId = 'flow' | 'ribbon' | 'sigil';
+export type StairsVariantId = 'steps' | 'beam' | 'arc';
+
 export interface SnakeStyle {
+  variantId: SnakeVariantId;
   glowStroke: string;
   glowStrokeWidth: number;
   coreGradientStops: [string, string, string];
@@ -16,6 +20,7 @@ export interface SnakeStyle {
 }
 
 export interface StairsStyle {
+  variantId: StairsVariantId;
   glowStroke: string;
   glowStrokeWidth: number;
   railGradientStops: [string, string];
@@ -109,6 +114,7 @@ export const DEFAULT_SPIRITUAL_THEME: BoardTheme = {
     transitionHintSnakeText: '#b45309',
   },
   snake: {
+    variantId: 'flow',
     glowStroke: 'rgba(185,133,74,0.38)',
     glowStrokeWidth: 4,
     coreGradientStops: ['#C8A262', '#8E3550', '#5E3F80'],
@@ -123,6 +129,7 @@ export const DEFAULT_SPIRITUAL_THEME: BoardTheme = {
     pulseBorder: '1px solid rgba(209,138,67,0.46)',
   },
   stairs: {
+    variantId: 'steps',
     glowStroke: 'rgba(173,123,83,0.24)',
     glowStrokeWidth: 3.4,
     railGradientStops: ['#D0B071', '#E8CEA0'],
@@ -181,6 +188,7 @@ export const COSMIC_DARK_THEME: BoardTheme = {
   },
   snake: {
     ...DEFAULT_SPIRITUAL_THEME.snake,
+    variantId: 'ribbon',
     glowStroke: 'rgba(246, 160, 97, 0.48)',
     coreGradientStops: ['#F0C37B', '#D87075', '#7A5BA3'],
     glyphFilter: 'hue-rotate(-12deg) saturate(1.06)',
@@ -189,6 +197,7 @@ export const COSMIC_DARK_THEME: BoardTheme = {
   },
   stairs: {
     ...DEFAULT_SPIRITUAL_THEME.stairs,
+    variantId: 'beam',
     glowStroke: 'rgba(76, 194, 207, 0.34)',
     railGradientStops: ['#5FE1E3', '#A6C5FF'],
     glyphFilter: 'hue-rotate(38deg) saturate(1.08)',
@@ -236,12 +245,14 @@ export const MINIMAL_CREAM_THEME: BoardTheme = {
   },
   snake: {
     ...DEFAULT_SPIRITUAL_THEME.snake,
+    variantId: 'sigil',
     glowStroke: 'rgba(181, 129, 91, 0.32)',
     coreGradientStops: ['#D8B78D', '#BA7A68', '#8C709F'],
     glyphFilter: 'sepia(0.12) saturate(0.92)',
   },
   stairs: {
     ...DEFAULT_SPIRITUAL_THEME.stairs,
+    variantId: 'arc',
     glowStroke: 'rgba(118, 170, 164, 0.3)',
     railGradientStops: ['#83C8BE', '#D6E2D8'],
     glyphFilter: 'sepia(0.1) saturate(0.9)',

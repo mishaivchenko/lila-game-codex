@@ -1,5 +1,4 @@
 import { useId, useMemo } from 'react';
-import { getLilaVisualAssets } from '../../config/visualThemes';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { buildSmoothPath, sampleAngleByProgress, samplePathByProgress } from './pathAnimationMath';
 import { useBoardTheme } from '../../theme';
@@ -15,7 +14,6 @@ export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationR
   const gradientSeed = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const gradientId = `snakeCore-${gradientSeed}`;
   const { theme } = useBoardTheme();
-  const snakeSpirit = useMemo(() => getLilaVisualAssets(theme.visualAssetTheme).snakeSpirit, [theme.visualAssetTheme]);
   const path = useMemo(() => buildSmoothPath(points), [points]);
   const head = useMemo(() => samplePathByProgress(points, progress), [points, progress]);
   const angle = useMemo(() => sampleAngleByProgress(points, progress), [points, progress]);
@@ -34,8 +32,6 @@ export const AnimationRendererSnake = ({ points, progress, opacity }: AnimationR
       headY={head.yPercent}
       headAngle={angle}
       headScale={headScale}
-      glyphOpacity={theme.snake.glyphOpacityBase + progress * theme.snake.glyphOpacityRange}
-      glyphHref={snakeSpirit}
       style={theme.snake}
       opacity={opacity}
     />

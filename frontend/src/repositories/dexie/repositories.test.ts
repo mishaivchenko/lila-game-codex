@@ -77,11 +77,19 @@ describe('dexie repositories', () => {
       selectedThemeId: 'cosmic-dark',
       tokenColorId: 'glacier',
       animationSpeed: 'fast',
+      snakeStyleId: 'ribbon',
+      snakeColorId: 'obsidian-cyan',
+      stairsStyleId: 'beam',
+      stairsColorId: 'silver-cyan',
     });
 
     const reloaded = await settings.getSettings();
     expect(reloaded.selectedThemeId).toBe('cosmic-dark');
     expect(reloaded.tokenColorId).toBe('glacier');
     expect(reloaded.animationSpeed).toBe('fast');
+    expect(reloaded.snakeStyleId).toBe('ribbon');
+    expect(reloaded.snakeColorId).toBe('obsidian-cyan');
+    expect(reloaded.stairsStyleId).toBe('beam');
+    expect(reloaded.stairsColorId).toBe('silver-cyan');
   });
 });
