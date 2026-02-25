@@ -1,6 +1,12 @@
 import { useId, useMemo } from 'react';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
-import { buildSmoothPath, buildStepSamples, sampleAngleByProgress, samplePathByProgress } from './pathAnimationMath';
+import {
+  buildOrthogonalStepPoints,
+  buildPolylinePath,
+  buildStepSamples,
+  sampleAngleByProgress,
+  samplePathByProgress,
+} from './pathAnimationMath';
 import { useBoardTheme } from '../../theme';
 import { StairsPath } from './StairsPath';
 
@@ -14,11 +20,18 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
   const gradientSeed = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const gradientId = `ladderRail-${gradientSeed}`;
   const { theme } = useBoardTheme();
-  const path = useMemo(() => buildSmoothPath(points), [points]);
-  const steps = useMemo(() => buildStepSamples(points), [points]);
-  const glyphPoint = useMemo(() => samplePathByProgress(points, Math.max(0.1, progress * 0.72)), [points, progress]);
-  const glyphAngle = useMemo(() => sampleAngleByProgress(points, Math.max(0.1, progress * 0.72)), [points, progress]);
-  const climber = useMemo(() => samplePathByProgress(points, progress), [points, progress]);
+  const orthogonalPoints = useMemo(() => buildOrthogonalStepPoints(points), [points]);
+  const path = useMemo(() => buildPolylinePath(orthogonalPoints), [orthogonalPoints]);
+  const steps = useMemo(() => buildStepSamples(orthogonalPoints, 3.2), [orthogonalPoints]);
+  const glyphPoint = useMemo(
+    () => samplePathByProgress(orthogonalPoints, Math.max(0.1, progress * 0.72)),
+    [orthogonalPoints, progress],
+  );
+  const glyphAngle = useMemo(
+    () => sampleAngleByProgress(orthogonalPoints, Math.max(0.1, progress * 0.72)),
+    [orthogonalPoints, progress],
+  );
+  const climber = useMemo(() => samplePathByProgress(orthogonalPoints, progress), [orthogonalPoints, progress]);
 
   return (
     <StairsPath

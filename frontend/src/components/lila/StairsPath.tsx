@@ -91,6 +91,7 @@ export const StairsPath = ({
         const threshold = (index + 1) / (steps.length + 1);
         const stepProgress = clamp01((progress - threshold) / 0.16);
         const scale = 0.1 + stepProgress * 0.9;
+        const sharpRadius = Math.min(0.08, style.stepRadius * 0.35);
 
         return (
           <g
@@ -115,7 +116,7 @@ export const StairsPath = ({
                 y={-0.26}
                 width={3.6}
                 height={style.stepHeight}
-                rx={style.stepRadius}
+                rx={sharpRadius}
                 fill={style.stepFill}
                 stroke={style.stepStroke}
                 strokeWidth={style.stepStrokeWidth}
