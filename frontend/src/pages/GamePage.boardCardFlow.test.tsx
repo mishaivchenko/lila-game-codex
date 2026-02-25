@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEffect } from 'react';
 import { GamePage } from './GamePage';
 import type { GameMove, GameSession } from '../domain/types';
+import { BOARD_DEFINITIONS } from '../content/boards';
+import { resolveTransitionEntryCell } from '../lib/lila/moveVisualization';
 
 const mockUseGameContext = vi.fn();
 
@@ -159,12 +161,36 @@ describe('GamePage board/card interactions', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByTestId('animation-state').textContent).toContain(':snake:9');
+    const entryCell = resolveTransitionEntryCell(
+      snakeMove.fromCell,
+      snakeMove.dice,
+      BOARD_DEFINITIONS.full,
+      snakeMove.snakeOrArrow,
+      snakeMove.toCell,
+    );
+    expect(entryCell).toBeDefined();
+
+    expect(screen.getByTestId('animation-state').textContent).toContain(`:none:${entryCell}`);
     expect(screen.queryByTestId('coach-modal')).toBeNull();
 
     act(() => {
       fireEvent.click(screen.getByText('finish-board-animation'));
+      vi.runAllTimers();
     });
+
+    expect(screen.getByText(`card-cell-${entryCell}`)).not.toBeNull();
+
+    act(() => {
+      fireEvent.click(screen.getByText('close-card'));
+    });
+
+    expect(screen.getByTestId('animation-state').textContent).toContain('move-snake-tail:snake:9');
+
+    act(() => {
+      fireEvent.click(screen.getByText('finish-board-animation'));
+      vi.runAllTimers();
+    });
+    expect(screen.getByTestId('animation-state').textContent).toBe('none');
   });
 
   it('does not allow second roll while movement is animating', async () => {
