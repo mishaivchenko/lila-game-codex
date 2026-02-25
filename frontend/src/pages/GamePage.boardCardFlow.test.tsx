@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEffect } from 'react';
 import { GamePage } from './GamePage';
 import type { GameMove, GameSession } from '../domain/types';
+import { BOARD_DEFINITIONS } from '../content/boards';
+import { resolveTransitionEntryCell } from '../lib/lila/moveVisualization';
 
 const mockUseGameContext = vi.fn();
 
@@ -128,22 +130,11 @@ describe('GamePage board/card interactions', () => {
     expect(screen.queryByText('card-cell-67')).not.toBeNull();
   });
 
-  it('runs snake flow and keeps card closed until animation completion', async () => {
-    const snakeMove: GameMove = {
-      id: 'move-snake',
-      sessionId: baseSession.id,
-      moveNumber: 1,
-      fromCell: 43,
-      toCell: 9,
-      dice: 1,
-      moveType: 'snake',
-      snakeOrArrow: 'snake',
-      createdAt: new Date().toISOString(),
-    };
-
+  const assertSpecialFlow = async (move: GameMove, expectedType: 'snake' | 'arrow') => {
+    const performMove = vi.fn().mockResolvedValue(move);
     mockUseGameContext.mockReturnValue({
-      currentSession: { ...baseSession, currentCell: 9 },
-      performMove: vi.fn().mockResolvedValue(snakeMove),
+      currentSession: { ...baseSession, currentCell: move.toCell },
+      performMove,
       finishSession: vi.fn().mockResolvedValue(undefined),
       saveInsight: vi.fn().mockResolvedValue(undefined),
       updateSessionRequest: vi.fn().mockResolvedValue(undefined),
@@ -152,6 +143,15 @@ describe('GamePage board/card interactions', () => {
       error: undefined,
     });
 
+    const entryCell = resolveTransitionEntryCell(
+      move.fromCell,
+      move.dice,
+      BOARD_DEFINITIONS.full,
+      move.snakeOrArrow,
+      move.toCell,
+    );
+    expect(entryCell).toBeDefined();
+
     renderPage();
 
     await act(async () => {
@@ -159,12 +159,58 @@ describe('GamePage board/card interactions', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByTestId('animation-state').textContent).toContain(':snake:9');
-    expect(screen.queryByTestId('coach-modal')).toBeNull();
+    expect(screen.getByTestId('animation-state').textContent).toContain(`${move.id}:none:${entryCell}`);
 
     act(() => {
       fireEvent.click(screen.getByText('finish-board-animation'));
+      vi.runAllTimers();
     });
+    expect(screen.getByText(`card-cell-${entryCell}`)).not.toBeNull();
+
+    act(() => {
+      fireEvent.click(screen.getByText('close-card'));
+    });
+    expect(screen.getByTestId('animation-state').textContent).toContain(`${move.id}-special:${expectedType}:${move.toCell}`);
+
+    act(() => {
+      fireEvent.click(screen.getByText('finish-board-animation'));
+      vi.runAllTimers();
+    });
+    expect(screen.getByText(`card-cell-${move.toCell}`)).not.toBeNull();
+  };
+
+  it('runs snake flow: entry card -> snake animation -> target card', async () => {
+    await assertSpecialFlow(
+      {
+        id: 'move-snake',
+        sessionId: baseSession.id,
+        moveNumber: 1,
+        fromCell: 43,
+        toCell: 9,
+        dice: 1,
+        moveType: 'snake',
+        snakeOrArrow: 'snake',
+        createdAt: new Date().toISOString(),
+      },
+      'snake',
+    );
+  });
+
+  it('runs arrow flow: entry card -> arrow animation -> target card', async () => {
+    await assertSpecialFlow(
+      {
+        id: 'move-arrow',
+        sessionId: baseSession.id,
+        moveNumber: 1,
+        fromCell: 19,
+        toCell: 32,
+        dice: 1,
+        moveType: 'ladder',
+        snakeOrArrow: 'arrow',
+        createdAt: new Date().toISOString(),
+      },
+      'arrow',
+    );
   });
 
   it('does not allow second roll while movement is animating', async () => {

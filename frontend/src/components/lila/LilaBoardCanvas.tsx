@@ -265,11 +265,10 @@ export const LilaBoardCanvas = ({
     const movementEngine = createMovementEngine(movementSettings);
 
     const specialEntryCell = animationMove.entryCell ?? animationMove.fromCell;
-    const tokenPathCells = animationMove.tokenPathCells && animationMove.tokenPathCells.length >= 2
-      ? animationMove.tokenPathCells
-      : animationMove.type && specialEntryCell !== animationMove.fromCell
+    const tokenPathCells = animationMove.tokenPathCells
+      ?? (animationMove.type && specialEntryCell !== animationMove.fromCell
         ? [animationMove.fromCell, specialEntryCell]
-        : [animationMove.fromCell, animationMove.toCell];
+        : [animationMove.fromCell, animationMove.toCell]);
     const movementPlan = movementEngine.planPath(tokenPathCells);
     setTokenStepDurationMs(movementEngine.settings.stepDurationMs);
     const transitionPath =
