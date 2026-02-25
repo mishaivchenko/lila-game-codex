@@ -3,9 +3,6 @@ import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import {
   buildOrthogonalStepPoints,
   buildPolylinePath,
-  buildStepSamples,
-  sampleAngleByProgress,
-  samplePathByProgress,
 } from './pathAnimationMath';
 import { useBoardTheme } from '../../theme';
 import { StairsPath } from './StairsPath';
@@ -22,16 +19,6 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
   const { theme } = useBoardTheme();
   const orthogonalPoints = useMemo(() => buildOrthogonalStepPoints(points), [points]);
   const path = useMemo(() => buildPolylinePath(orthogonalPoints), [orthogonalPoints]);
-  const steps = useMemo(() => buildStepSamples(orthogonalPoints, 3.2), [orthogonalPoints]);
-  const glyphPoint = useMemo(
-    () => samplePathByProgress(orthogonalPoints, Math.max(0.1, progress * 0.72)),
-    [orthogonalPoints, progress],
-  );
-  const glyphAngle = useMemo(
-    () => sampleAngleByProgress(orthogonalPoints, Math.max(0.1, progress * 0.72)),
-    [orthogonalPoints, progress],
-  );
-  const climber = useMemo(() => samplePathByProgress(orthogonalPoints, progress), [orthogonalPoints, progress]);
 
   return (
     <StairsPath
@@ -39,12 +26,6 @@ export const AnimationRendererLadder = ({ points, progress, opacity }: Animation
       gradientId={gradientId}
       progress={progress}
       opacity={opacity}
-      glyphPoint={glyphPoint}
-      glyphAngle={glyphAngle}
-      glyphScale={0.58 + progress * 0.36}
-      glyphOpacity={theme.stairs.glyphOpacityBase + progress * theme.stairs.glyphOpacityRange}
-      steps={steps}
-      climber={climber}
       style={theme.stairs}
     />
   );

@@ -5,7 +5,7 @@ import type { AnimationTimingSettings } from '../../lib/animations/animationTimi
 import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
 import { AnimationRendererLadder } from './AnimationRendererLadder';
 import { AnimationRendererSnake } from './AnimationRendererSnake';
-import { samplePathByProgress } from './pathAnimationMath';
+import { buildOrthogonalStepPoints, samplePathByProgress } from './pathAnimationMath';
 import {
   TRANSITION_FADE_OUT_MS,
   TRANSITION_POST_HOLD_MS,
@@ -61,6 +61,10 @@ export const LilaPathAnimation = ({
           ],
     [points, from.xPercent, from.yPercent, to.xPercent, to.yPercent],
   );
+  const animationPathPoints = useMemo(
+    () => (type === 'arrow' ? buildOrthogonalStepPoints(pathPoints) : pathPoints),
+    [pathPoints, type],
+  );
 
   useEffect(() => {
     onProgressRef.current = onProgress;
@@ -107,7 +111,7 @@ export const LilaPathAnimation = ({
       const linearTravel = Math.max(0, Math.min(1, (nowMs - drawEndMs) / travelDuration));
       const easedTravel = 0.5 - Math.cos(Math.PI * linearTravel) / 2;
       setProgress(easedTravel);
-      onProgressRef.current?.(easedTravel, samplePathByProgress(pathPoints, easedTravel));
+      onProgressRef.current?.(easedTravel, samplePathByProgress(animationPathPoints, easedTravel));
 
       if (easedTravel < 1) {
         rafRef.current = window.requestAnimationFrame(tick);
@@ -140,7 +144,7 @@ export const LilaPathAnimation = ({
       timersRef.current.push(holdTimer, doneTimer);
     };
 
-    onProgressRef.current?.(0, samplePathByProgress(pathPoints, 0));
+    onProgressRef.current?.(0, samplePathByProgress(animationPathPoints, 0));
     rafRef.current = window.requestAnimationFrame(tick);
 
     return () => {
@@ -152,7 +156,7 @@ export const LilaPathAnimation = ({
       timersRef.current.forEach((timer) => window.clearTimeout(timer));
       timersRef.current = [];
     };
-  }, [boardType, fromCell, pathPoints, toCell, timings?.pathDrawDurationMs, timings?.pathFadeOutMs, timings?.pathPostHoldMs, timings?.pathTravelDurationMs, type]);
+  }, [animationPathPoints, boardType, fromCell, toCell, timings?.pathDrawDurationMs, timings?.pathFadeOutMs, timings?.pathPostHoldMs, timings?.pathTravelDurationMs, type]);
 
   if (!visible) {
     return null;
@@ -171,13 +175,13 @@ export const LilaPathAnimation = ({
     >
       {type === 'snake' ? (
         <AnimationRendererSnake
-          points={pathPoints}
+          points={animationPathPoints}
           progress={Math.max(drawProgress, progress)}
           opacity={opacity}
           carryTokenColor={tokenColor}
         />
       ) : (
-        <AnimationRendererLadder points={pathPoints} progress={Math.max(drawProgress, progress)} opacity={opacity} />
+        <AnimationRendererLadder points={animationPathPoints} progress={Math.max(drawProgress, progress)} opacity={opacity} />
       )}
     </svg>
   );
