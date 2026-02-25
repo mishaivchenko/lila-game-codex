@@ -27,7 +27,7 @@ describe('LilaBoard', () => {
     expect(token.style.top).toBe(`${expected.yPercent}%`);
   });
 
-  it('renders short board with short image and short-board coordinates', () => {
+  it('renders short board with optimized short image and short-board coordinates', () => {
     const view = render(<LilaBoard board={BOARD_DEFINITIONS.short} currentCell={7} />);
     const scoped = within(view.container);
 
@@ -35,7 +35,7 @@ describe('LilaBoard', () => {
     const token = scoped.getByLabelText('token') as HTMLDivElement;
     const expected = mapCellToBoardPosition('short', 7);
 
-    expect(image.getAttribute('src')).toContain('lila-board-short.png');
+    expect(image.getAttribute('src')).toContain('/assets/board/web/short/');
     expect(token.style.left).toBe(`${expected.xPercent}%`);
     expect(token.style.top).toBe(`${expected.yPercent}%`);
   });

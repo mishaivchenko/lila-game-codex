@@ -53,13 +53,13 @@ This implementation provides:
 > Replace or extend these with fresh UI captures when new visuals are shipped.
 
 ### Board Example
-![Lila Board](field/lila-board-short.png)
+![Lila Board](frontend/public/assets/board/web/short/board-short-1024.webp)
 
 ### Card Example
 ![Card Example](cards/IMG_2677.JPEG)
 
 ### Full Board Asset
-![Full Board](field/НОВИЙ%20ДИЗАЙН.png)
+![Full Board](frontend/public/assets/board/web/full/board-full-1536.webp)
 
 ### Deep Journey Visual Reference
 ![Deep Journey Reference](tmp/pdfs/lila_guide_p1.png)

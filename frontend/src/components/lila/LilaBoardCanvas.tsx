@@ -16,6 +16,7 @@ import { getBoardProfile, getBoardTransitionPath } from '../../lib/lila/boardPro
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
 import { resolveCellFromBoardPercent } from '../../lib/lila/resolveCellFromBoardPointer';
+import { selectBoardImageAsset } from '../../lib/lila/selectBoardImageAsset';
 import type { LilaTransition } from './LilaBoard';
 import { LilaPathAnimation } from './LilaPathAnimation';
 import { useBoardTheme } from '../../theme';
@@ -46,6 +47,18 @@ const zoomSettings = {
 
 const DOUBLE_TAP_WINDOW_MS = 280;
 const DOUBLE_TAP_DISTANCE_PX = 24;
+const toResolvedSrcSet = (value: string): string =>
+  value
+    .split(',')
+    .map((segment) => {
+      const trimmed = segment.trim();
+      if (!trimmed) {
+        return trimmed;
+      }
+      const [url, descriptor] = trimmed.split(/\s+/);
+      return descriptor ? `${resolveAssetUrl(url)} ${descriptor}` : resolveAssetUrl(url);
+    })
+    .join(', ');
 
 export const LilaBoardCanvas = ({
   boardType,
@@ -67,6 +80,8 @@ export const LilaBoardCanvas = ({
   const [activePath, setActivePath] = useState<LilaTransition | undefined>();
   const [tokenPathPosition, setTokenPathPosition] = useState<BoardPathPoint | undefined>();
   const [tokenStepDurationMs, setTokenStepDurationMs] = useState(TOKEN_MOVE_DURATION_MS);
+  const [isBoardImageReady, setIsBoardImageReady] = useState(false);
+  const [activeBoardSrc, setActiveBoardSrc] = useState<string | null>(null);
   const [cameraState, setCameraState] = useState(() => ({
     zoom: 1,
     targetZoom: 1,
@@ -101,6 +116,16 @@ export const LilaBoardCanvas = ({
     }),
   );
   const boardProfile = useMemo(() => getBoardProfile(boardType), [boardType]);
+  const boardImageSelection = useMemo(
+    () =>
+      selectBoardImageAsset(boardProfile.imageAssets, {
+        viewportWidth: viewportSize.width,
+        viewportHeight: viewportSize.height,
+        devicePixelRatio: typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1,
+        zoom: cameraState.zoom,
+      }),
+    [boardProfile.imageAssets, cameraState.zoom, viewportSize.height, viewportSize.width],
+  );
   const specialTransitions = useMemo(() => {
     const board = BOARD_DEFINITIONS[boardType];
     const transitionByCell = new Map<number, 'snake' | 'arrow'>();
@@ -108,6 +133,32 @@ export const LilaBoardCanvas = ({
     board.arrows.forEach((arrow) => transitionByCell.set(arrow.from, 'arrow'));
     return transitionByCell;
   }, [boardType]);
+
+  useEffect(() => {
+    const image = new Image();
+    image.decoding = 'async';
+    const nextSrc = resolveAssetUrl(boardImageSelection.fallbackSrc);
+    let isCancelled = false;
+
+    if (!activeBoardSrc || !activeBoardSrc.includes(boardType)) {
+      setIsBoardImageReady(false);
+    }
+
+    image.src = nextSrc;
+    image.onload = () => {
+      if (isCancelled) {
+        return;
+      }
+      setActiveBoardSrc(nextSrc);
+      setIsBoardImageReady(true);
+      if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+        setAspectRatio(image.naturalWidth / image.naturalHeight);
+      }
+    };
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeBoardSrc, boardImageSelection.fallbackSrc, boardType]);
 
   useEffect(() => {
     const camera = cameraEngineRef.current;
@@ -474,23 +525,41 @@ export const LilaBoardCanvas = ({
         ref={canvasRef}
       >
         <BoardSceneContainer camera={cameraState}>
-          <img
-            src={resolveAssetUrl(boardProfile.imageSrc)}
-            alt={boardType === 'full' ? 'Lila full board' : 'Lila short board'}
-            className="block h-full w-full select-none object-cover"
-            style={{
-              imageRendering: 'auto',
-              transform: 'translateZ(0)',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-            }}
-            onLoad={(event) => {
-              const { naturalWidth, naturalHeight } = event.currentTarget;
-              if (naturalWidth > 0 && naturalHeight > 0) {
-                setAspectRatio(naturalWidth / naturalHeight);
-              }
-            }}
-          />
+          {!isBoardImageReady && (
+            <img
+              src={resolveAssetUrl(boardImageSelection.placeholderSrc)}
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 block h-full w-full select-none object-cover"
+              style={{
+                filter: 'blur(8px)',
+                opacity: 0.9,
+                transform: 'scale(1.02)',
+              }}
+            />
+          )}
+
+          <picture>
+            <source
+              type="image/webp"
+              srcSet={toResolvedSrcSet(boardImageSelection.webpSrcSet)}
+              sizes={boardImageSelection.sizes}
+            />
+            <img
+              src={activeBoardSrc ?? resolveAssetUrl(boardImageSelection.fallbackSrc)}
+              srcSet={toResolvedSrcSet(boardImageSelection.pngSrcSet)}
+              sizes={boardImageSelection.sizes}
+              alt={boardType === 'full' ? 'Lila full board' : 'Lila short board'}
+              className="block h-full w-full select-none object-cover transition-opacity duration-300"
+              style={{
+                opacity: isBoardImageReady ? 1 : 0,
+                imageRendering: 'auto',
+                transform: 'translateZ(0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+              }}
+            />
+          </picture>
 
           {activePath?.type && (
             <LilaPathAnimation

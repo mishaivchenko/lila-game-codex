@@ -7,7 +7,7 @@ export interface CellCoord {
 const FULL_COLUMNS = 9;
 const FULL_ROWS = 8;
 
-// Calibrated to the printed number centers on /field/НОВИЙ ДИЗАЙН.png.
+// Calibrated to the printed number centers on design/print/board-full-master.png.
 const X_MIN = 5.1;
 const X_MAX = 88.9;
 const Y_TOP = 11.6;

@@ -3,7 +3,7 @@ import type { CellCoord } from './fullBoardCoordinates';
 const SHORT_COLUMNS = 6;
 const SHORT_ROWS = 6;
 
-// Calibrated to /field/lila-board-short.png placeholder.
+// Calibrated to design/print/board-short-master.jpg and web short-board variants.
 const X_MIN = 11.0;
 const X_MAX = 89.0;
 const Y_TOP = 13.0;

@@ -193,11 +193,13 @@ Current production-oriented stack is defined by `/docker-compose.yml`:
 - `postgres` (persistent volume).
 
 Network routing (`/deploy/Caddyfile`):
-- `/api/*`, `/health`, `/field/*`, `/cards/*` -> `backend:3001`,
+- `/api/*`, `/health`, `/cards/*` -> `backend:3001`,
 - all other paths -> `frontend:80`.
 
 Frontend serving:
 - Nginx config (`/frontend/nginx.conf`) uses `try_files ... /index.html` for SPA fallback.
+- Board image assets are served as optimized static web variants from `frontend/public/assets/board/web/...`.
+- Print masters are kept separately in `design/print/` and are not referenced by runtime code.
 
 ### Build/package flow
 - frontend Dockerfile: multi-stage Node build -> Nginx runtime image.

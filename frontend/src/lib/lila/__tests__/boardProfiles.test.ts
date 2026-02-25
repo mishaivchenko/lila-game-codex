@@ -6,12 +6,12 @@ describe('boardProfiles', () => {
     const full = getBoardProfile('full');
     const short = getBoardProfile('short');
 
-    expect(full.imageSrc).toContain('/field/');
+    expect(full.imageAssets.webp.medium).toContain('/assets/board/web/full/');
     expect(full.cellCoordinates).toHaveLength(72);
     expect(full.snakePaths.length).toBeGreaterThan(0);
     expect(full.ladderPaths.length).toBeGreaterThan(0);
 
-    expect(short.imageSrc).toContain('short');
+    expect(short.imageAssets.webp.medium).toContain('/assets/board/web/short/');
     expect(short.cellCoordinates).toHaveLength(36);
   });
 

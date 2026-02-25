@@ -22,15 +22,15 @@ describe('LilaBoardCanvas', () => {
     const token = screen.getByLabelText('token');
 
     expect(board).not.toBeNull();
-    expect(image.getAttribute('src')).toContain('/field/');
+    expect(image.getAttribute('src')).toContain('/assets/board/web/full/');
     expect(token).not.toBeNull();
   });
 
-  it('renders short board with dedicated short-board PNG', () => {
+  it('renders short board with optimized short-board asset', () => {
     render(<LilaBoardCanvas boardType="short" currentCell={10} />);
 
     const image = screen.getByAltText('Lila short board');
-    expect(image.getAttribute('src')).toContain('lila-board-short.png');
+    expect(image.getAttribute('src')).toContain('/assets/board/web/short/');
   });
 
   it('renders transition animation layer for special move', () => {

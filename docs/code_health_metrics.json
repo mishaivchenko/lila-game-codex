@@ -1,7 +1,7 @@
 {
   "summary": {
-    "overall_score": 86,
-    "last_updated": "2026-02-25T17:39:58Z",
+    "overall_score": 87,
+    "last_updated": "2026-02-25T18:49:53Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -11,23 +11,23 @@
     "complexity_growth_percent_max": 10
   },
   "metrics": {
-    "files_total": 166,
-    "source_files_total": 166,
-    "lines_total": 10922,
+    "files_total": 168,
+    "source_files_total": 168,
+    "lines_total": 11134,
     "frontend": {
-      "files": 154,
-      "lines": 10461
+      "files": 156,
+      "lines": 10673
     },
     "backend": {
       "files": 12,
       "lines": 461
     },
     "tests": {
-      "files": 31,
-      "lines": 1690,
-      "test_file_ratio_vs_source_percent": 18.7,
-      "source_files_with_direct_test_match_percent": 28.4,
-      "coverage_estimate_percent": 71,
+      "files": 32,
+      "lines": 1742,
+      "test_file_ratio_vs_source_percent": 19.0,
+      "source_files_with_direct_test_match_percent": 28.9,
+      "coverage_estimate_percent": 72,
       "coverage_band": "medium"
     },
     "smells": {
@@ -36,7 +36,7 @@
       "long_functions_over_50_loc": 16,
       "duplicate_code_blocks_estimate": 6,
       "solid_violations_estimate": 7,
-      "smells_per_1k_loc": 2.98
+      "smells_per_1k_loc": 2.92
     },
     "risk_modules": [
       {
@@ -47,7 +47,7 @@
       {
         "path": "frontend/src/components/lila/LilaBoardCanvas.tsx",
         "risk": "medium",
-        "reason": "Camera follow, drag pan, token/path sync, and pointer hit mapping remain concentrated, but movement sequencing now delegates to MovementEngine."
+        "reason": "Camera follow, token/path sync, pointer hit mapping and adaptive board asset loading remain concentrated in a single component."
       },
       {
         "path": "frontend/src/theme/BoardThemeProvider.tsx",
@@ -62,11 +62,11 @@
     ]
   },
   "scores": {
-    "architecture_clarity": 88,
-    "solid_compliance": 85,
-    "test_coverage": 71,
+    "architecture_clarity": 89,
+    "solid_compliance": 86,
+    "test_coverage": 72,
     "complexity": 81,
-    "consistency": 86
+    "consistency": 87
   },
   "methods": {
     "loc": "wc -l over frontend/src + backend/src ts/tsx/js/jsx",
