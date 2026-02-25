@@ -104,38 +104,48 @@ describe('LilaBoardCanvas', () => {
     vi.useRealTimers();
   });
 
-  it('keeps token at snake entry cell before snake path animation starts', () => {
+  it('keeps token anchored at special entry cell before special path animation starts', () => {
     vi.useFakeTimers();
 
+    const entryPosition = mapCellToBoardPosition('full', 44);
     const { container } = render(
       <LilaBoardCanvas
         boardType="full"
-        currentCell={60}
+        currentCell={9}
         animationMove={{
-          id: 'snake-tail',
-          fromCell: 60,
-          toCell: 13,
+          id: 'm-special',
+          fromCell: 44,
+          toCell: 9,
           type: 'snake',
-          entryCell: 60,
-          tokenPathCells: [60],
+          entryCell: 44,
+          pathPoints: [
+            { xPercent: 42.11, yPercent: 40.85 },
+            { xPercent: 16.31, yPercent: 81.18 },
+          ],
+          tokenPathCells: [44],
         }}
       />,
     );
 
-    const token = within(container).getByLabelText('token') as HTMLDivElement;
-    const entryPosition = mapCellToBoardPosition('full', 60);
+    const token = within(container).getByLabelText('token');
+    const startStyle = token.getAttribute('style') ?? '';
+    expect(startStyle).toContain(`left: ${entryPosition.xPercent}%`);
+    expect(startStyle).toContain(`top: ${entryPosition.yPercent}%`);
     expect(screen.queryByTestId('lila-transition-snake')).toBeNull();
-
-    expect(token.style.left).toBe(`${entryPosition.xPercent}%`);
-    expect(token.style.top).toBe(`${entryPosition.yPercent}%`);
 
     act(() => {
       vi.advanceTimersByTime(DEFAULT_MOVEMENT_SETTINGS.snakeDelayMs - 1);
     });
 
-    expect(token.style.left).toBe(`${entryPosition.xPercent}%`);
-    expect(token.style.top).toBe(`${entryPosition.yPercent}%`);
+    const beforeSpecialStyle = token.getAttribute('style') ?? '';
+    expect(beforeSpecialStyle).toContain(`left: ${entryPosition.xPercent}%`);
+    expect(beforeSpecialStyle).toContain(`top: ${entryPosition.yPercent}%`);
     expect(screen.queryByTestId('lila-transition-snake')).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(2);
+    });
+    expect(screen.getByTestId('lila-transition-snake')).not.toBeNull();
 
     vi.useRealTimers();
   });

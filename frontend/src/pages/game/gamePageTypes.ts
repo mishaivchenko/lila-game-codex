@@ -43,8 +43,8 @@ export interface SimpleMultiplayerPayload {
 }
 
 export type TurnState = 'idle' | 'rolling' | 'animating';
-export type ModalMode = 'inspect' | 'move' | 'special-head' | 'special-tail';
-export type SpecialFlowPhase = 'idle' | 'head-card' | 'tail-animation' | 'tail-card';
+export type ModalMode = 'inspect' | 'move' | 'special-entry' | 'special-target';
+export type SpecialFlowPhase = 'idle' | 'entry-animation' | 'entry-card' | 'special-animation' | 'target-card';
 
 export interface CoachMoveContext {
   fromCell: number;
