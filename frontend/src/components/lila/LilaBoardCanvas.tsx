@@ -15,6 +15,7 @@ import {
 import { getBoardProfile, getBoardTransitionPath } from '../../lib/lila/boardProfiles';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
+import { DEFAULT_BOARD_ZOOM_SETTINGS, resolveFocusedZoom } from '../../lib/lila/boardZoomSettings';
 import { resolveCellFromBoardPercent } from '../../lib/lila/resolveCellFromBoardPointer';
 import { selectBoardImageAsset } from '../../lib/lila/selectBoardImageAsset';
 import type { LilaTransition } from './LilaBoard';
@@ -37,16 +38,6 @@ interface LilaBoardCanvasProps {
   holdTokenSync?: boolean;
 }
 
-const zoomSettings = {
-  baseZoom: 1,
-  followZoom: 2.15,
-  manualZoom: 2.15,
-  zoomInDurationMs: 250,
-  zoomOutDurationMs: 400,
-};
-
-const DOUBLE_TAP_WINDOW_MS = 280;
-const DOUBLE_TAP_DISTANCE_PX = 24;
 const toResolvedSrcSet = (value: string): string =>
   value
     .split(',')
@@ -74,6 +65,9 @@ export const LilaBoardCanvas = ({
   holdTokenSync = false,
 }: LilaBoardCanvasProps) => {
   const { theme } = useBoardTheme();
+  const isTouchDevice = typeof window !== 'undefined'
+    && (window.matchMedia?.('(pointer: coarse)').matches || 'ontouchstart' in window);
+  const focusedZoom = resolveFocusedZoom(DEFAULT_BOARD_ZOOM_SETTINGS, isTouchDevice);
   const [tokenCell, setTokenCell] = useState(currentCell);
   const [pulseCell, setPulseCell] = useState<number | null>(null);
   const [aspectRatio, setAspectRatio] = useState(0.64);
@@ -231,8 +225,8 @@ export const LilaBoardCanvas = ({
             y: followPointRef.current.y,
           },
         });
-        void camera.animateZoom(zoomSettings.followZoom, {
-          durationMs: zoomSettings.zoomInDurationMs,
+        void camera.animateZoom(focusedZoom, {
+          durationMs: DEFAULT_BOARD_ZOOM_SETTINGS.zoomInDurationMs,
           easing: 'easeOut',
         });
       }
@@ -244,11 +238,11 @@ export const LilaBoardCanvas = ({
     }
     followModeRef.current = false;
     camera.clearFollow();
-    void camera.animateZoom(zoomSettings.baseZoom, {
-      durationMs: zoomSettings.zoomOutDurationMs,
+    void camera.animateZoom(DEFAULT_BOARD_ZOOM_SETTINGS.baseZoom, {
+      durationMs: DEFAULT_BOARD_ZOOM_SETTINGS.zoomOutDurationMs,
       easing: 'easeOut',
     });
-  }, [isMovingWithCamera, viewportSize.height, viewportSize.width]);
+  }, [focusedZoom, isMovingWithCamera, viewportSize.height, viewportSize.width]);
 
   useEffect(() => {
     if (!animationMove) {
@@ -367,20 +361,20 @@ export const LilaBoardCanvas = ({
 
   const toggleManualZoomAt = (worldPoint: { x: number; y: number }) => {
     const camera = cameraEngineRef.current;
-    const isZoomedIn = cameraState.zoom > zoomSettings.baseZoom + 0.05;
+    const isZoomedIn = cameraState.zoom > DEFAULT_BOARD_ZOOM_SETTINGS.baseZoom + 0.05;
     if (isMovingWithCamera) {
       return;
     }
     if (isZoomedIn) {
-      void camera.animateZoom(zoomSettings.baseZoom, {
-        durationMs: zoomSettings.zoomOutDurationMs,
+      void camera.animateZoom(DEFAULT_BOARD_ZOOM_SETTINGS.baseZoom, {
+        durationMs: DEFAULT_BOARD_ZOOM_SETTINGS.zoomOutDurationMs,
         easing: 'easeOut',
         focusPoint: worldPoint,
       });
       return;
     }
-    void camera.animateZoom(zoomSettings.manualZoom, {
-      durationMs: zoomSettings.zoomInDurationMs,
+    void camera.animateZoom(focusedZoom, {
+      durationMs: DEFAULT_BOARD_ZOOM_SETTINGS.zoomInDurationMs,
       easing: 'easeOut',
       focusPoint: worldPoint,
     });
@@ -405,7 +399,7 @@ export const LilaBoardCanvas = ({
     singleTapTimerRef.current = window.setTimeout(() => {
       onCellSelect(cell);
       singleTapTimerRef.current = null;
-    }, DOUBLE_TAP_WINDOW_MS);
+    }, DEFAULT_BOARD_ZOOM_SETTINGS.doubleTapWindowMs);
   };
 
   const handleBoardPointerUp = (event: PointerEvent<HTMLDivElement>) => {
@@ -431,8 +425,8 @@ export const LilaBoardCanvas = ({
     const previousTap = lastTapRef.current;
     const isDoubleTap = Boolean(
       previousTap
-      && now - previousTap.time <= DOUBLE_TAP_WINDOW_MS
-      && Math.hypot(worldPoint.x - previousTap.x, worldPoint.y - previousTap.y) <= DOUBLE_TAP_DISTANCE_PX,
+      && now - previousTap.time <= DEFAULT_BOARD_ZOOM_SETTINGS.doubleTapWindowMs
+      && Math.hypot(worldPoint.x - previousTap.x, worldPoint.y - previousTap.y) <= DEFAULT_BOARD_ZOOM_SETTINGS.doubleTapDistancePx,
     );
 
     if (isDoubleTap) {
@@ -481,7 +475,7 @@ export const LilaBoardCanvas = ({
     dragState.lastY = event.clientY;
     if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
       dragState.moved = true;
-      if (!followModeRef.current && cameraState.zoom > zoomSettings.baseZoom + 0.05) {
+      if (!followModeRef.current && cameraState.zoom > DEFAULT_BOARD_ZOOM_SETTINGS.baseZoom + 0.05) {
         cameraEngineRef.current.panBy({ x: dx, y: dy });
         const next = cameraEngineRef.current.getSnapshot();
         cameraSnapshotRef.current = next;

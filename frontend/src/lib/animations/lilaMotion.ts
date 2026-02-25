@@ -1,4 +1,5 @@
 import type { Transition, Variants } from 'framer-motion';
+import { DEFAULT_MODAL_ANIMATION_SETTINGS } from './modalSettings';
 
 export const TOKEN_MOVE_DURATION_MS = 1480;
 export const PATH_DRAW_DURATION_MS = 760;
@@ -25,8 +26,20 @@ export const pathGlideTransition: Transition = {
 
 export const modalBackdropVariants: Variants = {
   initial: { opacity: 0 },
-  animate: { opacity: 1, transition: { duration: 0.3, ease: easingSoft } },
-  exit: { opacity: 0, transition: { duration: 0.24, ease: easingSoft } },
+  animate: {
+    opacity: 1,
+    transition: {
+      duration: DEFAULT_MODAL_ANIMATION_SETTINGS.openDurationMs / 1000,
+      ease: DEFAULT_MODAL_ANIMATION_SETTINGS.easing,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: {
+      duration: DEFAULT_MODAL_ANIMATION_SETTINGS.closeDurationMs / 1000,
+      ease: DEFAULT_MODAL_ANIMATION_SETTINGS.easing,
+    },
+  },
 };
 
 export const modalPanelVariants: Variants = {
@@ -35,13 +48,19 @@ export const modalPanelVariants: Variants = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { duration: 0.3, ease: easingCalm },
+    transition: {
+      duration: DEFAULT_MODAL_ANIMATION_SETTINGS.openDurationMs / 1000,
+      ease: DEFAULT_MODAL_ANIMATION_SETTINGS.easing,
+    },
   },
   exit: {
     opacity: 0.55,
     y: '105%',
     scale: 1,
-    transition: { duration: 0.24, ease: easingSoft },
+    transition: {
+      duration: DEFAULT_MODAL_ANIMATION_SETTINGS.closeDurationMs / 1000,
+      ease: DEFAULT_MODAL_ANIMATION_SETTINGS.easing,
+    },
   },
 };
 
