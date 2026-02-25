@@ -34,6 +34,13 @@ interface LilaBoardCanvasProps {
   holdTokenSync?: boolean;
 }
 
+const zoomSettings = {
+  baseZoom: 1,
+  followZoom: 1.8,
+  zoomInDurationMs: 250,
+  zoomOutDurationMs: 400,
+};
+
 export const LilaBoardCanvas = ({
   boardType,
   currentCell,
@@ -59,8 +66,10 @@ export const LilaBoardCanvas = ({
     panX: 0,
     panY: 0,
   }));
+  const [viewportSize, setViewportSize] = useState({ width: 100, height: 100 });
   const timersRef = useRef<number[]>([]);
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  const followModeRef = useRef(false);
   const cameraEngineRef = useRef(
     createBoardCameraEngine({
       viewportWidth: 100,
@@ -108,6 +117,7 @@ export const LilaBoardCanvas = ({
       const rect = element.getBoundingClientRect();
       camera.setViewport({ width: rect.width, height: rect.height });
       camera.setWorldBounds({ width: rect.width, height: rect.height });
+      setViewportSize({ width: rect.width, height: rect.height });
     };
 
     updateViewport();
@@ -120,6 +130,35 @@ export const LilaBoardCanvas = ({
       observer.disconnect();
     };
   }, []);
+
+  const isMovingWithCamera = Boolean(animationMove || activePath || holdTokenSync);
+
+  useEffect(() => {
+    const camera = cameraEngineRef.current;
+    if (isMovingWithCamera) {
+      if (!followModeRef.current) {
+        followModeRef.current = true;
+        void camera.animateZoom(zoomSettings.followZoom, {
+          durationMs: zoomSettings.zoomInDurationMs,
+          easing: 'easeOut',
+        });
+      }
+      return;
+    }
+
+    if (!followModeRef.current) {
+      return;
+    }
+    followModeRef.current = false;
+    void camera.animateZoom(zoomSettings.baseZoom, {
+      durationMs: zoomSettings.zoomOutDurationMs,
+      easing: 'easeOut',
+    });
+    void camera.animateTo(
+      { x: viewportSize.width / 2, y: viewportSize.height / 2 },
+      { durationMs: zoomSettings.zoomOutDurationMs, easing: 'easeOut' },
+    );
+  }, [isMovingWithCamera, viewportSize.height, viewportSize.width]);
 
   useEffect(() => {
     if (!animationMove) {
@@ -196,6 +235,21 @@ export const LilaBoardCanvas = ({
     [boardType, tokenCell],
   );
   const effectiveTokenPosition = tokenPathPosition ?? tokenPosition;
+
+  useEffect(() => {
+    if (!followModeRef.current) {
+      return;
+    }
+
+    const camera = cameraEngineRef.current;
+    camera.follow({
+      id: 'token',
+      point: {
+        x: (effectiveTokenPosition.xPercent / 100) * viewportSize.width,
+        y: (effectiveTokenPosition.yPercent / 100) * viewportSize.height,
+      },
+    });
+  }, [effectiveTokenPosition.xPercent, effectiveTokenPosition.yPercent, viewportSize.height, viewportSize.width]);
 
   const pulsePosition = pulseCell ? mapCellToBoardPosition(boardType, pulseCell) : undefined;
   const activeCellType = specialTransitions.get(currentCell);
