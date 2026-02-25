@@ -18,16 +18,25 @@ const resolveByGridArea = (
 
   const xs = profile.cellCoordinates.map((coord) => coord.xPercent);
   const ys = profile.cellCoordinates.map((coord) => coord.yPercent);
-  const xMin = Math.min(...xs);
-  const xMax = Math.max(...xs);
-  const yTop = Math.min(...ys);
-  const yBottom = Math.max(...ys);
-  const xStep = (xMax - xMin) / Math.max(1, grid.columns - 1);
-  const yStep = (yBottom - yTop) / Math.max(1, grid.rows - 1);
-  const leftBound = xMin - xStep / 2;
-  const rightBound = xMax + xStep / 2;
-  const topBound = yTop - yStep / 2;
-  const bottomBound = yBottom + yStep / 2;
+  const xMin = grid.xMinPercent ?? Math.min(...xs);
+  const xMax = grid.xMaxPercent ?? Math.max(...xs);
+  const yTop = grid.yTopPercent ?? Math.min(...ys);
+  const yBottom = grid.yBottomPercent ?? Math.max(...ys);
+  const hasExplicitBounds =
+    grid.xMinPercent !== undefined
+    && grid.xMaxPercent !== undefined
+    && grid.yTopPercent !== undefined
+    && grid.yBottomPercent !== undefined;
+  const xStep = hasExplicitBounds
+    ? (xMax - xMin) / Math.max(1, grid.columns)
+    : (xMax - xMin) / Math.max(1, grid.columns - 1);
+  const yStep = hasExplicitBounds
+    ? (yBottom - yTop) / Math.max(1, grid.rows)
+    : (yBottom - yTop) / Math.max(1, grid.rows - 1);
+  const leftBound = hasExplicitBounds ? xMin : xMin - xStep / 2;
+  const rightBound = hasExplicitBounds ? xMax : xMax + xStep / 2;
+  const topBound = hasExplicitBounds ? yTop : yTop - yStep / 2;
+  const bottomBound = hasExplicitBounds ? yBottom : yBottom + yStep / 2;
 
   if (
     point.xPercent < leftBound

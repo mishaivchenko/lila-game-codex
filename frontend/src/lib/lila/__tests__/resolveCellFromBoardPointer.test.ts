@@ -93,6 +93,15 @@ describe('resolveCellFromBoardPercent', () => {
     ).toBe(4);
   });
 
+  it('does not resolve right-half tap of full-board cell 2 as the next cell', () => {
+    expect(
+      resolveCellFromBoardPercent('full', {
+        xPercent: 30.6,
+        yPercent: 88.4,
+      }),
+    ).toBe(2);
+  });
+
   it('maps calibrated visual points for full-board cells 2 and 3', () => {
     expect(
       resolveCellFromBoardPercent('full', {

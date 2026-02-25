@@ -29,6 +29,10 @@ export interface BoardImageAssetSet {
 export interface BoardHitTestConfig {
   columns: number;
   rows: number;
+  xMinPercent?: number;
+  xMaxPercent?: number;
+  yTopPercent?: number;
+  yBottomPercent?: number;
   rowCellOrderFromBottom?: number[][];
 }
 

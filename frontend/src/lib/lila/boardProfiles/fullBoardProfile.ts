@@ -24,6 +24,10 @@ export const fullBoardProfile: BoardProfile = {
   hitTest: {
     columns: 9,
     rows: 8,
+    xMinPercent: 0,
+    xMaxPercent: 100,
+    yTopPercent: 8.2,
+    yBottomPercent: 92.2,
     rowCellOrderFromBottom: [
       [1, 3, 2, 4, 5, 6, 7, 8, 9],
     ],
