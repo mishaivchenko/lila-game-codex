@@ -43,6 +43,7 @@ export interface BoardCameraEngine {
   animateZoom(zoomLevel: number, config?: BoardCameraAnimationConfig): Promise<void>;
   setViewport(size: { width: number; height: number }): void;
   setWorldBounds(bounds: { width: number; height: number }): void;
+  panBy(delta: { x: number; y: number }): void;
   projectScreenToWorld(point: CameraPoint): CameraPoint;
   update(dtMs: number): void;
   getSnapshot(): BoardCameraSnapshot;
@@ -103,6 +104,12 @@ export class CameraEngine implements BoardCameraEngine {
   setWorldBounds(bounds: { width: number; height: number }): void {
     this.worldWidth = Math.max(1, bounds.width);
     this.worldHeight = Math.max(1, bounds.height);
+    this.applyPanClamp();
+  }
+
+  panBy(delta: { x: number; y: number }): void {
+    this.panX += delta.x;
+    this.panY += delta.y;
     this.applyPanClamp();
   }
 

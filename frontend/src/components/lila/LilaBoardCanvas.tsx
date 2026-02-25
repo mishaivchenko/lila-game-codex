@@ -70,6 +70,12 @@ export const LilaBoardCanvas = ({
   const timersRef = useRef<number[]>([]);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const followModeRef = useRef(false);
+  const dragStateRef = useRef<{
+    pointerId: number;
+    lastX: number;
+    lastY: number;
+    moved: boolean;
+  } | null>(null);
   const cameraEngineRef = useRef(
     createBoardCameraEngine({
       viewportWidth: 100,
@@ -92,8 +98,12 @@ export const LilaBoardCanvas = ({
     const camera = cameraEngineRef.current;
     let frameId = 0;
     let previous = performance.now();
+    let isActive = true;
 
     const tick = (now: number) => {
+      if (!isActive) {
+        return;
+      }
       const dt = now - previous;
       previous = now;
       camera.update(dt);
@@ -102,6 +112,7 @@ export const LilaBoardCanvas = ({
     };
     frameId = window.requestAnimationFrame(tick);
     return () => {
+      isActive = false;
       window.cancelAnimationFrame(frameId);
     };
   }, []);
@@ -260,6 +271,14 @@ export const LilaBoardCanvas = ({
     position: mapCellToBoardPosition(boardType, token.cell),
   }));
   const handleBoardPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const dragState = dragStateRef.current;
+    if (dragState && dragState.pointerId === event.pointerId) {
+      dragStateRef.current = null;
+      if (dragState.moved) {
+        return;
+      }
+    }
+
     if (disableCellSelect || !onCellSelect) {
       return;
     }
@@ -281,6 +300,44 @@ export const LilaBoardCanvas = ({
     }
   };
 
+  const handleBoardPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (followModeRef.current || cameraState.zoom <= 1.01) {
+      return;
+    }
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      lastX: event.clientX,
+      lastY: event.clientY,
+      moved: false,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleBoardPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const dx = event.clientX - dragState.lastX;
+    const dy = event.clientY - dragState.lastY;
+    dragState.lastX = event.clientX;
+    dragState.lastY = event.clientY;
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+      dragState.moved = true;
+      cameraEngineRef.current.panBy({ x: dx, y: dy });
+      setCameraState(cameraEngineRef.current.getSnapshot());
+    }
+  };
+
+  const handleBoardPointerCancel = (event: PointerEvent<HTMLDivElement>) => {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) {
+      return;
+    }
+    dragStateRef.current = null;
+  };
+
   return (
     <div
       className="relative mx-auto w-full max-w-[520px] rounded-3xl p-2"
@@ -297,6 +354,9 @@ export const LilaBoardCanvas = ({
         }}
         data-testid="lila-board-canvas"
         onPointerUp={handleBoardPointerUp}
+        onPointerDown={handleBoardPointerDown}
+        onPointerMove={handleBoardPointerMove}
+        onPointerCancel={handleBoardPointerCancel}
         ref={canvasRef}
       >
         <BoardSceneContainer camera={cameraState}>
