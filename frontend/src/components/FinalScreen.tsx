@@ -6,6 +6,8 @@ interface FinalScreenProps {
 }
 
 export const FinalScreen = ({ onViewPath, onStartNew }: FinalScreenProps) => {
+  const newJourneyLabel = 'Нова подорож';
+
   return (
     <div className="space-y-4 rounded-3xl bg-white p-4 shadow-sm">
       <img src={getCardImagePath(68)} alt="Фінальна клітина" className="h-48 w-full rounded-2xl object-cover" />
@@ -21,8 +23,13 @@ export const FinalScreen = ({ onViewPath, onStartNew }: FinalScreenProps) => {
         <button onClick={onViewPath} type="button" className="flex-1 rounded-xl bg-stone-900 px-3 py-3 text-sm text-white">
           Переглянути мій шлях
         </button>
-        <button onClick={onStartNew} type="button" className="flex-1 rounded-xl border border-stone-300 px-3 py-3 text-sm">
-          Нова подорож
+        <button
+          onClick={onStartNew}
+          type="button"
+          aria-label={newJourneyLabel}
+          className="flex-1 rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm font-medium text-stone-900"
+        >
+          {newJourneyLabel}
         </button>
       </div>
     </div>
