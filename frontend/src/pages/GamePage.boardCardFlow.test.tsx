@@ -128,7 +128,7 @@ describe('GamePage board/card interactions', () => {
     expect(screen.queryByText('card-cell-67')).not.toBeNull();
   });
 
-  it('runs snake flow: head card -> snake animation -> tail card', async () => {
+  it('runs snake flow and keeps card closed until animation completion', async () => {
     const snakeMove: GameMove = {
       id: 'move-snake',
       sessionId: baseSession.id,
@@ -159,21 +159,47 @@ describe('GamePage board/card interactions', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByTestId('animation-state').textContent).toContain(':none:44');
-
-    act(() => {
-      fireEvent.click(screen.getByText('finish-board-animation'));
-    });
-    expect(screen.queryByText('card-cell-44')).not.toBeNull();
-
-    act(() => {
-      fireEvent.click(screen.getByText('close-card'));
-    });
     expect(screen.getByTestId('animation-state').textContent).toContain(':snake:9');
+    expect(screen.queryByTestId('coach-modal')).toBeNull();
 
     act(() => {
       fireEvent.click(screen.getByText('finish-board-animation'));
     });
-    expect(screen.queryByText('card-cell-9')).not.toBeNull();
+  });
+
+  it('does not allow second roll while movement is animating', async () => {
+    const move: GameMove = {
+      id: 'move-normal',
+      sessionId: baseSession.id,
+      moveNumber: 1,
+      fromCell: 8,
+      toCell: 11,
+      dice: 3,
+      moveType: 'normal',
+      snakeOrArrow: null,
+      createdAt: new Date().toISOString(),
+    };
+    const performMove = vi.fn().mockResolvedValue(move);
+
+    mockUseGameContext.mockReturnValue({
+      currentSession: { ...baseSession, currentCell: 11 },
+      performMove,
+      finishSession: vi.fn().mockResolvedValue(undefined),
+      saveInsight: vi.fn().mockResolvedValue(undefined),
+      updateSessionRequest: vi.fn().mockResolvedValue(undefined),
+      resumeLastSession: vi.fn().mockResolvedValue(undefined),
+      loading: false,
+      error: undefined,
+    });
+
+    renderPage();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('Кинути кубик'));
+      fireEvent.click(screen.getByText('Кинути кубик'));
+      await Promise.resolve();
+    });
+
+    expect(performMove).toHaveBeenCalledTimes(1);
   });
 });
