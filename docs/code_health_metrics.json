@@ -1,7 +1,7 @@
 {
   "summary": {
     "overall_score": 86,
-    "last_updated": "2026-02-25T17:39:58Z",
+    "last_updated": "2026-02-25T17:59:11Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -11,22 +11,22 @@
     "complexity_growth_percent_max": 10
   },
   "metrics": {
-    "files_total": 166,
-    "source_files_total": 166,
-    "lines_total": 10922,
+    "files_total": 168,
+    "source_files_total": 168,
+    "lines_total": 10976,
     "frontend": {
-      "files": 154,
-      "lines": 10461
+      "files": 156,
+      "lines": 10515
     },
     "backend": {
       "files": 12,
       "lines": 461
     },
     "tests": {
-      "files": 31,
-      "lines": 1690,
-      "test_file_ratio_vs_source_percent": 18.7,
-      "source_files_with_direct_test_match_percent": 28.4,
+      "files": 32,
+      "lines": 1708,
+      "test_file_ratio_vs_source_percent": 19.0,
+      "source_files_with_direct_test_match_percent": 28.8,
       "coverage_estimate_percent": 71,
       "coverage_band": "medium"
     },
@@ -36,7 +36,7 @@
       "long_functions_over_50_loc": 16,
       "duplicate_code_blocks_estimate": 6,
       "solid_violations_estimate": 7,
-      "smells_per_1k_loc": 2.98
+      "smells_per_1k_loc": 2.96
     },
     "risk_modules": [
       {

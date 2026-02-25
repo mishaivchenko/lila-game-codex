@@ -15,6 +15,7 @@ import {
 import { getBoardProfile, getBoardTransitionPath } from '../../lib/lila/boardProfiles';
 import type { BoardPathPoint } from '../../lib/lila/boardProfiles/types';
 import { mapCellToBoardPosition } from '../../lib/lila/mapCellToBoardPosition';
+import { resolveBoardImageRenderScale } from '../../lib/lila/boardImageQuality';
 import { resolveCellFromBoardPercent } from '../../lib/lila/resolveCellFromBoardPointer';
 import type { LilaTransition } from './LilaBoard';
 import { LilaPathAnimation } from './LilaPathAnimation';
@@ -101,6 +102,14 @@ export const LilaBoardCanvas = ({
     }),
   );
   const boardProfile = useMemo(() => getBoardProfile(boardType), [boardType]);
+  const devicePixelRatio = useMemo(
+    () => (typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1),
+    [],
+  );
+  const boardImageRenderScale = useMemo(
+    () => resolveBoardImageRenderScale({ zoom: cameraState.zoom, devicePixelRatio }),
+    [cameraState.zoom, devicePixelRatio],
+  );
   const specialTransitions = useMemo(() => {
     const board = BOARD_DEFINITIONS[boardType];
     const transitionByCell = new Map<number, 'snake' | 'arrow'>();
@@ -477,12 +486,16 @@ export const LilaBoardCanvas = ({
           <img
             src={resolveAssetUrl(boardProfile.imageSrc)}
             alt={boardType === 'full' ? 'Lila full board' : 'Lila short board'}
-            className="block h-full w-full select-none object-cover"
+            className="block select-none object-cover"
             style={{
+              width: `${100 * boardImageRenderScale}%`,
+              height: `${100 * boardImageRenderScale}%`,
+              transform: `scale(${1 / boardImageRenderScale}) translateZ(0)`,
+              transformOrigin: 'top left',
               imageRendering: 'auto',
-              transform: 'translateZ(0)',
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
+              willChange: boardImageRenderScale > 1.01 ? 'transform' : 'auto',
             }}
             onLoad={(event) => {
               const { naturalWidth, naturalHeight } = event.currentTarget;
