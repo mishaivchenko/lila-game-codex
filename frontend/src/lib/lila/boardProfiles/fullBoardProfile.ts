@@ -21,6 +21,17 @@ export const fullBoardProfile: BoardProfile = {
   boardType: 'full',
   boardTheme: 'classic-full',
   imageAssets: FULL_BOARD_ASSETS,
+  hitTest: {
+    columns: 9,
+    rows: 8,
+    xMinPercent: 0,
+    xMaxPercent: 100,
+    yTopPercent: 8.2,
+    yBottomPercent: 92.2,
+    rowCellOrderFromBottom: [
+      [1, 3, 2, 4, 5, 6, 7, 8, 9],
+    ],
+  },
   cellCoordinates: FULL_BOARD_COORDS,
   snakePaths: createTransitionPaths(FULL_BOARD_COORDS, BOARD_DEFINITIONS.full.snakes, 'snake'),
   ladderPaths: createTransitionPaths(FULL_BOARD_COORDS, BOARD_DEFINITIONS.full.arrows, 'ladder'),

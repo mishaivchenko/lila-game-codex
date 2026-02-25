@@ -21,6 +21,10 @@ export const shortBoardProfile: BoardProfile = {
   boardType: 'short',
   boardTheme: 'classic-short',
   imageAssets: SHORT_BOARD_ASSETS,
+  hitTest: {
+    columns: 6,
+    rows: 6,
+  },
   cellCoordinates: SHORT_BOARD_COORDS,
   snakePaths: createTransitionPaths(SHORT_BOARD_COORDS, BOARD_DEFINITIONS.short.snakes, 'snake'),
   ladderPaths: createTransitionPaths(SHORT_BOARD_COORDS, BOARD_DEFINITIONS.short.arrows, 'ladder'),

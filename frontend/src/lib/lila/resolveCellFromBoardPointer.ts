@@ -9,30 +9,34 @@ interface BoardPointerPoint {
 const distance = (left: BoardPointerPoint, right: BoardPointerPoint): number =>
   Math.hypot(left.xPercent - right.xPercent, left.yPercent - right.yPercent);
 
-const BOARD_GRID: Record<BoardType, { columns: number; rows: number }> = {
-  full: { columns: 9, rows: 8 },
-  short: { columns: 6, rows: 6 },
-};
-
 const resolveByGridArea = (
   boardType: BoardType,
   point: BoardPointerPoint,
 ): number | undefined => {
   const profile = getBoardProfile(boardType);
-  const grid = BOARD_GRID[boardType];
+  const grid = profile.hitTest;
 
   const xs = profile.cellCoordinates.map((coord) => coord.xPercent);
   const ys = profile.cellCoordinates.map((coord) => coord.yPercent);
-  const xMin = Math.min(...xs);
-  const xMax = Math.max(...xs);
-  const yTop = Math.min(...ys);
-  const yBottom = Math.max(...ys);
-  const xStep = (xMax - xMin) / Math.max(1, grid.columns - 1);
-  const yStep = (yBottom - yTop) / Math.max(1, grid.rows - 1);
-  const leftBound = xMin - xStep / 2;
-  const rightBound = xMax + xStep / 2;
-  const topBound = yTop - yStep / 2;
-  const bottomBound = yBottom + yStep / 2;
+  const xMin = grid.xMinPercent ?? Math.min(...xs);
+  const xMax = grid.xMaxPercent ?? Math.max(...xs);
+  const yTop = grid.yTopPercent ?? Math.min(...ys);
+  const yBottom = grid.yBottomPercent ?? Math.max(...ys);
+  const hasExplicitBounds =
+    grid.xMinPercent !== undefined
+    && grid.xMaxPercent !== undefined
+    && grid.yTopPercent !== undefined
+    && grid.yBottomPercent !== undefined;
+  const xStep = hasExplicitBounds
+    ? (xMax - xMin) / Math.max(1, grid.columns)
+    : (xMax - xMin) / Math.max(1, grid.columns - 1);
+  const yStep = hasExplicitBounds
+    ? (yBottom - yTop) / Math.max(1, grid.rows)
+    : (yBottom - yTop) / Math.max(1, grid.rows - 1);
+  const leftBound = hasExplicitBounds ? xMin : xMin - xStep / 2;
+  const rightBound = hasExplicitBounds ? xMax : xMax + xStep / 2;
+  const topBound = hasExplicitBounds ? yTop : yTop - yStep / 2;
+  const bottomBound = hasExplicitBounds ? yBottom : yBottom + yStep / 2;
 
   if (
     point.xPercent < leftBound
@@ -57,9 +61,14 @@ const resolveByGridArea = (
       Math.floor((bottomBound - point.yPercent) / yStep),
     ),
   );
+
+  const rowOrder = grid.rowCellOrderFromBottom?.[rowFromBottom];
+  if (rowOrder && rowOrder.length === grid.columns) {
+    return rowOrder[colFromLeft];
+  }
+
   const isReverseRow = rowFromBottom % 2 === 1;
   const indexInRow = isReverseRow ? grid.columns - 1 - colFromLeft : colFromLeft;
-
   return rowFromBottom * grid.columns + indexInRow + 1;
 };
 
@@ -70,6 +79,10 @@ export const resolveCellFromBoardPercent = (
 ): number | undefined => {
   const profile = getBoardProfile(boardType);
   const gridCell = resolveByGridArea(boardType, point);
+  if (gridCell) {
+    return gridCell;
+  }
+
   let closestCell: number | undefined;
   let closestDistance = Number.POSITIVE_INFINITY;
 
@@ -80,14 +93,8 @@ export const resolveCellFromBoardPercent = (
       closestCell = coord.cell;
     }
   }
-
-  if (gridCell) {
-    return gridCell;
-  }
-
   if (closestDistance > maxDistancePercent) {
     return undefined;
   }
-
   return closestCell;
 };
