@@ -36,8 +36,8 @@ interface LilaBoardCanvasProps {
 
 const zoomSettings = {
   baseZoom: 1,
-  followZoom: 1.8,
-  manualZoom: 1.8,
+  followZoom: 2.15,
+  manualZoom: 2.15,
   zoomInDurationMs: 250,
   zoomOutDurationMs: 400,
 };
@@ -478,6 +478,9 @@ export const LilaBoardCanvas = ({
             className="block h-full w-full select-none object-cover"
             style={{
               imageRendering: 'auto',
+              transform: 'translateZ(0)',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
             }}
             onLoad={(event) => {
               const { naturalWidth, naturalHeight } = event.currentTarget;
