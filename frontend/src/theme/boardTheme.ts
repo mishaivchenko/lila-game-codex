@@ -1,3 +1,5 @@
+import type { LilaVisualTheme } from '../config/visualThemes';
+
 export interface SnakeStyle {
   glowStroke: string;
   glowStrokeWidth: number;
@@ -8,6 +10,7 @@ export interface SnakeStyle {
   eyeFill: string;
   glyphOpacityBase: number;
   glyphOpacityRange: number;
+  glyphFilter: string;
   pulseFill: string;
   pulseBorder: string;
 }
@@ -26,6 +29,7 @@ export interface StairsStyle {
   stepRadius: number;
   glyphOpacityBase: number;
   glyphOpacityRange: number;
+  glyphFilter: string;
   climberFill: string;
   climberRadius: number;
   pulseFill: string;
@@ -70,6 +74,7 @@ export interface BoardTheme {
   id: string;
   name: string;
   boardImageMode: 'profile';
+  visualAssetTheme: LilaVisualTheme;
   boardBackground: BoardBackgroundStyle;
   snake: SnakeStyle;
   stairs: StairsStyle;
@@ -91,6 +96,7 @@ export const DEFAULT_SPIRITUAL_THEME: BoardTheme = {
   id: 'default-spiritual',
   name: 'Default Spiritual',
   boardImageMode: 'profile',
+  visualAssetTheme: 'mystic',
   boardBackground: {
     canvasShellBackground: 'rgba(231, 229, 228, 0.7)',
     canvasShellShadow: 'inset 0 1px 6px rgba(41, 37, 36, 0.08)',
@@ -112,6 +118,7 @@ export const DEFAULT_SPIRITUAL_THEME: BoardTheme = {
     eyeFill: '#6E2740',
     glyphOpacityBase: 0.48,
     glyphOpacityRange: 0.34,
+    glyphFilter: 'none',
     pulseFill: 'rgba(209,138,67,0.24)',
     pulseBorder: '1px solid rgba(209,138,67,0.46)',
   },
@@ -129,6 +136,7 @@ export const DEFAULT_SPIRITUAL_THEME: BoardTheme = {
     stepRadius: 0.18,
     glyphOpacityBase: 0.22,
     glyphOpacityRange: 0.44,
+    glyphFilter: 'none',
     climberFill: '#F8EED4',
     climberRadius: 0.74,
     pulseFill: 'rgba(44,191,175,0.22)',
@@ -159,6 +167,7 @@ export const COSMIC_DARK_THEME: BoardTheme = {
   ...DEFAULT_SPIRITUAL_THEME,
   id: 'cosmic-dark',
   name: 'Cosmic Dark',
+  visualAssetTheme: 'minimal',
   boardBackground: {
     ...DEFAULT_SPIRITUAL_THEME.boardBackground,
     canvasShellBackground: 'rgba(25, 28, 40, 0.76)',
@@ -174,6 +183,7 @@ export const COSMIC_DARK_THEME: BoardTheme = {
     ...DEFAULT_SPIRITUAL_THEME.snake,
     glowStroke: 'rgba(246, 160, 97, 0.48)',
     coreGradientStops: ['#F0C37B', '#D87075', '#7A5BA3'],
+    glyphFilter: 'hue-rotate(-12deg) saturate(1.06)',
     pulseFill: 'rgba(246, 160, 97, 0.3)',
     pulseBorder: '1px solid rgba(246, 160, 97, 0.55)',
   },
@@ -181,6 +191,7 @@ export const COSMIC_DARK_THEME: BoardTheme = {
     ...DEFAULT_SPIRITUAL_THEME.stairs,
     glowStroke: 'rgba(76, 194, 207, 0.34)',
     railGradientStops: ['#5FE1E3', '#A6C5FF'],
+    glyphFilter: 'hue-rotate(38deg) saturate(1.08)',
     pulseFill: 'rgba(95, 225, 227, 0.28)',
     pulseBorder: '1px solid rgba(95, 225, 227, 0.52)',
   },
@@ -211,6 +222,7 @@ export const MINIMAL_CREAM_THEME: BoardTheme = {
   ...DEFAULT_SPIRITUAL_THEME,
   id: 'minimal-cream',
   name: 'Minimal Cream',
+  visualAssetTheme: 'minimal',
   boardBackground: {
     ...DEFAULT_SPIRITUAL_THEME.boardBackground,
     canvasShellBackground: 'rgba(247, 241, 233, 0.9)',
@@ -226,11 +238,13 @@ export const MINIMAL_CREAM_THEME: BoardTheme = {
     ...DEFAULT_SPIRITUAL_THEME.snake,
     glowStroke: 'rgba(181, 129, 91, 0.32)',
     coreGradientStops: ['#D8B78D', '#BA7A68', '#8C709F'],
+    glyphFilter: 'sepia(0.12) saturate(0.92)',
   },
   stairs: {
     ...DEFAULT_SPIRITUAL_THEME.stairs,
     glowStroke: 'rgba(118, 170, 164, 0.3)',
     railGradientStops: ['#83C8BE', '#D6E2D8'],
+    glyphFilter: 'sepia(0.1) saturate(0.9)',
     stepFill: '#f2e4cd',
   },
   token: {

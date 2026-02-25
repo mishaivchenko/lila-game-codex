@@ -1,5 +1,7 @@
 import snakeSpiritMystic from '../assets/lila/themes/mystic/snake-spirit.svg';
 import stairsLightMystic from '../assets/lila/themes/mystic/stairs-light.svg';
+import snakeSpiritMinimal from '../assets/lila/themes/minimal/snake-spirit.svg';
+import stairsLightMinimal from '../assets/lila/themes/minimal/stairs-light.svg';
 
 export type LilaVisualTheme = 'mystic' | 'minimal';
 
@@ -13,11 +15,9 @@ const VISUAL_ASSETS: Record<LilaVisualTheme, LilaVisualAssets> = {
     snakeSpirit: snakeSpiritMystic,
     stairsLight: stairsLightMystic,
   },
-  // Minimal is intentionally mapped to the current baseline in Theme A branch.
-  // Theme B will provide dedicated minimal assets.
   minimal: {
-    snakeSpirit: snakeSpiritMystic,
-    stairsLight: stairsLightMystic,
+    snakeSpirit: snakeSpiritMinimal,
+    stairsLight: stairsLightMinimal,
   },
 };
 
