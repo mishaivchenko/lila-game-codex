@@ -176,7 +176,7 @@ export const GamePage = () => {
     }
 
     const activeSpecialFlow = specialFlow;
-    if (activeSpecialFlow?.type === 'snake') {
+    if (activeSpecialFlow) {
       const tailMoveId = `${activeSpecialFlow.moveId}-tail`;
       if (specialFlowPhase === 'tail-animation' && moveId === tailMoveId) {
         if (pendingSimpleMoveRef.current?.moveId === activeSpecialFlow.moveId) {
@@ -362,14 +362,14 @@ export const GamePage = () => {
           ? getBoardTransitionPath(currentSession.boardType, computed.snakeOrArrow, entryCell, computed.toCell)?.points
           : undefined;
       const tokenPathCells = buildStepwiseCellPath(computed.fromCell, computed.dice, board.maxCell);
-      const isSnakeFlow = computed.snakeOrArrow === 'snake' && Boolean(entryCell) && Boolean(transitionPath?.length);
-      const snakeHeadCell = entryCell ?? computed.toCell;
-      const snakeMoveId = moveId;
-      if (isSnakeFlow) {
+      const isSpecialFlow = Boolean(computed.snakeOrArrow) && Boolean(entryCell) && Boolean(transitionPath?.length);
+      const specialEntryCell = entryCell ?? computed.toCell;
+      const specialMoveId = moveId;
+      if (isSpecialFlow && computed.snakeOrArrow) {
         setSpecialFlow({
-          moveId: snakeMoveId,
-          type: 'snake',
-          headCell: snakeHeadCell,
+          moveId: specialMoveId,
+          type: computed.snakeOrArrow,
+          headCell: specialEntryCell,
           tailCell: computed.toCell,
           pathPoints: transitionPath,
         });
@@ -379,20 +379,20 @@ export const GamePage = () => {
         setSpecialFlowPhase('idle');
       }
       setAnimationMove({
-        id: isSnakeFlow ? snakeMoveId : moveId,
+        id: isSpecialFlow ? specialMoveId : moveId,
         fromCell: computed.fromCell,
-        toCell: isSnakeFlow ? snakeHeadCell : computed.toCell,
-        type: isSnakeFlow ? null : computed.snakeOrArrow ?? null,
-        entryCell: isSnakeFlow ? undefined : entryCell,
-        pathPoints: isSnakeFlow ? undefined : transitionPath,
+        toCell: isSpecialFlow ? specialEntryCell : computed.toCell,
+        type: isSpecialFlow ? null : computed.snakeOrArrow ?? null,
+        entryCell: isSpecialFlow ? undefined : entryCell,
+        pathPoints: isSpecialFlow ? undefined : transitionPath,
         tokenPathCells,
       });
-      if (isSnakeFlow) {
+      if (isSpecialFlow) {
         pendingMoveContextRef.current = {
-          fromCell: snakeHeadCell,
+          fromCell: specialEntryCell,
           toCell: computed.toCell,
-          type: 'snake',
-          pathLabel: `${snakeHeadCell} → ${computed.toCell}`,
+          type: computed.snakeOrArrow === 'arrow' ? 'ladder' : 'snake',
+          pathLabel: `${specialEntryCell} → ${computed.toCell}`,
         };
       }
       return;
@@ -438,13 +438,13 @@ export const GamePage = () => {
         ? getBoardTransitionPath(currentSession.boardType, move.snakeOrArrow, entryCell, move.toCell)?.points
         : undefined;
     const tokenPathCells = buildStepwiseCellPath(move.fromCell, move.dice, board.maxCell);
-    const isSnakeFlow = move.snakeOrArrow === 'snake' && Boolean(entryCell) && Boolean(transitionPath?.length);
-    const snakeHeadCell = entryCell ?? move.toCell;
-    if (isSnakeFlow) {
+    const isSpecialFlow = Boolean(move.snakeOrArrow) && Boolean(entryCell) && Boolean(transitionPath?.length);
+    const specialEntryCell = entryCell ?? move.toCell;
+    if (isSpecialFlow && move.snakeOrArrow) {
       setSpecialFlow({
         moveId: move.id,
-        type: 'snake',
-        headCell: snakeHeadCell,
+        type: move.snakeOrArrow,
+        headCell: specialEntryCell,
         tailCell: move.toCell,
         pathPoints: transitionPath,
       });
@@ -457,16 +457,16 @@ export const GamePage = () => {
     setAnimationMove({
       id: move.id,
       fromCell: move.fromCell,
-      toCell: isSnakeFlow ? snakeHeadCell : move.toCell,
-      type: isSnakeFlow ? null : move.snakeOrArrow ?? null,
-      entryCell: isSnakeFlow ? undefined : entryCell,
-      pathPoints: isSnakeFlow ? undefined : transitionPath,
+      toCell: isSpecialFlow ? specialEntryCell : move.toCell,
+      type: isSpecialFlow ? null : move.snakeOrArrow ?? null,
+      entryCell: isSpecialFlow ? undefined : entryCell,
+      pathPoints: isSpecialFlow ? undefined : transitionPath,
       tokenPathCells,
     });
 
     const movementPlan = createMovementEngine(movementSettings).planPath(tokenPathCells);
     const specialDuration =
-      move.snakeOrArrow && !isSnakeFlow
+      move.snakeOrArrow && !isSpecialFlow
         ? movementSettings.snakeDelayMs
           + effectiveAnimationTimings.pathDrawDurationMs
           + effectiveAnimationTimings.pathTravelDurationMs
@@ -478,15 +478,15 @@ export const GamePage = () => {
       if (pendingMoveIdRef.current !== move.id) {
         return;
       }
-      if (isSnakeFlow) {
+      if (isSpecialFlow) {
         setTurnState('animating');
         openCoachCard(
-          snakeHeadCell,
+          specialEntryCell,
           {
-            fromCell: snakeHeadCell,
-            toCell: snakeHeadCell,
+            fromCell: specialEntryCell,
+            toCell: specialEntryCell,
             type: 'normal',
-            pathLabel: `${snakeHeadCell}`,
+            pathLabel: `${specialEntryCell}`,
           },
         );
       } else {
@@ -512,26 +512,27 @@ export const GamePage = () => {
   };
 
   const closeCoachModal = useCallback(() => {
-    const isSnakeHeadCardClose =
-      specialFlow?.type === 'snake'
+    const activeSpecialFlow = specialFlow;
+    const isSpecialHeadCardClose =
+      Boolean(activeSpecialFlow)
       && showCoach
-      && activeModalCell === specialFlow.headCell
-      && specialFlowPhase !== 'tail-card';
-    if (isSnakeHeadCardClose) {
+      && activeModalCell === activeSpecialFlow?.headCell
+      && specialFlowPhase === 'head-card';
+    if (isSpecialHeadCardClose && activeSpecialFlow) {
       setShowCoach(false);
       setModalMoveContext(undefined);
-      const tailMoveId = `${specialFlow.moveId}-tail`;
+      const tailMoveId = `${activeSpecialFlow.moveId}-tail`;
       pendingMoveIdRef.current = tailMoveId;
       setSpecialFlowPhase('tail-animation');
       setTurnState('animating');
       setAnimationMove({
         id: tailMoveId,
-        fromCell: specialFlow.headCell,
-        toCell: specialFlow.tailCell,
-        type: 'snake',
-        entryCell: specialFlow.headCell,
-        pathPoints: specialFlow.pathPoints,
-        tokenPathCells: [specialFlow.headCell, specialFlow.tailCell],
+        fromCell: activeSpecialFlow.headCell,
+        toCell: activeSpecialFlow.tailCell,
+        type: activeSpecialFlow.type,
+        entryCell: activeSpecialFlow.headCell,
+        pathPoints: activeSpecialFlow.pathPoints,
+        tokenPathCells: [activeSpecialFlow.headCell],
       });
       return;
     }

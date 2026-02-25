@@ -2,6 +2,7 @@ import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LilaBoardCanvas } from '../LilaBoardCanvas';
 import { DEFAULT_MOVEMENT_SETTINGS } from '../../../engine/movement/MovementEngine';
+import { mapCellToBoardPosition } from '../../../lib/lila/mapCellToBoardPosition';
 
 vi.mock('../LilaPathAnimation', () => ({
   LilaPathAnimation: ({ type }: { type: 'snake' | 'arrow' }) => (
@@ -100,6 +101,42 @@ describe('LilaBoardCanvas', () => {
     });
 
     expect(onMoveAnimationComplete).toHaveBeenCalledWith('m-bounce');
+    vi.useRealTimers();
+  });
+
+  it('keeps token at snake entry cell before snake path animation starts', () => {
+    vi.useFakeTimers();
+
+    const { container } = render(
+      <LilaBoardCanvas
+        boardType="full"
+        currentCell={60}
+        animationMove={{
+          id: 'snake-tail',
+          fromCell: 60,
+          toCell: 13,
+          type: 'snake',
+          entryCell: 60,
+          tokenPathCells: [60],
+        }}
+      />,
+    );
+
+    const token = within(container).getByLabelText('token') as HTMLDivElement;
+    const entryPosition = mapCellToBoardPosition('full', 60);
+    expect(screen.queryByTestId('lila-transition-snake')).toBeNull();
+
+    expect(token.style.left).toBe(`${entryPosition.xPercent}%`);
+    expect(token.style.top).toBe(`${entryPosition.yPercent}%`);
+
+    act(() => {
+      vi.advanceTimersByTime(DEFAULT_MOVEMENT_SETTINGS.snakeDelayMs - 1);
+    });
+
+    expect(token.style.left).toBe(`${entryPosition.xPercent}%`);
+    expect(token.style.top).toBe(`${entryPosition.yPercent}%`);
+    expect(screen.queryByTestId('lila-transition-snake')).toBeNull();
+
     vi.useRealTimers();
   });
 });

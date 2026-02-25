@@ -193,6 +193,58 @@ describe('GamePage board/card interactions', () => {
     expect(screen.getByTestId('animation-state').textContent).toBe('none');
   });
 
+  it('runs arrow flow entry card and starts transfer after closing it', async () => {
+    const arrowMove: GameMove = {
+      id: 'move-arrow',
+      sessionId: baseSession.id,
+      moveNumber: 1,
+      fromCell: 19,
+      toCell: 32,
+      dice: 1,
+      moveType: 'ladder',
+      snakeOrArrow: 'arrow',
+      createdAt: new Date().toISOString(),
+    };
+
+    mockUseGameContext.mockReturnValue({
+      currentSession: { ...baseSession, currentCell: 32 },
+      performMove: vi.fn().mockResolvedValue(arrowMove),
+      finishSession: vi.fn().mockResolvedValue(undefined),
+      saveInsight: vi.fn().mockResolvedValue(undefined),
+      updateSessionRequest: vi.fn().mockResolvedValue(undefined),
+      resumeLastSession: vi.fn().mockResolvedValue(undefined),
+      loading: false,
+      error: undefined,
+    });
+
+    renderPage();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('Кинути кубик'));
+      await Promise.resolve();
+    });
+
+    const entryCell = resolveTransitionEntryCell(
+      arrowMove.fromCell,
+      arrowMove.dice,
+      BOARD_DEFINITIONS.full,
+      arrowMove.snakeOrArrow,
+      arrowMove.toCell,
+    );
+    expect(entryCell).toBeDefined();
+
+    act(() => {
+      fireEvent.click(screen.getByText('finish-board-animation'));
+      vi.runAllTimers();
+    });
+    expect(screen.getByText(`card-cell-${entryCell}`)).not.toBeNull();
+
+    act(() => {
+      fireEvent.click(screen.getByText('close-card'));
+    });
+    expect(screen.getByTestId('animation-state').textContent).toContain('move-arrow-tail:arrow:32');
+  });
+
   it('does not allow second roll while movement is animating', async () => {
     const move: GameMove = {
       id: 'move-normal',
