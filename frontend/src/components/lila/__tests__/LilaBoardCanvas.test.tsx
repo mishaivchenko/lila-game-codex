@@ -1,7 +1,7 @@
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LilaBoardCanvas } from '../LilaBoardCanvas';
-import { TOKEN_MOVE_DURATION_MS } from '../../../lib/animations/lilaMotion';
+import { DEFAULT_MOVEMENT_SETTINGS } from '../../../engine/movement/MovementEngine';
 
 vi.mock('../LilaPathAnimation', () => ({
   LilaPathAnimation: ({ type }: { type: 'snake' | 'arrow' }) => (
@@ -47,8 +47,16 @@ describe('LilaBoardCanvas', () => {
     expect(screen.queryByTestId('lila-transition-arrow')).toBeNull();
 
     act(() => {
-      vi.advanceTimersByTime(TOKEN_MOVE_DURATION_MS);
+      vi.advanceTimersByTime(
+        DEFAULT_MOVEMENT_SETTINGS.stepDurationMs + DEFAULT_MOVEMENT_SETTINGS.snakeDelayMs - 1,
+      );
     });
+    expect(screen.queryByTestId('lila-transition-arrow')).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(2);
+    });
+
     expect(screen.getByTestId('lila-transition-arrow')).not.toBeNull();
 
     vi.useRealTimers();
@@ -77,14 +85,18 @@ describe('LilaBoardCanvas', () => {
     const startLeft = token.getAttribute('style') ?? '';
 
     act(() => {
-      vi.advanceTimersByTime(Math.round(TOKEN_MOVE_DURATION_MS / 2));
+      vi.advanceTimersByTime(
+        DEFAULT_MOVEMENT_SETTINGS.stepDurationMs + Math.round(DEFAULT_MOVEMENT_SETTINGS.stepPauseMs / 2),
+      );
     });
 
     const midLeft = token.getAttribute('style') ?? '';
     expect(midLeft).not.toBe(startLeft);
 
     act(() => {
-      vi.advanceTimersByTime(TOKEN_MOVE_DURATION_MS / 2);
+      vi.advanceTimersByTime(
+        DEFAULT_MOVEMENT_SETTINGS.stepDurationMs + Math.round(DEFAULT_MOVEMENT_SETTINGS.stepPauseMs / 2) + 20,
+      );
     });
 
     expect(onMoveAnimationComplete).toHaveBeenCalledWith('m-bounce');
