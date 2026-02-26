@@ -27,7 +27,7 @@ export const GameBoardLayout = ({
         </section>
 
         <section
-          className="relative rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 shadow-[0_16px_36px_rgba(98,76,62,0.14)]"
+          className="relative overflow-hidden rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 shadow-[0_16px_36px_rgba(98,76,62,0.14)]"
           style={{ padding: `${theme.layout.boardPanelPaddingPx}px` }}
         >
           {board}

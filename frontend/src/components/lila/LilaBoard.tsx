@@ -46,17 +46,12 @@ export const LilaBoard = ({
   const { theme } = useBoardTheme();
   return (
     <section
-      className="rounded-3xl p-2.5 shadow-inner sm:p-3"
+      className="rounded-3xl p-0 shadow-inner"
       style={{
         background: theme.boardBackground.boardPanelBackground,
         color: theme.boardBackground.boardPanelText,
       }}
     >
-      <div className="mb-2 flex items-center justify-between text-sm">
-        <span>Дошка: {board.id === 'full' ? 'Повна' : 'Коротка'}</span>
-        <span>Клітина {currentCell}</span>
-      </div>
-
       <LilaBoardCanvas
         boardType={board.id}
         currentCell={currentCell}
@@ -73,7 +68,7 @@ export const LilaBoard = ({
 
       {animationMove?.type && (
         <motion.div
-          className="mt-3 rounded-full px-3 py-1 text-center text-[11px] font-medium"
+          className="mx-2 mb-2 mt-2 rounded-full px-3 py-1 text-center text-[11px] font-medium"
           style={{
             background:
               animationMove.type === 'arrow'
