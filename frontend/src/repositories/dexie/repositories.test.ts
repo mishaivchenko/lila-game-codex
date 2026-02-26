@@ -23,7 +23,7 @@ describe('dexie repositories', () => {
       updatedAt: new Date().toISOString(),
       boardType: 'full',
       currentCell: 1,
-      settings: { speed: 'normal', depth: 'standard' },
+      settings: { diceMode: 'classic', depth: 'standard' },
       request: { isDeepEntry: false, simpleRequest: 'test' },
       sessionStatus: 'active',
       finished: false,
@@ -76,7 +76,6 @@ describe('dexie repositories', () => {
       ...current,
       selectedThemeId: 'cosmic-dark',
       tokenColorId: 'glacier',
-      animationSpeed: 'fast',
       snakeStyleId: 'ribbon',
       snakeColorId: 'obsidian-cyan',
       stairsStyleId: 'beam',
@@ -86,7 +85,6 @@ describe('dexie repositories', () => {
     const reloaded = await settings.getSettings();
     expect(reloaded.selectedThemeId).toBe('cosmic-dark');
     expect(reloaded.tokenColorId).toBe('glacier');
-    expect(reloaded.animationSpeed).toBe('fast');
     expect(reloaded.snakeStyleId).toBe('ribbon');
     expect(reloaded.snakeColorId).toBe('obsidian-cyan');
     expect(reloaded.stairsStyleId).toBe('beam');

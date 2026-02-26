@@ -20,13 +20,13 @@ export interface BoardAssetSelectionResult {
 
 const resolveTier = ({ viewportWidth, viewportHeight, devicePixelRatio, zoom }: BoardAssetSelectionInput): BoardAssetTier => {
   const base = Math.max(viewportWidth, viewportHeight) * Math.max(1, Math.min(devicePixelRatio, 3));
-  const zoomBoost = zoom > 1.35 ? 1.24 : 1;
+  const zoomBoost = zoom > 1.35 ? 1.7 : 1;
   const score = base * zoomBoost;
 
   if (score >= 1700) {
     return 'large';
   }
-  if (score >= 1200) {
+  if (score >= 900) {
     return 'medium';
   }
   return 'small';
@@ -49,4 +49,3 @@ export const selectBoardImageAsset = (
     sizes: input.zoom > 1.2 ? '100vw' : '(max-width: 768px) 100vw, 560px',
   };
 };
-

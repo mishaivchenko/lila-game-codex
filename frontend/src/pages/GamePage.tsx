@@ -6,7 +6,7 @@ import { Dice3D } from '../components/dice3d/Dice3D';
 import { AnimationSettingsModal } from '../components/AnimationSettingsModal';
 import { CellCoachModal } from '../components/CellCoachModal';
 import { FinalScreen } from '../components/FinalScreen';
-import { computeNextPosition } from '../domain/gameEngine';
+import { computeNextPosition, resolveEffectiveDiceMode, rollDiceByMode, type DiceRollResult } from '../domain/gameEngine';
 import type { ChakraInfo, GameMove } from '../domain/types';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -56,7 +56,7 @@ export const GamePage = () => {
   const [showHintInfo, setShowHintInfo] = useState(false);
   const [entryHint, setEntryHint] = useState<string | undefined>(undefined);
   const [diceRollToken, setDiceRollToken] = useState(0);
-  const [diceRequestedValue, setDiceRequestedValue] = useState<number | undefined>(undefined);
+  const [pendingDiceRoll, setPendingDiceRoll] = useState<DiceRollResult | undefined>(undefined);
   const [turnState, setTurnState] = useState<TurnState>('idle');
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showAnimationSettings, setShowAnimationSettings] = useState(false);
@@ -85,7 +85,7 @@ export const GamePage = () => {
     currentSession,
     updateSessionRequest,
   });
-  const { tokenColorValue, animationSpeed } = useBoardTheme();
+  const { tokenColorValue } = useBoardTheme();
 
   const currentChakra = useMemo(() => {
     if (!currentSession) {
@@ -109,27 +109,13 @@ export const GamePage = () => {
     currentSession
       ? (BOARD_DEFINITIONS[currentSession.boardType] ?? BOARD_DEFINITIONS.full)
       : BOARD_DEFINITIONS.full;
-  const animationSpeedMultiplier = animationSpeed === 'slow' ? 1.3 : animationSpeed === 'fast' ? 0.8 : 1;
   const effectiveAnimationTimings = useMemo(
-    () => ({
-      tokenMoveDurationMs: Math.round(animationTimings.tokenMoveDurationMs * animationSpeedMultiplier),
-      pathDrawDurationMs: Math.round(animationTimings.pathDrawDurationMs * animationSpeedMultiplier),
-      pathTravelDurationMs: Math.round(animationTimings.pathTravelDurationMs * animationSpeedMultiplier),
-      pathPostHoldMs: Math.round(animationTimings.pathPostHoldMs * animationSpeedMultiplier),
-      pathFadeOutMs: Math.round(animationTimings.pathFadeOutMs * animationSpeedMultiplier),
-      cardOpenDelayMs: Math.round(animationTimings.cardOpenDelayMs * animationSpeedMultiplier),
-    }),
-    [animationSpeedMultiplier, animationTimings],
+    () => animationTimings,
+    [animationTimings],
   );
   const movementSettings = useMemo(
-    () =>
-      normalizeMovementSettings({
-        stepDurationMs: Math.round(DEFAULT_MOVEMENT_SETTINGS.stepDurationMs * animationSpeedMultiplier),
-        stepPauseMs: Math.round(DEFAULT_MOVEMENT_SETTINGS.stepPauseMs * animationSpeedMultiplier),
-        snakeDelayMs: Math.round(DEFAULT_MOVEMENT_SETTINGS.snakeDelayMs * animationSpeedMultiplier),
-        modalOpenDelayMs: Math.round(DEFAULT_MOVEMENT_SETTINGS.modalOpenDelayMs * animationSpeedMultiplier),
-      }),
-    [animationSpeedMultiplier],
+    () => normalizeMovementSettings(DEFAULT_MOVEMENT_SETTINGS),
+    [],
   );
   const displayCurrentCell = activeSimplePlayer?.currentCell ?? currentSession?.currentCell ?? 1;
 
@@ -317,6 +303,7 @@ export const GamePage = () => {
         activeSimplePlayer.currentCell,
         diceValue,
         board,
+        currentSession.settings.diceMode,
         activeSimplePlayer.hasEnteredGame,
       );
       const moveId = `simple-${activeSimplePlayer.id}-${Date.now()}`;
@@ -532,12 +519,17 @@ export const GamePage = () => {
     }, fallbackMs);
   };
 
-  const triggerDiceRoll = (requestedValue?: number): void => {
+  const triggerDiceRoll = (): void => {
     if (turnState !== 'idle' || multiplayerFinished || currentSession.finished || currentSession.sessionStatus === 'completed') {
       return;
     }
     setShowCoach(false);
-    setDiceRequestedValue(requestedValue);
+    const effectiveDiceMode = resolveEffectiveDiceMode(
+      currentSession.settings.diceMode,
+      safeCurrentCell,
+      board,
+    );
+    setPendingDiceRoll(rollDiceByMode(effectiveDiceMode));
     setTurnState('rolling');
     setDiceRollToken((prev) => prev + 1);
   };
@@ -696,13 +688,13 @@ export const GamePage = () => {
 
       <Dice3D
         rollToken={diceRollToken}
-        requestedValue={diceRequestedValue}
+        diceValues={pendingDiceRoll?.dice}
         onResult={(value) => {
           void applyRolledValue(value);
         }}
         onFinished={() => {
           setTurnState((prev) => (prev === 'rolling' ? 'idle' : prev));
-          setDiceRequestedValue(undefined);
+          setPendingDiceRoll(undefined);
         }}
       />
     </>

@@ -23,7 +23,7 @@ const TestHarness = () => {
       <button
         type="button"
         onClick={() => {
-          void startNewSession('full', { isDeepEntry: false, simpleRequest: 'start' }, { speed: 'normal', depth: 'standard' });
+          void startNewSession('full', { isDeepEntry: false, simpleRequest: 'start' }, { diceMode: 'classic', depth: 'standard' });
         }}
       >
         start
@@ -93,7 +93,7 @@ describe('GameContext', () => {
       updatedAt: new Date().toISOString(),
       boardType: 'legacy_full',
       currentCell: 999,
-      settings: { speed: 'normal', depth: 'standard' },
+      settings: { diceMode: 'classic', depth: 'standard' },
       request: { isDeepEntry: false, simpleRequest: 'legacy' },
       sessionStatus: undefined,
       finished: false,
@@ -136,6 +136,99 @@ describe('GameContext', () => {
     const beforeCell = screen.getByTestId('cell').textContent;
     await user.click(screen.getByText('move'));
     await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe(beforeCell));
+
+    await db.delete();
+  });
+
+  it('applies selected dice mode when rolling move distance', async () => {
+    const db = new LilaDexieDb(`ctx_dice_mode_${Date.now()}`);
+    const repositories = createRepositories(db);
+
+    render(
+      <GameProvider repositories={repositories} diceRng={() => 0}>
+        <TestHarness />
+      </GameProvider>,
+    );
+
+    const user = userEvent.setup();
+    await user.click(screen.getByText('start'));
+    await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe('1'));
+
+    // Patch active session to triple mode and verify move is 3 (1+1+1).
+    const active = await repositories.sessionsRepository.getLastActiveSession();
+    expect(active).toBeDefined();
+    await repositories.sessionsRepository.updateSession(active!.id, {
+      settings: { ...active!.settings, diceMode: 'triple' },
+    });
+
+    await user.click(screen.getByText('resume'));
+    await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe('1'));
+
+    await user.click(screen.getByText('move'));
+    await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe('4'));
+
+    await db.delete();
+  });
+
+  it('uses single-die fallback for fast mode in the final two rows', async () => {
+    const db = new LilaDexieDb(`ctx_fast_endgame_${Date.now()}`);
+    const repositories = createRepositories(db);
+
+    render(
+      <GameProvider repositories={repositories} diceRng={() => 0}>
+        <TestHarness />
+      </GameProvider>,
+    );
+
+    const user = userEvent.setup();
+    await user.click(screen.getByText('start'));
+    await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe('1'));
+
+    const active = await repositories.sessionsRepository.getLastActiveSession();
+    expect(active).toBeDefined();
+    await repositories.sessionsRepository.updateSession(active!.id, {
+      currentCell: 56,
+      hasEnteredGame: true,
+      settings: { ...active!.settings, diceMode: 'fast' },
+    });
+
+    await user.click(screen.getByText('resume'));
+    await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe('56'));
+
+    await user.click(screen.getByText('move'));
+    await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe('57'));
+
+    await db.delete();
+  });
+
+  it('finishes triple mode when landing anywhere in the final row', async () => {
+    const db = new LilaDexieDb(`ctx_triple_endgame_${Date.now()}`);
+    const repositories = createRepositories(db);
+
+    render(
+      <GameProvider repositories={repositories} diceRng={() => 0}>
+        <TestHarness />
+      </GameProvider>,
+    );
+
+    const user = userEvent.setup();
+    await user.click(screen.getByText('start'));
+    await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('active'));
+
+    const active = await repositories.sessionsRepository.getLastActiveSession();
+    expect(active).toBeDefined();
+    await repositories.sessionsRepository.updateSession(active!.id, {
+      currentCell: 63,
+      hasEnteredGame: true,
+      settings: { ...active!.settings, diceMode: 'triple' },
+    });
+
+    await user.click(screen.getByText('resume'));
+    await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe('63'));
+
+    await user.click(screen.getByText('move'));
+    await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('completed'));
+    await waitFor(() => expect(Number(screen.getByTestId('cell').textContent)).toBeGreaterThanOrEqual(64));
 
     await db.delete();
   });

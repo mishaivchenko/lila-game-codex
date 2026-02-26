@@ -14,8 +14,21 @@ export const normalizeSession = (session: GameSession): GameSession => {
   const board = BOARD_DEFINITIONS[normalizedBoardType];
   const normalizedCell = Math.min(Math.max(session.currentCell || 1, 1), board.maxCell);
 
+  const legacySpeed = (session.settings as { speed?: string }).speed;
+  const mappedDiceMode =
+    legacySpeed === 'fast'
+      ? 'fast'
+      : legacySpeed === 'slow'
+        ? 'triple'
+        : 'classic';
+
   return {
     ...session,
+    settings: {
+      ...session.settings,
+      // Backward compatibility for persisted sessions created before diceMode migration.
+      diceMode: (session.settings as { diceMode?: GameSession['settings']['diceMode'] }).diceMode ?? mappedDiceMode,
+    },
     boardType: normalizedBoardType,
     currentCell: normalizedCell,
     sessionStatus: session.finished ? 'completed' : (session.sessionStatus ?? 'active'),
@@ -39,4 +52,3 @@ export const gameContextReducer = (state: GameState, action: GameAction): GameSt
       return state;
   }
 };
-

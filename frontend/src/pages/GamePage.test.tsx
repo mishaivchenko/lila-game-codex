@@ -18,17 +18,20 @@ vi.mock('../components/dice3d/Dice3D', () => ({
     rollToken,
     onResult,
     onFinished,
+    diceValues,
   }: {
     rollToken: number;
+    diceValues?: number[];
     onResult: (value: number) => void;
     onFinished?: () => void;
   }) => {
     useEffect(() => {
       if (rollToken > 0) {
-        onResult(4);
+        const total = (diceValues ?? [4]).reduce((sum, value) => sum + value, 0);
+        onResult(total);
         onFinished?.();
       }
-    }, [onFinished, onResult, rollToken]);
+    }, [diceValues, onFinished, onResult, rollToken]);
     return null;
   },
 }));
@@ -43,7 +46,7 @@ const baseSession: GameSession = {
   updatedAt: new Date().toISOString(),
   boardType: 'full',
   currentCell: 1,
-  settings: { speed: 'normal', depth: 'standard' },
+  settings: { diceMode: 'classic', depth: 'standard' },
   request: { isDeepEntry: false, simpleRequest: 'test' },
   sessionStatus: 'active',
   finished: false,

@@ -269,7 +269,7 @@ export const CellCoachModal = ({
         {isVeilVisible && (
           <div
             data-testid="card-loading-veil"
-            className="pointer-events-none absolute inset-0 z-10 bg-[var(--lila-surface)]/88 backdrop-blur-[1px]"
+            className="pointer-events-none absolute inset-0 z-10 bg-[var(--lila-surface)]/80"
             style={{
               opacity: isVeilFading ? 0 : 1,
               transition: `opacity ${DEFAULT_CARD_LOADING_SETTINGS.veilFadeDurationMs}ms ease-out`,

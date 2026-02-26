@@ -28,8 +28,9 @@ export const SettingsPage = () => {
   return (
     <main className="mx-auto min-h-screen max-w-lg bg-[var(--lila-bg-main)] px-4 py-5">
       <div className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4 shadow-[0_12px_30px_rgba(98,76,62,0.1)]">
-        <h1 className="text-xl font-semibold">Налаштування</h1>
+        <h1 className="text-xl font-semibold">Налаштування подорожі</h1>
         <p className="mt-2 text-sm text-stone-600">Глобальні параметри зберігаються локально в IndexedDB.</p>
+
         <div className="mt-4 space-y-2 text-sm text-stone-700">
           <label className="flex items-center justify-between rounded-xl border border-stone-200 p-3">
             Звук

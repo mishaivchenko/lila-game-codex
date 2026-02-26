@@ -1,7 +1,7 @@
 import { act, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Dice3D } from './Dice3D';
-import { DICE_FALL_MS, DICE_SETTLE_MS, generateDiceValue } from './diceRoll';
+import { DICE_FALL_MS, DICE_SETTLE_MS, generateDiceValue, normalizeDiceValues, sumDiceValues } from './diceRoll';
 import type { ReactNode } from 'react';
 
 vi.mock('@react-three/fiber', () => ({
@@ -25,6 +25,11 @@ describe('diceRoll helpers', () => {
 
     expect(values.size).toBeGreaterThan(1);
   });
+
+  it('normalizes and sums multiple dice values', () => {
+    expect(normalizeDiceValues([1, 3, 9])).toEqual([1, 3, 6]);
+    expect(sumDiceValues([1, 3, 6])).toBe(10);
+  });
 });
 
 describe('Dice3D', () => {
@@ -32,13 +37,13 @@ describe('Dice3D', () => {
     vi.useFakeTimers();
     const onResult = vi.fn();
 
-    render(<Dice3D rollToken={1} requestedValue={4} onResult={onResult} />);
+    render(<Dice3D rollToken={1} diceValues={[2, 4]} onResult={onResult} />);
 
     act(() => {
       vi.advanceTimersByTime(DICE_FALL_MS + DICE_SETTLE_MS);
     });
 
-    expect(onResult).toHaveBeenCalledWith(4);
+    expect(onResult).toHaveBeenCalledWith(6);
 
     vi.useRealTimers();
   });

@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameContext } from '../../context/GameContext';
 import { MarkdownText } from '../MarkdownText';
+import type { DiceMode } from '../../domain/types';
+import { createRepositories } from '../../repositories';
 
 const colors = [
   { id: 'червоний', className: 'bg-red-500' },
@@ -73,13 +75,28 @@ const createPlayer = (index: number): PlayerDraft => ({
   color: colors[index % colors.length].id,
 });
 
+const repositories = createRepositories();
+
 export const JourneySetupHub = () => {
   const navigate = useNavigate();
   const { startNewSession, loading } = useGameContext();
   const [activeTab, setActiveTab] = useState<TabId>('simple');
+  const [diceMode, setDiceMode] = useState<DiceMode>('classic');
 
   const [players, setPlayers] = useState<PlayerDraft[]>([createPlayer(0)]);
   const [simpleError, setSimpleError] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    void repositories.settingsRepository.getSettings().then((settings) => {
+      if (!cancelled) {
+        setDiceMode(settings.defaultDiceMode);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const updatePlayer = (id: string, patch: Partial<PlayerDraft>) => {
     setPlayers((prev) => prev.map((player) => (player.id === id ? { ...player, ...patch } : player)));
@@ -147,7 +164,7 @@ export const JourneySetupHub = () => {
         question: JSON.stringify(multiplayerPayload),
         need: summary,
       },
-      { speed: 'normal', depth: 'standard' },
+      { diceMode, depth: 'standard' },
     );
 
     navigate('/game');
