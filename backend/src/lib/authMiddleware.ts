@@ -1,10 +1,11 @@
 import type { NextFunction, Request, Response } from 'express';
 import { verifyAppToken } from './appToken.js';
 import { getUserById } from '../store/usersStore.js';
-import type { AppUser } from '../types/auth.js';
+import type { AppUser, AuthScopeContext } from '../types/auth.js';
 
 export interface AuthenticatedRequest extends Request {
   authUser?: AppUser;
+  authScope?: AuthScopeContext;
 }
 
 const unauthorized = (res: Response, message: string) => {
@@ -29,6 +30,11 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
       return unauthorized(res, 'User not found');
     }
     req.authUser = user;
+    req.authScope = {
+      chatInstance: payload.chatInstance,
+      chatType: payload.chatType,
+      startParam: payload.startParam,
+    };
     return next();
   } catch {
     return unauthorized(res, 'Invalid token');

@@ -1,7 +1,7 @@
 {
   "summary": {
     "overall_score": 89,
-    "last_updated": "2026-02-27T01:38:00Z",
+    "last_updated": "2026-02-27T01:54:00Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -13,18 +13,18 @@
   "metrics": {
     "files_total": 172,
     "source_files_total": 172,
-    "lines_total": 16695,
+    "lines_total": 16873,
     "frontend": {
       "files": 155,
-      "lines": 13944
+      "lines": 13990
     },
     "backend": {
       "files": 17,
-      "lines": 2751
+      "lines": 2883
     },
     "tests": {
       "files": 38,
-      "lines": 2827,
+      "lines": 2888,
       "test_file_ratio_vs_source_percent": 22.1,
       "source_files_with_direct_test_match_percent": 29.7,
       "coverage_estimate_percent": 73,
@@ -93,6 +93,16 @@
         "path": "backend/src/lib/db.ts",
         "risk": "low",
         "reason": "Migration runner and pool lifecycle are centralized here; small but foundational for all future persistence-dependent features including RAG."
+      },
+      {
+        "path": "backend/src/routes/auth.ts",
+        "risk": "medium",
+        "reason": "Telegram validation, scoped token issuance, admin upgrade, and chat-bound capability serialization now intersect in one route module."
+      },
+      {
+        "path": "backend/src/store/usersStore.ts",
+        "risk": "medium",
+        "reason": "User persistence now also manages admin chat bindings and role promotion, which should eventually move into a dedicated auth/admin service."
       }
     ]
   },

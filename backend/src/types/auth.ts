@@ -13,6 +13,15 @@ export interface TelegramAuthResult {
   firstName?: string;
   lastName?: string;
   locale?: string;
+  chatInstance?: string;
+  chatType?: string;
+  startParam?: string;
+}
+
+export interface AuthScopeContext {
+  chatInstance?: string;
+  chatType?: string;
+  startParam?: string;
 }
 
 export interface AppUser {

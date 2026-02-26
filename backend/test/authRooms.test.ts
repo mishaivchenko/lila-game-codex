@@ -8,7 +8,12 @@ import { clearGamesStore } from '../src/store/gamesStore.js';
 
 const BOT_TOKEN = '123456:TEST_BOT_TOKEN';
 
-const buildTelegramInitData = (botToken: string, userId = 424242, username = 'misha_test'): string => {
+const buildTelegramInitData = (
+  botToken: string,
+  userId = 424242,
+  username = 'misha_test',
+  scope?: { chatInstance?: string; chatType?: string },
+): string => {
   const payload = new URLSearchParams();
   payload.set('auth_date', `${Math.floor(Date.now() / 1000)}`);
   payload.set('query_id', 'AAEAAAE');
@@ -22,6 +27,12 @@ const buildTelegramInitData = (botToken: string, userId = 424242, username = 'mi
       language_code: 'uk',
     }),
   );
+  if (scope?.chatInstance) {
+    payload.set('chat_instance', scope.chatInstance);
+  }
+  if (scope?.chatType) {
+    payload.set('chat_type', scope.chatType);
+  }
 
   const rows = Array.from(payload.entries())
     .sort(([left], [right]) => left.localeCompare(right))
@@ -338,6 +349,7 @@ describe('Telegram auth + rooms', () => {
 
     const hostUserId = hostAuth.body.user.id as string;
     const playerOneUserId = playerOneAuth.body.user.id as string;
+    const playerTwoUserId = playerTwoAuth.body.user.id as string;
 
     await rollDiceForCurrentPlayer({ roomId, userId: hostUserId });
 
@@ -347,11 +359,19 @@ describe('Telegram auth + rooms', () => {
       .send({});
     expect(closeHostCard.status).toBe(200);
 
-    await rollDiceForCurrentPlayer({ roomId, userId: playerOneUserId });
+    const roomBeforePlayerRoll = await request(app)
+      .get(`/api/rooms/${roomId}`)
+      .set('Authorization', `Bearer ${hostToken}`);
+    const currentTurnAfterHostRoll = roomBeforePlayerRoll.body.gameState.currentTurnPlayerId as string;
+    const currentPlayerToken =
+      currentTurnAfterHostRoll === playerOneUserId ? playerOneToken
+        : currentTurnAfterHostRoll === playerTwoUserId ? playerTwoToken
+          : hostToken;
+    await rollDiceForCurrentPlayer({ roomId, userId: currentTurnAfterHostRoll });
 
     const playerAttempt = await request(app)
       .post(`/api/rooms/${roomId}/card/close`)
-      .set('Authorization', `Bearer ${playerTwoToken}`)
+      .set('Authorization', `Bearer ${currentPlayerToken === playerOneToken ? playerTwoToken : playerOneToken}`)
       .send({});
     expect(playerAttempt.status).toBe(403);
 
@@ -403,5 +423,46 @@ describe('Telegram auth + rooms', () => {
     expect(hostUpdate.status).toBe(200);
     expect(hostUpdate.body.gameState.settings.diceMode).toBe('triple');
     expect(hostUpdate.body.gameState.settings.hostCanPause).toBe(false);
+  });
+
+  it('binds admin access to the current Telegram chat scope', async () => {
+    const initDataChatA = buildTelegramInitData(BOT_TOKEN, 63001, 'scoped_admin', {
+      chatInstance: 'chat-A',
+      chatType: 'group',
+    });
+    const authChatA = await request(app).post('/api/auth/telegram/webapp').send({ initData: initDataChatA });
+    const tokenChatA = authChatA.body.token as string;
+
+    const upgradeResponse = await request(app)
+      .post('/api/auth/upgrade-admin')
+      .set('Authorization', `Bearer ${tokenChatA}`)
+      .send({ starsPaid: 100 });
+    expect(upgradeResponse.status).toBe(200);
+    expect(upgradeResponse.body.user.canHostCurrentChat).toBe(true);
+
+    const createRoomInChatA = await request(app)
+      .post('/api/rooms')
+      .set('Authorization', `Bearer ${tokenChatA}`)
+      .send({ boardType: 'full' });
+    expect(createRoomInChatA.status).toBe(201);
+
+    const initDataChatB = buildTelegramInitData(BOT_TOKEN, 63001, 'scoped_admin', {
+      chatInstance: 'chat-B',
+      chatType: 'group',
+    });
+    const authChatB = await request(app).post('/api/auth/telegram/webapp').send({ initData: initDataChatB });
+    const tokenChatB = authChatB.body.token as string;
+
+    const meInChatB = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${tokenChatB}`);
+    expect(meInChatB.status).toBe(200);
+    expect(meInChatB.body.user.canHostCurrentChat).toBe(false);
+
+    const createRoomInChatB = await request(app)
+      .post('/api/rooms')
+      .set('Authorization', `Bearer ${tokenChatB}`)
+      .send({ boardType: 'full' });
+    expect(createRoomInChatB.status).toBe(403);
   });
 });

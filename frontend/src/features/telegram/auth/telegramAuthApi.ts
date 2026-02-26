@@ -11,6 +11,7 @@ export interface TelegramAppUser {
   role?: 'USER' | 'ADMIN' | 'SUPER_ADMIN';
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
+  canHostCurrentChat?: boolean;
   createdAt?: string;
   lastActiveAt?: string;
 }
@@ -28,7 +29,8 @@ export const authenticateTelegramWebApp = async (initData: string): Promise<Tele
   });
 
   if (!response.ok) {
-    throw new Error('Telegram auth failed');
+    const payload = await response.json().catch(() => null) as { error?: string } | null;
+    throw new Error(payload?.error ?? 'Telegram auth failed');
   }
 
   return response.json() as Promise<TelegramAuthResponse>;

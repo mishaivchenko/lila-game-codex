@@ -1,7 +1,12 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { verifyTelegramWebAppInitData } from '../lib/telegramWebAppAuth.js';
-import { upgradeUserToAdmin, upsertUserFromTelegram } from '../store/usersStore.js';
+import {
+  grantAdminChatBinding,
+  hasAdminBindingForChat,
+  upgradeUserToAdmin,
+  upsertUserFromTelegram,
+} from '../store/usersStore.js';
 import { createAppToken } from '../lib/appToken.js';
 import { requireAuth, type AuthenticatedRequest } from '../lib/authMiddleware.js';
 
@@ -42,7 +47,7 @@ const serializeUser = (user: {
   isSuperAdmin: boolean;
   createdAt: string;
   lastActiveAt: string;
-}) => ({
+}, canHostCurrentChat = false) => ({
   id: user.id,
   telegramId: user.telegramId,
   displayName: user.displayName,
@@ -53,6 +58,7 @@ const serializeUser = (user: {
   role: user.role,
   isAdmin: user.isAdmin,
   isSuperAdmin: user.isSuperAdmin,
+  canHostCurrentChat,
   createdAt: user.createdAt,
   lastActiveAt: user.lastActiveAt,
 });
@@ -71,12 +77,17 @@ const handleTelegramAuth = async (req: Request, res: Response) => {
   try {
     const telegramProfile = verifyTelegramWebAppInitData(parsed.data.initData, botToken);
     const user = await upsertUserFromTelegram(telegramProfile);
-    const token = createAppToken(user.id);
+    const canHostCurrentChat = user.isSuperAdmin || await hasAdminBindingForChat(user.id, telegramProfile.chatInstance);
+    const token = createAppToken(user.id, 60 * 60 * 12, {
+      chatInstance: telegramProfile.chatInstance,
+      chatType: telegramProfile.chatType,
+      startParam: telegramProfile.startParam,
+    });
 
     return res.status(200).json({
       ok: true,
       token,
-      user: serializeUser(user),
+      user: serializeUser(user, canHostCurrentChat),
     });
   } catch (error) {
     console.warn(
@@ -101,13 +112,18 @@ authRouter.post('/telegram', (req, res) => {
 });
 
 authRouter.get('/me', requireAuth, (req: AuthenticatedRequest, res) => {
-  if (!req.authUser) {
-    return res.status(401).json({ ok: false, error: 'Unauthorized' });
-  }
-  return res.status(200).json({
-    ok: true,
-    user: serializeUser(req.authUser),
-  });
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const canHostCurrentChat =
+      req.authUser.isSuperAdmin
+      || await hasAdminBindingForChat(req.authUser.id, req.authScope?.chatInstance);
+    return res.status(200).json({
+      ok: true,
+      user: serializeUser(req.authUser, canHostCurrentChat),
+    });
+  })();
 });
 
 authRouter.post('/upgrade-admin', requireAuth, (req: AuthenticatedRequest, res) => {
@@ -121,8 +137,17 @@ authRouter.post('/upgrade-admin', requireAuth, (req: AuthenticatedRequest, res) 
       return res.status(400).json({ ok: false, error: 'Invalid payload', details: parsed.error.flatten() });
     }
 
+    if (!req.authScope?.chatInstance) {
+      return res.status(400).json({ ok: false, error: 'Telegram chat scope is required for admin upgrade' });
+    }
+
     if (req.authUser.isAdmin) {
-      return res.status(200).json({ ok: true, user: serializeUser(req.authUser) });
+      await grantAdminChatBinding({
+        userId: req.authUser.id,
+        chatInstance: req.authScope.chatInstance,
+        chatType: req.authScope.chatType,
+      });
+      return res.status(200).json({ ok: true, user: serializeUser(req.authUser, true) });
     }
 
     if (parsed.data.starsPaid < 100) {
@@ -134,6 +159,12 @@ authRouter.post('/upgrade-admin', requireAuth, (req: AuthenticatedRequest, res) 
       return res.status(404).json({ ok: false, error: 'User not found' });
     }
 
-    return res.status(200).json({ ok: true, user: serializeUser(updated) });
+    await grantAdminChatBinding({
+      userId: updated.id,
+      chatInstance: req.authScope.chatInstance,
+      chatType: req.authScope.chatType,
+    });
+
+    return res.status(200).json({ ok: true, user: serializeUser(updated, true) });
   })();
 });

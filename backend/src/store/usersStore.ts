@@ -5,6 +5,7 @@ import type { AppUser, TelegramAuthResult } from '../types/auth.js';
 
 const usersByTelegramId = new Map<string, AppUser>();
 const usersById = new Map<string, AppUser>();
+const adminBindingsByUserId = new Map<string, Set<string>>();
 
 const SUPER_ADMIN_USERNAMES = new Set(['soulvio', 'writemebeforemidnight']);
 const SUPER_ADMIN_TELEGRAM_IDS = new Set<string>(
@@ -29,6 +30,11 @@ interface UserRow {
   is_super_admin: boolean;
   created_at: string;
   last_active_at: string;
+}
+
+interface AdminChatBindingRow {
+  user_id: string;
+  chat_instance: string;
 }
 
 const mapUserRow = (row: UserRow): AppUser => ({
@@ -65,6 +71,15 @@ const storeInMemory = (user: AppUser): AppUser => {
   usersById.set(user.id, user);
   usersByTelegramId.set(user.telegramId, user);
   return user;
+};
+
+const storeAdminBindingInMemory = (userId: string, chatInstance: string): void => {
+  if (!chatInstance) {
+    return;
+  }
+  const existing = adminBindingsByUserId.get(userId) ?? new Set<string>();
+  existing.add(chatInstance);
+  adminBindingsByUserId.set(userId, existing);
 };
 
 const upsertUserInMemory = (telegram: TelegramAuthResult): AppUser => {
@@ -216,6 +231,58 @@ export const getUserById = async (id: string): Promise<AppUser | undefined> => {
   return user;
 };
 
+export const hasAdminBindingForChat = async (userId: string, chatInstance?: string): Promise<boolean> => {
+  if (!chatInstance) {
+    return false;
+  }
+  if (!isPostgresEnabled()) {
+    return adminBindingsByUserId.get(userId)?.has(chatInstance) ?? false;
+  }
+  const rows = await queryDb<AdminChatBindingRow>(
+    `SELECT user_id, chat_instance
+     FROM admin_chat_bindings
+     WHERE user_id = $1 AND chat_instance = $2
+     LIMIT 1`,
+    [userId, chatInstance],
+  );
+  if (rows[0]) {
+    storeAdminBindingInMemory(userId, chatInstance);
+    return true;
+  }
+  return false;
+};
+
+export const grantAdminChatBinding = async ({
+  userId,
+  chatInstance,
+  chatType,
+  grantedByUserId,
+}: {
+  userId: string;
+  chatInstance: string;
+  chatType?: string;
+  grantedByUserId?: string;
+}): Promise<void> => {
+  if (!chatInstance) {
+    throw new Error('MISSING_CHAT_INSTANCE');
+  }
+  if (!isPostgresEnabled()) {
+    storeAdminBindingInMemory(userId, chatInstance);
+    return;
+  }
+  await queryDb(
+    `INSERT INTO admin_chat_bindings (id, user_id, chat_instance, chat_type, granted_by_user_id, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+     ON CONFLICT (user_id, chat_instance)
+     DO UPDATE SET
+       chat_type = COALESCE(EXCLUDED.chat_type, admin_chat_bindings.chat_type),
+       granted_by_user_id = COALESCE(EXCLUDED.granted_by_user_id, admin_chat_bindings.granted_by_user_id),
+       updated_at = NOW()`,
+    [randomUUID(), userId, chatInstance, chatType ?? null, grantedByUserId ?? null],
+  );
+  storeAdminBindingInMemory(userId, chatInstance);
+};
+
 export const upgradeUserToAdmin = async (id: string): Promise<AppUser | undefined> => {
   if (!isPostgresEnabled()) {
     const user = usersById.get(id);
@@ -266,9 +333,11 @@ export const upgradeUserToAdmin = async (id: string): Promise<AppUser | undefine
 export const clearUsersStore = async (): Promise<void> => {
   usersByTelegramId.clear();
   usersById.clear();
+  adminBindingsByUserId.clear();
   if (!isPostgresEnabled()) {
     return;
   }
+  await queryDb('DELETE FROM admin_chat_bindings');
   await queryDb('DELETE FROM room_players');
   await queryDb('DELETE FROM room_game_states');
   await queryDb('DELETE FROM host_rooms');

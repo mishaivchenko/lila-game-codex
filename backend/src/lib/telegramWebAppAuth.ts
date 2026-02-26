@@ -82,5 +82,8 @@ export const verifyTelegramWebAppInitData = (initData: string, botToken: string)
     firstName: user.first_name,
     lastName: user.last_name,
     locale: user.language_code,
+    chatInstance: entries.get('chat_instance') ?? undefined,
+    chatType: entries.get('chat_type') ?? undefined,
+    startParam: entries.get('start_param') ?? undefined,
   };
 };

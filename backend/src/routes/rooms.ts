@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth, type AuthenticatedRequest } from '../lib/authMiddleware.js';
+import { hasAdminBindingForChat } from '../store/usersStore.js';
 import {
   closeRoomCard,
   createHostRoom,
@@ -46,8 +47,11 @@ roomsRouter.post('/', requireAuth, (req: AuthenticatedRequest, res) => {
     if (!req.authUser) {
       return res.status(401).json({ ok: false, error: 'Unauthorized' });
     }
-    if (!req.authUser.isAdmin) {
-      return res.status(403).json({ ok: false, error: 'Admin role required to host room' });
+    const canHostCurrentChat =
+      req.authUser.isSuperAdmin
+      || await hasAdminBindingForChat(req.authUser.id, req.authScope?.chatInstance);
+    if (!canHostCurrentChat) {
+      return res.status(403).json({ ok: false, error: 'Admin access for this Telegram chat is required to host room' });
     }
     const parsed = createRoomSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
