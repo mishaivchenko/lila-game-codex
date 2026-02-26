@@ -31,6 +31,7 @@ ENV PORT=3001
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/backend/dist ./backend/dist
 COPY --from=build /app/backend/package.json ./backend/package.json
+COPY --from=build /app/backend/migrations ./backend/migrations
 COPY --from=build /app/frontend/dist ./frontend/dist
 COPY --from=build /app/cards ./cards
 

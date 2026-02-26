@@ -14,6 +14,21 @@ const upgradeAdminSchema = z.object({
 
 export const authRouter = Router();
 
+const isTelegramValidationError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  return [
+    'Missing initData or bot token',
+    'Missing hash',
+    'Invalid Telegram signature',
+    'Expired initData',
+    'Missing Telegram user',
+    'Invalid Telegram user payload',
+    'Missing Telegram user id',
+  ].includes(error.message);
+};
+
 const serializeUser = (user: {
   id: string;
   telegramId: string;
@@ -71,7 +86,10 @@ const handleTelegramAuth = async (req: Request, res: Response) => {
         message: error instanceof Error ? error.message : 'Unknown error',
       }),
     );
-    return res.status(401).json({ ok: false, error: 'Telegram auth validation failed' });
+    if (isTelegramValidationError(error)) {
+      return res.status(401).json({ ok: false, error: 'Telegram auth validation failed' });
+    }
+    return res.status(500).json({ ok: false, error: 'Authentication backend is temporarily unavailable' });
   }
 };
 

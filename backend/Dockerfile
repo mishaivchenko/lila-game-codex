@@ -5,6 +5,7 @@ COPY package.json package-lock.json ./
 COPY backend/package.json backend/package.json
 COPY backend/tsconfig.json backend/tsconfig.json
 COPY backend/src backend/src
+COPY backend/migrations backend/migrations
 
 RUN npm ci --workspace backend --include-workspace-root=false
 RUN npm run build --workspace backend
@@ -18,6 +19,7 @@ ENV PORT=3001
 COPY backend/package.json ./backend/package.json
 RUN npm install --omit=dev --prefix ./backend
 COPY --from=build /app/backend/dist ./backend/dist
+COPY --from=build /app/backend/migrations ./backend/migrations
 COPY cards ./cards
 
 USER node
