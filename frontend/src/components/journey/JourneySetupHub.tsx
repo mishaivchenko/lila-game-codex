@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameContext } from '../../context/GameContext';
 import { MarkdownText } from '../MarkdownText';
 import type { DiceMode } from '../../domain/types';
+import { createRepositories } from '../../repositories';
 
 const colors = [
   { id: 'червоний', className: 'bg-red-500' },
@@ -74,30 +75,7 @@ const createPlayer = (index: number): PlayerDraft => ({
   color: colors[index % colors.length].id,
 });
 
-const diceModeOptions: Array<{
-  id: DiceMode;
-  title: string;
-  subtitle: string;
-  diceCount: number;
-}> = [
-  { id: 'classic', title: 'Класична', subtitle: '1 кубик · спокійний ритм', diceCount: 1 },
-  { id: 'fast', title: 'Швидка', subtitle: '2 кубики · динамічний крок', diceCount: 2 },
-  { id: 'triple', title: 'Питання дня', subtitle: '3 кубики · глибший розмах', diceCount: 3 },
-];
-
-const DiceModeIcon = ({ count }: { count: number }) => (
-  <div className="flex items-end gap-1.5">
-    {Array.from({ length: count }).map((_, index) => (
-      <span
-        key={`die-icon-${count}-${index}`}
-        className="flex h-6 w-6 items-center justify-center rounded-md border border-[#d8c7b8] bg-white/90 text-[10px] text-[#8d6b5a] shadow-[0_2px_8px_rgba(95,74,60,0.12)]"
-        style={{ transform: `translateY(${Math.abs(index - (count - 1) / 2) * -2}px)` }}
-      >
-        •
-      </span>
-    ))}
-  </div>
-);
+const repositories = createRepositories();
 
 export const JourneySetupHub = () => {
   const navigate = useNavigate();
@@ -107,6 +85,18 @@ export const JourneySetupHub = () => {
 
   const [players, setPlayers] = useState<PlayerDraft[]>([createPlayer(0)]);
   const [simpleError, setSimpleError] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    void repositories.settingsRepository.getSettings().then((settings) => {
+      if (!cancelled) {
+        setDiceMode(settings.defaultDiceMode);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const updatePlayer = (id: string, patch: Partial<PlayerDraft>) => {
     setPlayers((prev) => prev.map((player) => (player.id === id ? { ...player, ...patch } : player)));
@@ -220,32 +210,16 @@ export const JourneySetupHub = () => {
 
           <div className="rounded-2xl border border-stone-200 bg-white p-3">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">Формат кидка</p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {diceModeOptions.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => setDiceMode(option.id)}
-                  className={`rounded-2xl border p-3 text-left transition ${
-                    diceMode === option.id
-                      ? 'border-[#c57b5d] bg-[#fff1e8] shadow-[0_8px_24px_rgba(197,123,93,0.2)]'
-                      : 'border-stone-200 bg-white hover:border-[#dcc5b7] hover:bg-[#fdf9f5]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <p className={`text-sm font-semibold ${diceMode === option.id ? 'text-[#6b4a3b]' : 'text-stone-800'}`}>
-                        {option.title}
-                      </p>
-                      <p className={`mt-0.5 text-xs ${diceMode === option.id ? 'text-[#8d6b5a]' : 'text-stone-500'}`}>
-                        {option.subtitle}
-                      </p>
-                    </div>
-                    <DiceModeIcon count={option.diceCount} />
-                  </div>
-                </button>
-              ))}
-            </div>
+            <p className="mt-2 text-sm text-stone-600">
+              Поточний режим: <span className="font-medium text-stone-800">{diceMode === 'classic' ? 'Класична' : diceMode === 'fast' ? 'Швидка' : 'Питання дня'}</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/settings')}
+              className="mt-3 rounded-xl border border-[#d8c7b8] bg-[#fdf7f2] px-3 py-2 text-xs font-medium text-[#7d5d4e]"
+            >
+              Налаштувати у «Налаштування подорожі»
+            </button>
           </div>
 
           {players.map((player, index) => (
