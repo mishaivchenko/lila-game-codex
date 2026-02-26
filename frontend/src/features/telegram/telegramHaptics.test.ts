@@ -35,16 +35,17 @@ describe('telegram haptics', () => {
   });
 
   it('triggers expected haptic methods for gameplay intents', () => {
-    const { impactOccurred, selectionChanged } = setupTelegram();
+    const { impactOccurred, notificationOccurred, selectionChanged } = setupTelegram();
 
     triggerDiceHaptic();
     triggerLandingHaptic();
     triggerTeleportHaptic();
     triggerModalOpenHaptic();
 
-    expect(impactOccurred).toHaveBeenNthCalledWith(1, 'soft');
+    expect(impactOccurred).toHaveBeenNthCalledWith(1, 'medium');
     expect(impactOccurred).toHaveBeenNthCalledWith(2, 'light');
-    expect(selectionChanged).toHaveBeenCalledTimes(2);
+    expect(notificationOccurred).toHaveBeenCalledWith('warning');
+    expect(selectionChanged).toHaveBeenCalledTimes(1);
   });
 
   it('suppresses duplicate haptics within cooldown window', () => {

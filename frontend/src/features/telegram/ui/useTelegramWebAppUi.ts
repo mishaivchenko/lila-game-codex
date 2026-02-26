@@ -8,14 +8,12 @@ interface UseTelegramWebAppUiParams {
   telegramMode: boolean;
   pathname: string;
   navigateBack: () => void;
-  onInvite?: () => void;
 }
 
 export const useTelegramWebAppUi = ({
   telegramMode,
   pathname,
   navigateBack,
-  onInvite,
 }: UseTelegramWebAppUiParams) => {
   useEffect(() => {
     if (!telegramMode) {
@@ -29,9 +27,7 @@ export const useTelegramWebAppUi = ({
     document.documentElement.setAttribute('data-tg-mode', 'true');
 
     const backButton = webApp?.BackButton;
-    const mainButton = webApp?.MainButton;
     const handleBack = () => navigateBack();
-    const handleMain = () => onInvite?.();
     const handleThemeChanged = () => applyTelegramThemeToRoot(webApp?.themeParams, webApp?.colorScheme);
     const isHomeRoute = pathname === '/' || pathname === '/telegram';
 
@@ -43,16 +39,6 @@ export const useTelegramWebAppUi = ({
         backButton.onClick(handleBack);
       }
     }
-    if (mainButton) {
-      if (isHomeRoute && onInvite) {
-        mainButton.setText?.('Invite');
-        mainButton.enable?.();
-        mainButton.show();
-        mainButton.onClick(handleMain);
-      } else {
-        mainButton.hide();
-      }
-    }
     webApp?.onEvent?.('themeChanged', handleThemeChanged);
 
     return () => {
@@ -61,9 +47,6 @@ export const useTelegramWebAppUi = ({
       if (backButton) {
         backButton.offClick(handleBack);
       }
-      if (mainButton) {
-        mainButton.offClick(handleMain);
-      }
     };
-  }, [navigateBack, onInvite, pathname, telegramMode]);
+  }, [navigateBack, pathname, telegramMode]);
 };

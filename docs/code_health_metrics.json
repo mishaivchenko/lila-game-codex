@@ -1,7 +1,7 @@
 {
   "summary": {
     "overall_score": 89,
-    "last_updated": "2026-02-26T19:02:18Z",
+    "last_updated": "2026-02-26T19:17:23Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -11,21 +11,21 @@
     "complexity_growth_percent_max": 10
   },
   "metrics": {
-    "files_total": 169,
-    "source_files_total": 169,
-    "lines_total": 13436,
+    "files_total": 167,
+    "source_files_total": 167,
+    "lines_total": 13331,
     "frontend": {
-      "files": 154,
-      "lines": 12684
+      "files": 152,
+      "lines": 12579
     },
     "backend": {
       "files": 15,
       "lines": 752
     },
     "tests": {
-      "files": 38,
-      "lines": 2501,
-      "test_file_ratio_vs_source_percent": 22.5,
+      "files": 37,
+      "lines": 2466,
+      "test_file_ratio_vs_source_percent": 22.2,
       "source_files_with_direct_test_match_percent": 30.3,
       "coverage_estimate_percent": 73,
       "coverage_band": "medium"

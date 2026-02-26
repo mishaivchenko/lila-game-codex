@@ -41,11 +41,10 @@ This implementation provides:
 - BoardTheme system with persisted user customization (theme, token color, animation speed).
 
 ## Telegram Mini App UX
-- Native Telegram shell integration with route-aware **BackButton** and optional **MainButton invite** action.
+- Native Telegram shell integration with route-aware **BackButton** behavior.
 - Gentle **haptic feedback** for key moments (dice throw, landing, snake/arrow transition, card open).
 - Improved fullscreen + safe-area behavior (`env(safe-area-inset-*)`) for iPhone notch / Android gesture areas.
 - Runtime Telegram theme sync with `themeChanged` event and `colorScheme` handling.
-- Lightweight invite/share flow via `WebApp.shareURL()` with fallback to Telegram deep-link sharing.
 
 ## Board Themes & Preferences
 - `BoardTheme` is centralized in `/frontend/src/theme/boardTheme.ts`.

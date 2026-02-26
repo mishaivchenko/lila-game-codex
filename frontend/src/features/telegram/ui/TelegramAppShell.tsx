@@ -8,7 +8,6 @@ import { useTelegramFullscreen } from './useTelegramFullscreen';
 import { useTelegramWebAppUi } from './useTelegramWebAppUi';
 import { useTelegramAuthBootstrap } from './useTelegramAuthBootstrap';
 import { useTelegramSessionSync } from './useTelegramSessionSync';
-import { shareMiniAppInvite } from '../shareInvite';
 
 interface TelegramAppShellProps {
   children: React.ReactNode;
@@ -39,7 +38,6 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
     telegramMode,
     pathname: location.pathname,
     navigateBack: () => navigate(-1),
-    onInvite: () => shareMiniAppInvite(),
   });
   useTelegramAuthBootstrap({ telegramMode, setAuthState });
 
