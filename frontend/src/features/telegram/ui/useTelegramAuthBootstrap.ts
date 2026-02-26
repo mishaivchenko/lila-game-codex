@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { authenticateTelegramWebApp } from '../auth/telegramAuthApi';
+import { authenticateTelegramWebApp, fetchCurrentUser } from '../auth/telegramAuthApi';
 import type { TelegramAuthContextValue } from '../auth/TelegramAuthContext';
 import { getTelegramInitData, isLocalDevHost, shouldBypassTelegramAuthForLocalDev } from '../telegramWebApp';
 
@@ -84,11 +84,18 @@ export const useTelegramAuthBootstrap = ({
           return;
         }
 
+        let currentUser = result.user;
+        try {
+          currentUser = await fetchCurrentUser(result.token);
+        } catch {
+          // Keep the auth bootstrap resilient: if /me fails temporarily, use auth payload.
+        }
+
         setAuthState({
           isTelegramMode: true,
           status: 'authenticated',
           token: result.token,
-          user: result.user,
+          user: currentUser,
         });
       } catch {
         if (cancelled) {

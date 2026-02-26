@@ -22,8 +22,28 @@ export const useGameContextActions = ({
   diceRng,
 }: UseGameContextActionsParams): Pick<
   GameContextValue,
-  'startNewSession' | 'resumeLastSession' | 'performMove' | 'finishSession' | 'saveInsight' | 'updateSessionRequest'
+  | 'startNewSession'
+  | 'resumeLastSession'
+  | 'performMove'
+  | 'finishSession'
+  | 'saveInsight'
+  | 'updateSessionRequest'
+  | 'loadSession'
 > => {
+  const loadSession = useCallback<GameContextValue['loadSession']>(
+    async (session) => {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      try {
+        const normalizedSession = normalizeSession(session);
+        await repositories.sessionsRepository.saveSession(normalizedSession);
+        dispatch({ type: 'NEW_SESSION_STARTED', payload: normalizedSession });
+      } catch {
+        dispatch({ type: 'SET_ERROR', payload: 'Не вдалося відкрити подорож.' });
+      }
+    },
+    [dispatch, repositories.sessionsRepository],
+  );
+
   const startNewSession = useCallback<GameContextValue['startNewSession']>(
     async (boardType, request, settings) => {
       dispatch({ type: 'SET_LOADING', payload: true });
@@ -297,5 +317,6 @@ export const useGameContextActions = ({
     finishSession,
     saveInsight,
     updateSessionRequest,
+    loadSession,
   };
 };
