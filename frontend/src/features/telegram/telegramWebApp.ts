@@ -19,9 +19,24 @@ export interface TelegramThemeParams {
 export interface TelegramWebAppButton {
   show: () => void;
   hide: () => void;
+  setText?: (text: string) => void;
+  enable?: () => void;
+  disable?: () => void;
   onClick: (callback: () => void) => void;
   offClick: (callback: () => void) => void;
 }
+
+export interface TelegramWebAppHapticFeedback {
+  impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
+  notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
+  selectionChanged: () => void;
+}
+
+export type TelegramWebAppEvent =
+  | 'themeChanged'
+  | 'viewportChanged'
+  | 'mainButtonClicked'
+  | 'backButtonClicked';
 
 export interface TelegramWebApp {
   initData: string;
@@ -34,8 +49,14 @@ export interface TelegramWebApp {
   expand: () => void;
   requestFullscreen?: () => void;
   exitFullscreen?: () => void;
+  openTelegramLink?: (url: string) => void;
+  shareURL?: (url: string, text?: string) => void;
+  HapticFeedback?: TelegramWebAppHapticFeedback;
+  MainButton?: TelegramWebAppButton;
   close: () => void;
   BackButton?: TelegramWebAppButton;
+  onEvent?: (eventType: TelegramWebAppEvent, eventHandler: () => void) => void;
+  offEvent?: (eventType: TelegramWebAppEvent, eventHandler: () => void) => void;
 }
 
 const hasTelegramObject = (): boolean => Boolean(window.Telegram?.WebApp);
@@ -119,8 +140,14 @@ export const getTelegramInitData = (): string => {
   return decodedFallback.includes('hash=') ? decodedFallback : '';
 };
 
-export const applyTelegramThemeToRoot = (theme?: TelegramThemeParams): void => {
+export const applyTelegramThemeToRoot = (
+  theme?: TelegramThemeParams,
+  colorScheme?: 'light' | 'dark',
+): void => {
   if (!theme) {
+    if (colorScheme) {
+      document.documentElement.setAttribute('data-tg-color-scheme', colorScheme);
+    }
     return;
   }
 
@@ -142,5 +169,8 @@ export const applyTelegramThemeToRoot = (theme?: TelegramThemeParams): void => {
   }
   if (theme.button_text_color) {
     root.style.setProperty('--tg-button-text-color', theme.button_text_color);
+  }
+  if (colorScheme) {
+    root.setAttribute('data-tg-color-scheme', colorScheme);
   }
 };

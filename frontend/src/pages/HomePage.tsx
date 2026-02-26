@@ -5,6 +5,7 @@ import { JourneySetupHub } from '../components/journey/JourneySetupHub';
 import { TelegramRoomsPanel, useTelegramAuth } from '../features/telegram';
 import { AppearanceCustomizationPanel } from '../components/AppearanceCustomizationPanel';
 import { fetchUserGameHistory, type RemoteUserGameSession } from '../features/telegram/history/gamesApi';
+import { shareMiniAppInvite } from '../features/telegram/shareInvite';
 
 export const HomePage = () => {
   const { resumeLastSession, loadSession } = useGameContext();
@@ -96,6 +97,15 @@ export const HomePage = () => {
             Продовжити гру
           </button>
         </div>
+        {isTelegramMode && status === 'authenticated' && (
+          <button
+            type="button"
+            onClick={() => shareMiniAppInvite('Join my Lila journey in Telegram Mini App.')}
+            className="mt-2 rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] px-4 py-2 text-center text-xs font-medium text-[var(--lila-text-primary)] transition hover:bg-[var(--lila-surface-muted)]"
+          >
+            Поділитися грою
+          </button>
+        )}
 
         {!showSetup && (
           <Link to="/setup" className="mt-3 inline-block text-xs text-[var(--lila-text-muted)] underline underline-offset-2">
