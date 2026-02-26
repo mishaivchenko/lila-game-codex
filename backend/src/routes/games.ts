@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth, type AuthenticatedRequest } from '../lib/authMiddleware.js';
 import {
+  getUserActiveGameSession,
   getUserGameSessionById,
   listUserGameSessions,
   patchGameSessionForUser,
@@ -55,6 +56,14 @@ gamesRouter.get('/', requireAuth, (req: AuthenticatedRequest, res) => {
   const limit = Number.isFinite(limitRaw) ? Math.min(20, Math.max(1, Math.floor(limitRaw))) : 10;
   const sessions = listUserGameSessions(req.authUser.id, limit);
   return res.status(200).json({ ok: true, sessions });
+});
+
+gamesRouter.get('/active', requireAuth, (req: AuthenticatedRequest, res) => {
+  if (!req.authUser) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  }
+  const session = getUserActiveGameSession(req.authUser.id);
+  return res.status(200).json({ ok: true, session: session ?? null });
 });
 
 gamesRouter.get('/:id', requireAuth, (req: AuthenticatedRequest, res) => {

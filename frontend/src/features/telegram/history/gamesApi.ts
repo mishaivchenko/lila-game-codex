@@ -27,6 +27,17 @@ export const fetchUserGameHistory = async (
   return payload.sessions;
 };
 
+export const fetchActiveUserGameSession = async (
+  authToken: string,
+): Promise<RemoteUserGameSession | null> => {
+  const response = await apiFetch('/api/games/active', { method: 'GET' }, authToken);
+  if (!response.ok) {
+    throw new Error('Failed to fetch active game');
+  }
+  const payload = await response.json() as { ok: boolean; session: RemoteUserGameSession | null };
+  return payload.session;
+};
+
 export const upsertUserGameSession = async (
   authToken: string,
   session: GameSession,

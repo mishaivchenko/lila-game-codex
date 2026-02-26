@@ -1,7 +1,7 @@
 {
   "summary": {
     "overall_score": 89,
-    "last_updated": "2026-02-26T19:49:33Z",
+    "last_updated": "2026-02-26T20:20:14Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -67,7 +67,7 @@
       {
         "path": "frontend/src/features/telegram/ui/useTelegramSessionSync.ts",
         "risk": "low",
-        "reason": "New side-effect bridge syncs current session to backend; guarded by auth/session signature to avoid redundant writes."
+        "reason": "Session bootstrap now hydrates from server and then performs outbound sync; ordering is guarded but async orchestration remains sensitive."
       },
       {
         "path": "backend/src/routes/games.ts",

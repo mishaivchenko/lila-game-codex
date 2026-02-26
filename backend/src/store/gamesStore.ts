@@ -77,6 +77,12 @@ export const listUserGameSessions = (userId: string, limit = 10): UserGameSessio
     .slice(0, limit);
 };
 
+export const getUserActiveGameSession = (userId: string): UserGameSession | undefined => {
+  return Array.from(sessionsById.values())
+    .filter((session) => session.userId === userId && session.status === 'in_progress')
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0];
+};
+
 export const clearGamesStore = (): void => {
   sessionsById.clear();
 };

@@ -162,6 +162,125 @@ describe('Telegram auth + rooms', () => {
     expect(listForeignResponse.body.sessions).toHaveLength(0);
   });
 
+  it('returns latest in-progress session via /api/games/active and ignores finished sessions', async () => {
+    const initData = buildTelegramInitData(BOT_TOKEN, 50999);
+    const auth = await request(app).post('/api/auth/telegram/webapp').send({ initData });
+    const token = auth.body.token as string;
+
+    const createdAt = new Date().toISOString();
+    const firstSession = {
+      session: {
+        id: 'session-active-old',
+        boardType: 'full',
+        currentCell: 9,
+        settings: { diceMode: 'classic', depth: 'standard' },
+        request: { isDeepEntry: false, simpleRequest: 'old active' },
+        hasEnteredGame: true,
+        sessionStatus: 'active',
+        finished: false,
+        createdAt,
+        updatedAt: createdAt,
+      },
+    };
+    const secondSession = {
+      session: {
+        id: 'session-active-new',
+        boardType: 'full',
+        currentCell: 21,
+        settings: { diceMode: 'fast', depth: 'standard' },
+        request: { isDeepEntry: false, simpleRequest: 'new active' },
+        hasEnteredGame: true,
+        sessionStatus: 'active',
+        finished: false,
+        createdAt,
+        updatedAt: createdAt,
+      },
+    };
+    const finishedSession = {
+      session: {
+        id: 'session-finished',
+        boardType: 'full',
+        currentCell: 68,
+        settings: { diceMode: 'classic', depth: 'standard' },
+        request: { isDeepEntry: false, simpleRequest: 'done' },
+        hasEnteredGame: true,
+        sessionStatus: 'completed',
+        finished: true,
+        finishedAt: createdAt,
+        createdAt,
+        updatedAt: createdAt,
+      },
+    };
+
+    await request(app)
+      .post('/api/games')
+      .set('Authorization', `Bearer ${token}`)
+      .send(firstSession);
+    await request(app)
+      .post('/api/games')
+      .set('Authorization', `Bearer ${token}`)
+      .send(secondSession);
+    await request(app)
+      .post('/api/games')
+      .set('Authorization', `Bearer ${token}`)
+      .send(finishedSession);
+
+    const patchNewer = await request(app)
+      .patch('/api/games/session-active-new')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        session: {
+          currentCell: 24,
+          sessionStatus: 'active',
+          finished: false,
+        },
+      });
+    expect(patchNewer.status).toBe(200);
+
+    const activeResponse = await request(app)
+      .get('/api/games/active')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(activeResponse.status).toBe(200);
+    expect(activeResponse.body.ok).toBe(true);
+    expect(activeResponse.body.session.id).toBe('session-active-new');
+    expect(activeResponse.body.session.status).toBe('in_progress');
+  });
+
+  it('returns null from /api/games/active when only finished sessions exist', async () => {
+    const initData = buildTelegramInitData(BOT_TOKEN, 51000);
+    const auth = await request(app).post('/api/auth/telegram/webapp').send({ initData });
+    const token = auth.body.token as string;
+    const now = new Date().toISOString();
+
+    await request(app)
+      .post('/api/games')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        session: {
+          id: 'finished-only-session',
+          boardType: 'short',
+          currentCell: 68,
+          settings: { diceMode: 'classic', depth: 'light' },
+          request: { isDeepEntry: false, simpleRequest: 'done' },
+          hasEnteredGame: true,
+          sessionStatus: 'completed',
+          finished: true,
+          finishedAt: now,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+
+    const activeResponse = await request(app)
+      .get('/api/games/active')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(activeResponse.status).toBe(200);
+    expect(activeResponse.body.ok).toBe(true);
+    expect(activeResponse.body.session).toBeNull();
+  });
+
   it('rejects rooms access without auth token', async () => {
     const response = await request(app).post('/api/rooms').send({});
 
