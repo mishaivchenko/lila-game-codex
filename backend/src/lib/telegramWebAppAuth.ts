@@ -79,6 +79,8 @@ export const verifyTelegramWebAppInitData = (initData: string, botToken: string)
     telegramId: String(user.id),
     displayName,
     username: user.username,
+    firstName: user.first_name,
+    lastName: user.last_name,
     locale: user.language_code,
   };
 };

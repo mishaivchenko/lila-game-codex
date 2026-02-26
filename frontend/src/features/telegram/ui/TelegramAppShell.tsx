@@ -7,6 +7,7 @@ import { useTelegramRuntimeMode } from './useTelegramRuntimeMode';
 import { useTelegramFullscreen } from './useTelegramFullscreen';
 import { useTelegramWebAppUi } from './useTelegramWebAppUi';
 import { useTelegramAuthBootstrap } from './useTelegramAuthBootstrap';
+import { useTelegramSessionSync } from './useTelegramSessionSync';
 
 interface TelegramAppShellProps {
   children: React.ReactNode;
@@ -47,6 +48,7 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
   return (
     <TelegramAuthProvider value={authState}>
       <TelegramRoomsProvider authToken={authState.token}>
+        <TelegramSessionSyncBridge />
         <div className={shellClassName} data-telegram-mode={telegramMode ? 'true' : 'false'}>
           {authState.isTelegramMode && !fullscreenRequested && (
             <div className="mb-3 flex justify-end">
@@ -88,4 +90,9 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
       </TelegramRoomsProvider>
     </TelegramAuthProvider>
   );
+};
+
+const TelegramSessionSyncBridge = () => {
+  useTelegramSessionSync();
+  return null;
 };

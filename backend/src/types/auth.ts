@@ -10,6 +10,8 @@ export interface TelegramAuthResult {
   telegramId: string;
   displayName: string;
   username?: string;
+  firstName?: string;
+  lastName?: string;
   locale?: string;
 }
 
@@ -18,8 +20,9 @@ export interface AppUser {
   telegramId: string;
   displayName: string;
   username?: string;
+  firstName?: string;
+  lastName?: string;
   locale?: string;
-  timezone?: string;
   createdAt: string;
-  updatedAt: string;
+  lastActiveAt: string;
 }
