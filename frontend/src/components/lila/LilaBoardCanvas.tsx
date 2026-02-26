@@ -107,6 +107,7 @@ export const LilaBoardCanvas = ({
       worldWidth: 100,
       worldHeight: 100,
       zoom: 1,
+      maxZoom: DEFAULT_BOARD_ZOOM_SETTINGS.maxZoom,
     }),
   );
   const boardProfile = useMemo(() => getBoardProfile(boardType), [boardType]);
@@ -534,6 +535,11 @@ export const LilaBoardCanvas = ({
           )}
 
           <picture>
+            <source
+              type="image/webp"
+              srcSet={toResolvedSrcSet(boardImageSelection.webpSrcSet)}
+              sizes={boardImageSelection.sizes}
+            />
             <img
               src={activeBoardSrc ?? resolveAssetUrl(boardImageSelection.fallbackSrc)}
               srcSet={toResolvedSrcSet(boardImageSelection.pngSrcSet)}
@@ -543,6 +549,7 @@ export const LilaBoardCanvas = ({
               style={{
                 opacity: isBoardImageReady ? 1 : 0,
                 imageRendering: 'auto',
+                filter: theme.boardBackground.boardImageFilter,
                 transform: 'translateZ(0)',
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden',

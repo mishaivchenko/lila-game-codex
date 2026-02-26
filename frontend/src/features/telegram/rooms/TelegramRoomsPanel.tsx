@@ -21,7 +21,7 @@ export const TelegramRoomsPanel = () => {
 
   return (
     <section className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 p-4 shadow-[0_12px_28px_rgba(89,66,54,0.12)]">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8f6d5b]">Telegram Rooms</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lila-text-muted)]">Telegram Rooms</p>
       <h3 className="mt-1 text-base font-semibold text-[var(--lila-text-primary)]">Підготовка до спільної гри</h3>
       <p className="mt-1 text-xs text-[var(--lila-text-muted)]">
         Створіть код кімнати або приєднайтесь до існуючої. Повний мультиплеєр зʼявиться в наступних релізах.
@@ -45,7 +45,7 @@ export const TelegramRoomsPanel = () => {
             onChange={(event) => setRoomCodeInput(event.target.value.toUpperCase())}
             maxLength={8}
             placeholder="Код"
-            className="min-w-0 flex-1 rounded-xl border border-[var(--lila-border-soft)] bg-white px-3 py-2 text-sm text-[var(--lila-text-primary)] outline-none focus:border-[#cda58f]"
+            className="min-w-0 flex-1 rounded-xl border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-3 py-2 text-sm text-[var(--lila-text-primary)] outline-none focus:border-[var(--lila-accent)]"
           />
           <button
             type="submit"
@@ -58,7 +58,7 @@ export const TelegramRoomsPanel = () => {
       </div>
 
       {currentRoom && (
-        <p className="mt-3 rounded-xl bg-[#f4e6dc] px-3 py-2 text-sm text-[#5e4638]">
+        <p className="mt-3 rounded-xl bg-[var(--lila-accent-soft)] px-3 py-2 text-sm text-[var(--lila-text-primary)]">
           Активна кімната: <span className="font-semibold tracking-wider">{currentRoom.code}</span>
         </p>
       )}

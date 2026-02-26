@@ -63,6 +63,7 @@ export interface BoardBackgroundStyle {
   canvasShellBackground: string;
   canvasShellShadow: string;
   canvasFrameBackground: string;
+  boardImageFilter: string;
   boardPanelBackground: string;
   boardPanelText: string;
   transitionHintArrowBackground: string;
@@ -99,6 +100,36 @@ export interface BoardTheme {
   layout: BoardLayoutStyle;
 }
 
+export interface BoardThemeCssVars {
+  bgMain: string;
+  bgStart: string;
+  bgEnd: string;
+  surface: string;
+  surfaceMuted: string;
+  textPrimary: string;
+  textMuted: string;
+  accent: string;
+  accentHover: string;
+  accentSoft: string;
+  borderSoft: string;
+  chipBg: string;
+  chipText: string;
+  chipBorder: string;
+  chipActiveBg: string;
+  chipActiveText: string;
+  inputBg: string;
+  inputBorder: string;
+  secondaryButtonBg: string;
+  secondaryButtonText: string;
+  secondaryButtonBorder: string;
+  dangerBg: string;
+  dangerText: string;
+  warningBg: string;
+  warningText: string;
+  successBg: string;
+  successText: string;
+}
+
 const DEFAULT_TOKEN_PALETTE: TokenStyle['palette'] = [
   { id: 'onyx', label: 'Onyx', value: '#1c1917' },
   { id: 'copper', label: 'Copper', value: '#c57b5d' },
@@ -117,6 +148,7 @@ export const DEFAULT_SPIRITUAL_THEME: BoardTheme = {
     canvasShellBackground: 'rgba(231, 229, 228, 0.7)',
     canvasShellShadow: 'inset 0 1px 6px rgba(41, 37, 36, 0.08)',
     canvasFrameBackground: 'transparent',
+    boardImageFilter: 'none',
     boardPanelBackground: 'rgb(245 245 244)',
     boardPanelText: 'rgb(87 83 78)',
     transitionHintArrowBackground: '#f4e6dc',
@@ -199,6 +231,7 @@ export const COSMIC_DARK_THEME: BoardTheme = {
     ...DEFAULT_SPIRITUAL_THEME.boardBackground,
     canvasShellBackground: 'rgba(25, 28, 40, 0.76)',
     canvasShellShadow: 'inset 0 1px 8px rgba(12, 14, 25, 0.38)',
+    boardImageFilter: 'saturate(1.08) contrast(1.06) brightness(0.9) hue-rotate(-8deg)',
     boardPanelBackground: '#1f2331',
     boardPanelText: '#ece7df',
     transitionHintArrowBackground: '#2f3549',
@@ -263,6 +296,7 @@ export const MINIMAL_CREAM_THEME: BoardTheme = {
     ...DEFAULT_SPIRITUAL_THEME.boardBackground,
     canvasShellBackground: 'rgba(247, 241, 233, 0.9)',
     canvasShellShadow: 'inset 0 1px 5px rgba(124, 102, 86, 0.1)',
+    boardImageFilter: 'saturate(0.88) contrast(0.96) brightness(1.03)',
     boardPanelBackground: '#f6efe6',
     boardPanelText: '#57473f',
     transitionHintArrowBackground: '#e8f5f2',
@@ -320,3 +354,96 @@ export const resolveBoardTheme = (themeId: string | undefined): BoardTheme =>
 
 export const resolveTokenColor = (theme: BoardTheme, tokenColorId: string | undefined): string =>
   theme.token.palette.find((entry) => entry.id === tokenColorId)?.value ?? theme.token.defaultColor;
+
+const BOARD_THEME_CSS_VARS: Record<string, BoardThemeCssVars> = {
+  'default-spiritual': {
+    bgMain: '#f5efe6',
+    bgStart: '#fdf8f2',
+    bgEnd: '#efe6da',
+    surface: '#fffaf5',
+    surfaceMuted: '#f4ece3',
+    textPrimary: '#2f2521',
+    textMuted: '#6f6158',
+    accent: '#c57b5d',
+    accentHover: '#b96d50',
+    accentSoft: '#f4e0d2',
+    borderSoft: '#e7d8cb',
+    chipBg: '#ffffff',
+    chipText: '#6f6158',
+    chipBorder: '#ddcec1',
+    chipActiveBg: '#f8ebe2',
+    chipActiveText: '#6b4a3b',
+    inputBg: '#ffffff',
+    inputBorder: '#d8c8ba',
+    secondaryButtonBg: '#fffaf5',
+    secondaryButtonText: '#5f5249',
+    secondaryButtonBorder: '#d8c8ba',
+    dangerBg: '#fce9ec',
+    dangerText: '#b4233f',
+    warningBg: '#f4e6dc',
+    warningText: '#6f4a3a',
+    successBg: '#e8f5f2',
+    successText: '#2d675d',
+  },
+  'cosmic-dark': {
+    bgMain: '#151824',
+    bgStart: '#212739',
+    bgEnd: '#121722',
+    surface: '#22283a',
+    surfaceMuted: '#2d354a',
+    textPrimary: '#f5efe7',
+    textMuted: '#c7baad',
+    accent: '#54b4d7',
+    accentHover: '#489ec0',
+    accentSoft: '#243847',
+    borderSoft: '#3e4963',
+    chipBg: '#2c3347',
+    chipText: '#dfd3c8',
+    chipBorder: '#495370',
+    chipActiveBg: '#374662',
+    chipActiveText: '#f5efe7',
+    inputBg: '#252b3d',
+    inputBorder: '#4b5573',
+    secondaryButtonBg: '#2b3246',
+    secondaryButtonText: '#e6dacf',
+    secondaryButtonBorder: '#55607f',
+    dangerBg: '#3a2631',
+    dangerText: '#ff98b0',
+    warningBg: '#3a3442',
+    warningText: '#f5d09f',
+    successBg: '#243e42',
+    successText: '#9be8dc',
+  },
+  'minimal-cream': {
+    bgMain: '#f6f1e8',
+    bgStart: '#fffaf2',
+    bgEnd: '#e8dece',
+    surface: '#fffbf6',
+    surfaceMuted: '#efe5d7',
+    textPrimary: '#3b302b',
+    textMuted: '#72635a',
+    accent: '#9f7458',
+    accentHover: '#8b6349',
+    accentSoft: '#ead8c4',
+    borderSoft: '#ddcbb6',
+    chipBg: '#fff9f2',
+    chipText: '#72635a',
+    chipBorder: '#d8c5b1',
+    chipActiveBg: '#f1dfcd',
+    chipActiveText: '#5d4639',
+    inputBg: '#fffdf8',
+    inputBorder: '#d8c6b1',
+    secondaryButtonBg: '#fff8ef',
+    secondaryButtonText: '#67574c',
+    secondaryButtonBorder: '#d8c6b1',
+    dangerBg: '#f9e4e8',
+    dangerText: '#b53a55',
+    warningBg: '#f3e3d1',
+    warningText: '#6f5849',
+    successBg: '#e4f1ea',
+    successText: '#34685d',
+  },
+};
+
+export const resolveBoardThemeCssVars = (themeId: string | undefined): BoardThemeCssVars =>
+  BOARD_THEME_CSS_VARS[resolveBoardTheme(themeId).id] ?? BOARD_THEME_CSS_VARS['default-spiritual'];

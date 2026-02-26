@@ -1,6 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BoardThemeContext } from './BoardThemeContext';
-import { BOARD_THEME_LIST, DEFAULT_SPIRITUAL_THEME, resolveBoardTheme, resolveTokenColor } from './boardTheme';
+import {
+  BOARD_THEME_LIST,
+  DEFAULT_SPIRITUAL_THEME,
+  resolveBoardTheme,
+  resolveBoardThemeCssVars,
+  resolveTokenColor,
+} from './boardTheme';
 import { createRepositories } from '../repositories';
 import type { SettingsEntity } from '../domain/types';
 import type { SnakeVariantId, StairsVariantId } from './boardTheme';
@@ -14,6 +20,7 @@ interface BoardThemeProviderProps {
 const repositories = createRepositories();
 
 export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
+  const userChangedRef = useRef(false);
   const [themeId, setThemeIdState] = useState(DEFAULT_SPIRITUAL_THEME.id);
   const [tokenColorId, setTokenColorIdState] = useState<string | undefined>(undefined);
   const [snakeStyleId, setSnakeStyleIdState] = useState<SnakeVariantId>('flow');
@@ -32,7 +39,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   useEffect(() => {
     let isActive = true;
     void repositories.settingsRepository.getSettings().then((settings) => {
-      if (!isActive) {
+      if (!isActive || userChangedRef.current) {
         return;
       }
       setThemeIdState(resolveBoardTheme(settings.selectedThemeId).id);
@@ -47,7 +54,44 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const vars = resolveBoardThemeCssVars(themeId);
+    const root = document.documentElement;
+    root.style.setProperty('--lila-bg-main', vars.bgMain);
+    root.style.setProperty('--lila-bg-start', vars.bgStart);
+    root.style.setProperty('--lila-bg-end', vars.bgEnd);
+    root.style.setProperty('--lila-surface', vars.surface);
+    root.style.setProperty('--lila-surface-muted', vars.surfaceMuted);
+    root.style.setProperty('--lila-text-primary', vars.textPrimary);
+    root.style.setProperty('--lila-text-muted', vars.textMuted);
+    root.style.setProperty('--lila-accent', vars.accent);
+    root.style.setProperty('--lila-accent-hover', vars.accentHover);
+    root.style.setProperty('--lila-accent-soft', vars.accentSoft);
+    root.style.setProperty('--lila-border-soft', vars.borderSoft);
+    root.style.setProperty('--lila-chip-bg', vars.chipBg);
+    root.style.setProperty('--lila-chip-text', vars.chipText);
+    root.style.setProperty('--lila-chip-border', vars.chipBorder);
+    root.style.setProperty('--lila-chip-active-bg', vars.chipActiveBg);
+    root.style.setProperty('--lila-chip-active-text', vars.chipActiveText);
+    root.style.setProperty('--lila-input-bg', vars.inputBg);
+    root.style.setProperty('--lila-input-border', vars.inputBorder);
+    root.style.setProperty('--lila-btn-secondary-bg', vars.secondaryButtonBg);
+    root.style.setProperty('--lila-btn-secondary-text', vars.secondaryButtonText);
+    root.style.setProperty('--lila-btn-secondary-border', vars.secondaryButtonBorder);
+    root.style.setProperty('--lila-danger-bg', vars.dangerBg);
+    root.style.setProperty('--lila-danger-text', vars.dangerText);
+    root.style.setProperty('--lila-warning-bg', vars.warningBg);
+    root.style.setProperty('--lila-warning-text', vars.warningText);
+    root.style.setProperty('--lila-success-bg', vars.successBg);
+    root.style.setProperty('--lila-success-text', vars.successText);
+    root.setAttribute('data-lila-theme', themeId);
+  }, [themeId]);
+
   const setThemeId = useCallback((nextThemeId: string) => {
+    userChangedRef.current = true;
     const resolved = resolveBoardTheme(nextThemeId);
     setThemeIdState(resolved.id);
     saveSettingsPatch({
@@ -56,6 +100,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   }, [saveSettingsPatch]);
 
   const setTokenColorId = useCallback((nextTokenColorId: string) => {
+    userChangedRef.current = true;
     setTokenColorIdState(nextTokenColorId);
     saveSettingsPatch({
       tokenColorId: nextTokenColorId,
@@ -63,6 +108,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   }, [saveSettingsPatch]);
 
   const setSnakeStyleId = useCallback((nextStyleId: SnakeVariantId) => {
+    userChangedRef.current = true;
     setSnakeStyleIdState(nextStyleId);
     saveSettingsPatch({
       snakeStyleId: nextStyleId,
@@ -70,6 +116,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   }, [saveSettingsPatch]);
 
   const setSnakeColorId = useCallback((nextColorId: SnakeColorId) => {
+    userChangedRef.current = true;
     setSnakeColorIdState(nextColorId);
     saveSettingsPatch({
       snakeColorId: nextColorId,
@@ -77,6 +124,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   }, [saveSettingsPatch]);
 
   const setStairsStyleId = useCallback((nextStyleId: StairsVariantId) => {
+    userChangedRef.current = true;
     setStairsStyleIdState(nextStyleId);
     saveSettingsPatch({
       stairsStyleId: nextStyleId,
@@ -84,6 +132,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   }, [saveSettingsPatch]);
 
   const setStairsColorId = useCallback((nextColorId: StairsColorId) => {
+    userChangedRef.current = true;
     setStairsColorIdState(nextColorId);
     saveSettingsPatch({
       stairsColorId: nextColorId,

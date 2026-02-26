@@ -20,10 +20,10 @@ export interface BoardAssetSelectionResult {
 
 const resolveTier = ({ viewportWidth, viewportHeight, devicePixelRatio, zoom }: BoardAssetSelectionInput): BoardAssetTier => {
   const base = Math.max(viewportWidth, viewportHeight) * Math.max(1, Math.min(devicePixelRatio, 3));
-  const zoomBoost = zoom > 1.35 ? 1.7 : 1;
+  const zoomBoost = zoom > 1.2 ? 2.2 : 1;
   const score = base * zoomBoost;
 
-  if (score >= 1700) {
+  if (score >= 1800) {
     return 'large';
   }
   if (score >= 900) {
@@ -32,8 +32,21 @@ const resolveTier = ({ viewportWidth, viewportHeight, devicePixelRatio, zoom }: 
   return 'small';
 };
 
+const resolveWidthFromPath = (path: string, fallback: number): number => {
+  const match = path.match(/-(\d+)\.(?:png|webp)$/i);
+  if (!match) {
+    return fallback;
+  }
+  const value = Number(match[1]);
+  return Number.isFinite(value) ? value : fallback;
+};
+
 const buildSrcSet = (sources: BoardImageAssetSet['webp'] | BoardImageAssetSet['png']): string =>
-  `${sources.small} 1024w, ${sources.medium} 1536w, ${sources.large} 2048w`;
+  [
+    `${sources.small} ${resolveWidthFromPath(sources.small, 1024)}w`,
+    `${sources.medium} ${resolveWidthFromPath(sources.medium, 1536)}w`,
+    `${sources.large} ${resolveWidthFromPath(sources.large, 2048)}w`,
+  ].join(', ');
 
 export const selectBoardImageAsset = (
   assets: BoardImageAssetSet,
