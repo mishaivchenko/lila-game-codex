@@ -227,8 +227,8 @@ export const DEFAULT_SPIRITUAL_THEME: BoardTheme = {
     headingVar: '--lila-font-heading',
   },
   layout: {
-    pageMaxWidthPx: 460,
-    boardPanelPaddingPx: 8,
+    pageMaxWidthPx: 620,
+    boardPanelPaddingPx: 0,
     floatingControlsBackground: 'rgba(255, 251, 247, 0.95)',
     floatingControlsBorder: 'rgba(222, 208, 196, 0.9)',
     floatingControlsShadow: '0 20px 40px rgba(63,46,34,0.25)',

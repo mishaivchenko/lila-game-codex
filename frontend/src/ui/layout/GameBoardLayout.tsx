@@ -18,16 +18,16 @@ export const GameBoardLayout = ({
 
   return (
     <main
-      className="mx-auto min-h-screen w-full bg-[var(--lila-bg-main)] px-3 pb-6 pt-3 sm:px-4"
+      className="mx-auto min-h-screen w-full bg-[var(--lila-bg-main)] px-2 pb-5 pt-2 sm:px-3"
       style={{ maxWidth: `${theme.layout.pageMaxWidthPx}px` }}
     >
-      <div className="space-y-3">
-        <section className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 p-3 shadow-[0_6px_20px_rgba(98,76,62,0.08)]">
+      <div className="space-y-2.5">
+        <section className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 p-2.5 shadow-[0_6px_20px_rgba(98,76,62,0.08)]">
           {header}
         </section>
 
         <section
-          className="relative rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 shadow-[0_16px_36px_rgba(98,76,62,0.14)]"
+          className="relative overflow-hidden rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 shadow-[0_16px_36px_rgba(98,76,62,0.14)]"
           style={{ padding: `${theme.layout.boardPanelPaddingPx}px` }}
         >
           {board}
