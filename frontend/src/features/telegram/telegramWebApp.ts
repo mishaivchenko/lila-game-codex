@@ -59,6 +59,15 @@ export interface TelegramWebApp {
   offEvent?: (eventType: TelegramWebAppEvent, eventHandler: () => void) => void;
 }
 
+export interface TelegramThemeSnapshot {
+  colorScheme?: 'light' | 'dark';
+  bgColor?: string;
+  secondaryBgColor?: string;
+  textColor?: string;
+  hintColor?: string;
+  buttonColor?: string;
+}
+
 const hasTelegramObject = (): boolean => Boolean(window.Telegram?.WebApp);
 
 export const isTelegramWebApp = (): boolean => {
@@ -173,4 +182,17 @@ export const applyTelegramThemeToRoot = (
   if (colorScheme) {
     root.setAttribute('data-tg-color-scheme', colorScheme);
   }
+
+  window.dispatchEvent(
+    new CustomEvent<TelegramThemeSnapshot>('lila:telegram-theme-changed', {
+      detail: {
+        colorScheme,
+        bgColor: theme?.bg_color,
+        secondaryBgColor: theme?.secondary_bg_color,
+        textColor: theme?.text_color,
+        hintColor: theme?.hint_color,
+        buttonColor: theme?.button_color,
+      },
+    }),
+  );
 };

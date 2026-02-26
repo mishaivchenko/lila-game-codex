@@ -5,6 +5,8 @@ import {
   DEFAULT_SPIRITUAL_THEME,
   resolveBoardTheme,
   resolveBoardThemeCssVars,
+  resolveTelegramAutoCssVars,
+  resolveTelegramBaseTheme,
   resolveTokenColor,
 } from './boardTheme';
 import { createRepositories } from '../repositories';
@@ -12,6 +14,7 @@ import type { SettingsEntity } from '../domain/types';
 import type { SnakeVariantId, StairsVariantId } from './boardTheme';
 import type { SnakeColorId, StairsColorId } from './pathCustomization';
 import { applyPathCustomization } from './pathCustomization';
+import type { TelegramThemeSnapshot } from '../features/telegram/telegramWebApp';
 
 interface BoardThemeProviderProps {
   children: React.ReactNode;
@@ -27,6 +30,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   const [snakeColorId, setSnakeColorIdState] = useState<SnakeColorId>('amber-violet');
   const [stairsStyleId, setStairsStyleIdState] = useState<StairsVariantId>('steps');
   const [stairsColorId, setStairsColorIdState] = useState<StairsColorId>('sand-light');
+  const [telegramTheme, setTelegramTheme] = useState<TelegramThemeSnapshot | undefined>(undefined);
 
   const saveSettingsPatch = useCallback((patch: Partial<SettingsEntity>) => {
     void repositories.settingsRepository.getSettings().then((current) =>
@@ -55,10 +59,58 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const root = document.documentElement;
+    const readThemeFromRoot = (): TelegramThemeSnapshot => {
+      const css = window.getComputedStyle(root);
+      const colorScheme = (root.getAttribute('data-tg-color-scheme') as 'light' | 'dark' | null) ?? undefined;
+      const readVar = (name: string): string | undefined => {
+        const value = css.getPropertyValue(name).trim();
+        return value.length > 0 ? value : undefined;
+      };
+      return {
+        colorScheme,
+        bgColor: readVar('--tg-bg-color'),
+        secondaryBgColor: readVar('--tg-secondary-bg-color'),
+        textColor: readVar('--tg-text-color'),
+        hintColor: readVar('--tg-hint-color'),
+        buttonColor: readVar('--tg-button-color'),
+      };
+    };
+
+    const handleThemeChanged = (event: Event) => {
+      const customEvent = event as CustomEvent<TelegramThemeSnapshot>;
+      if (customEvent.detail) {
+        setTelegramTheme(customEvent.detail);
+        return;
+      }
+      setTelegramTheme(readThemeFromRoot());
+    };
+
+    setTelegramTheme(readThemeFromRoot());
+    window.addEventListener('lila:telegram-theme-changed', handleThemeChanged as EventListener);
+    return () => {
+      window.removeEventListener('lila:telegram-theme-changed', handleThemeChanged as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
     if (typeof document === 'undefined') {
       return;
     }
-    const vars = resolveBoardThemeCssVars(themeId);
+    const vars =
+      themeId === 'telegram-auto'
+        ? resolveTelegramAutoCssVars(telegramTheme?.colorScheme, {
+            bgMain: telegramTheme?.bgColor,
+            surface: telegramTheme?.secondaryBgColor,
+            textPrimary: telegramTheme?.textColor,
+            textMuted: telegramTheme?.hintColor,
+            accent: telegramTheme?.buttonColor,
+          })
+        : resolveBoardThemeCssVars(themeId);
     const root = document.documentElement;
     root.style.setProperty('--lila-bg-main', vars.bgMain);
     root.style.setProperty('--lila-bg-start', vars.bgStart);
@@ -88,7 +140,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
     root.style.setProperty('--lila-success-bg', vars.successBg);
     root.style.setProperty('--lila-success-text', vars.successText);
     root.setAttribute('data-lila-theme', themeId);
-  }, [themeId]);
+  }, [telegramTheme, themeId]);
 
   const setThemeId = useCallback((nextThemeId: string) => {
     userChangedRef.current = true;
@@ -140,14 +192,23 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   }, [saveSettingsPatch]);
 
   const theme = useMemo(
-    () =>
-      applyPathCustomization(resolveBoardTheme(themeId), {
+    () => {
+      const resolvedTheme =
+        themeId === 'telegram-auto'
+          ? {
+              ...resolveTelegramBaseTheme(telegramTheme?.colorScheme),
+              id: 'telegram-auto',
+              name: 'Telegram Auto',
+            }
+          : resolveBoardTheme(themeId);
+      return applyPathCustomization(resolvedTheme, {
         snakeStyleId,
         snakeColorId,
         stairsStyleId,
         stairsColorId,
-      }),
-    [snakeColorId, snakeStyleId, stairsColorId, stairsStyleId, themeId],
+      });
+    },
+    [snakeColorId, snakeStyleId, stairsColorId, stairsStyleId, telegramTheme?.colorScheme, themeId],
   );
   const tokenColorValue = useMemo(() => resolveTokenColor(theme, tokenColorId), [theme, tokenColorId]);
 

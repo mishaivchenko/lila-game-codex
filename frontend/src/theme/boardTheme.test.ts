@@ -5,12 +5,15 @@ import {
   DEFAULT_SPIRITUAL_THEME,
   resolveTokenColor,
   resolveBoardThemeCssVars,
+  resolveTelegramAutoCssVars,
+  resolveTelegramBaseTheme,
 } from './boardTheme';
 import { applyPathCustomization } from './pathCustomization';
 
 describe('boardTheme', () => {
   it('resolves known themes and falls back to default for unknown id', () => {
     expect(BOARD_THEMES['cosmic-dark']?.id).toBe('cosmic-dark');
+    expect(BOARD_THEMES['telegram-auto']?.id).toBe('telegram-auto');
     expect(resolveBoardTheme('minimal-cream').id).toBe('minimal-cream');
     expect(resolveBoardTheme('unknown-theme').id).toBe(DEFAULT_SPIRITUAL_THEME.id);
     expect(resolveBoardTheme(undefined).id).toBe(DEFAULT_SPIRITUAL_THEME.id);
@@ -59,5 +62,22 @@ describe('boardTheme', () => {
     expect(minimal.modal.imageCanvasBackground).toBe('#ffffff');
     expect(cosmic.modal.imageBlendMode).toBe('dark-framed');
     expect(cosmic.modal.imageCanvasShadow).not.toBe('none');
+  });
+
+  it('maps telegram auto to base theme by color scheme and overlays vars', () => {
+    expect(resolveTelegramBaseTheme('dark').id).toBe('cosmic-dark');
+    expect(resolveTelegramBaseTheme('light').id).toBe('default-spiritual');
+
+    const vars = resolveTelegramAutoCssVars('dark', {
+      bgMain: '#101010',
+      surface: '#202020',
+      textPrimary: '#f5f5f5',
+      textMuted: '#c0c0c0',
+      accent: '#55aaff',
+    });
+    expect(vars.bgMain).toBe('#101010');
+    expect(vars.surface).toBe('#202020');
+    expect(vars.textPrimary).toBe('#f5f5f5');
+    expect(vars.accent).toBe('#55aaff');
   });
 });

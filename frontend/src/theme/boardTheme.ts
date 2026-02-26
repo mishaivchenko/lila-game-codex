@@ -362,6 +362,12 @@ export const MINIMAL_CREAM_THEME: BoardTheme = {
   },
 };
 
+export const TELEGRAM_AUTO_THEME: BoardTheme = {
+  ...DEFAULT_SPIRITUAL_THEME,
+  id: 'telegram-auto',
+  name: 'Telegram Auto',
+};
+
 MINIMAL_CREAM_THEME.modal = {
   ...MINIMAL_CREAM_THEME.modal,
   imageBlendMode: 'light-blend',
@@ -377,12 +383,16 @@ export const BOARD_THEMES: Record<string, BoardTheme> = {
   [DEFAULT_SPIRITUAL_THEME.id]: DEFAULT_SPIRITUAL_THEME,
   [COSMIC_DARK_THEME.id]: COSMIC_DARK_THEME,
   [MINIMAL_CREAM_THEME.id]: MINIMAL_CREAM_THEME,
+  [TELEGRAM_AUTO_THEME.id]: TELEGRAM_AUTO_THEME,
 };
 
 export const BOARD_THEME_LIST: BoardTheme[] = Object.values(BOARD_THEMES);
 
 export const resolveBoardTheme = (themeId: string | undefined): BoardTheme =>
   (themeId && BOARD_THEMES[themeId]) || DEFAULT_SPIRITUAL_THEME;
+
+export const resolveTelegramBaseTheme = (colorScheme: 'light' | 'dark' | undefined): BoardTheme =>
+  colorScheme === 'dark' ? COSMIC_DARK_THEME : DEFAULT_SPIRITUAL_THEME;
 
 export const resolveTokenColor = (theme: BoardTheme, tokenColorId: string | undefined): string =>
   theme.token.palette.find((entry) => entry.id === tokenColorId)?.value ?? theme.token.defaultColor;
@@ -479,3 +489,41 @@ const BOARD_THEME_CSS_VARS: Record<string, BoardThemeCssVars> = {
 
 export const resolveBoardThemeCssVars = (themeId: string | undefined): BoardThemeCssVars =>
   BOARD_THEME_CSS_VARS[resolveBoardTheme(themeId).id] ?? BOARD_THEME_CSS_VARS['default-spiritual'];
+
+export const resolveTelegramAutoCssVars = (
+  colorScheme: 'light' | 'dark' | undefined,
+  telegramVars?: Partial<Pick<BoardThemeCssVars, 'bgMain' | 'surface' | 'textPrimary' | 'textMuted' | 'accent'>>,
+): BoardThemeCssVars => {
+  const baseTheme = resolveTelegramBaseTheme(colorScheme);
+  const baseVars = resolveBoardThemeCssVars(baseTheme.id);
+  return {
+    ...baseVars,
+    bgMain: telegramVars?.bgMain ?? baseVars.bgMain,
+    bgStart: telegramVars?.bgMain ?? baseVars.bgStart,
+    bgEnd: baseVars.bgEnd,
+    surface: telegramVars?.surface ?? baseVars.surface,
+    surfaceMuted: baseVars.surfaceMuted,
+    textPrimary: telegramVars?.textPrimary ?? baseVars.textPrimary,
+    textMuted: telegramVars?.textMuted ?? baseVars.textMuted,
+    accent: telegramVars?.accent ?? baseVars.accent,
+    accentHover: telegramVars?.accent ?? baseVars.accentHover,
+    accentSoft: baseVars.accentSoft,
+    borderSoft: baseVars.borderSoft,
+    chipBg: baseVars.chipBg,
+    chipText: baseVars.chipText,
+    chipBorder: baseVars.chipBorder,
+    chipActiveBg: baseVars.chipActiveBg,
+    chipActiveText: baseVars.chipActiveText,
+    inputBg: baseVars.inputBg,
+    inputBorder: baseVars.inputBorder,
+    secondaryButtonBg: baseVars.secondaryButtonBg,
+    secondaryButtonText: baseVars.secondaryButtonText,
+    secondaryButtonBorder: baseVars.secondaryButtonBorder,
+    dangerBg: baseVars.dangerBg,
+    dangerText: baseVars.dangerText,
+    warningBg: baseVars.warningBg,
+    warningText: baseVars.warningText,
+    successBg: baseVars.successBg,
+    successText: baseVars.successText,
+  };
+};
