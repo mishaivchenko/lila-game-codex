@@ -32,10 +32,13 @@ describe('TelegramRoomsPanel', () => {
         id: 'u1',
         telegramId: '1',
         displayName: 'Tester',
+        isAdmin: false,
       },
     });
 
     expect(screen.getByText('Спільна подорож')).not.toBeNull();
-    expect(screen.getByRole('button', { name: 'Створити Host Room' })).not.toBeNull();
+    expect(screen.getByRole('button', { name: /я гравець/i })).not.toBeNull();
+    expect(screen.getByRole('button', { name: /я ведучий/i })).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Join' })).not.toBeNull();
   });
 });

@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import type { PoolClient } from 'pg';
+import { isPostgresEnabled, queryDb, withDbTransaction } from '../lib/db.js';
 import type {
   GameRoom,
   RoomBoardType,
+  RoomConnectionStatus,
+  RoomGameState,
   RoomPlayer,
   RoomPlayerState,
   RoomSnapshot,
@@ -14,44 +18,14 @@ const MAX_ROOM_PLAYERS = 6;
 const TOKEN_COLORS = ['#1f2937', '#c57b5d', '#2cbfaf', '#8b5cf6', '#ef4444', '#f59e0b'];
 
 const SHORT_TRANSITIONS = {
-  snakes: new Map<number, number>([
-    [11, 3],
-    [15, 8],
-    [18, 5],
-    [27, 13],
-    [33, 20],
-  ]),
-  arrows: new Map<number, number>([
-    [2, 9],
-    [7, 14],
-    [12, 19],
-    [17, 26],
-    [24, 32],
-  ]),
+  snakes: new Map<number, number>([[11, 3], [15, 8], [18, 5], [27, 13], [33, 20]]),
+  arrows: new Map<number, number>([[2, 9], [7, 14], [12, 19], [17, 26], [24, 32]]),
   maxCell: 34,
 } as const;
 
 const FULL_TRANSITIONS = {
-  snakes: new Map<number, number>([
-    [17, 7],
-    [54, 34],
-    [62, 19],
-    [64, 60],
-    [87, 24],
-    [93, 73],
-    [95, 75],
-    [98, 79],
-  ]),
-  arrows: new Map<number, number>([
-    [4, 14],
-    [9, 31],
-    [20, 38],
-    [28, 84],
-    [40, 59],
-    [51, 67],
-    [63, 81],
-    [71, 91],
-  ]),
+  snakes: new Map<number, number>([[17, 7], [54, 34], [62, 19], [64, 60], [87, 24], [93, 73], [95, 75], [98, 79]]),
+  arrows: new Map<number, number>([[4, 14], [9, 31], [20, 38], [28, 84], [40, 59], [51, 67], [63, 81], [71, 91]]),
   maxCell: 100,
 } as const;
 
@@ -63,6 +37,37 @@ const transitionsByBoard: Record<RoomBoardType, { snakes: Map<number, number>; a
 const roomsById = new Map<string, GameRoom>();
 const roomsByCode = new Map<string, string>();
 
+interface HostRoomRow {
+  id: string;
+  room_code: string;
+  host_user_id: string;
+  board_type: RoomBoardType;
+  status: RoomStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+interface RoomPlayerRow {
+  id: string;
+  room_id: string;
+  user_id: string;
+  display_name: string;
+  role: RoomPlayer['role'];
+  token_color: string;
+  joined_at: string;
+  connection_status: RoomConnectionStatus;
+}
+
+interface RoomGameStateRow {
+  room_id: string;
+  current_turn_player_id: string;
+  per_player_state_json: Record<string, RoomPlayerState>;
+  move_history_json: RoomGameState['moveHistory'];
+  updated_at: string;
+}
+
+type DbClient = Pick<PoolClient, 'query'>;
+
 const generateRoomCode = (): string => {
   let code = '';
   for (let i = 0; i < ROOM_CODE_LENGTH; i += 1) {
@@ -72,15 +77,33 @@ const generateRoomCode = (): string => {
   return code;
 };
 
-const getUniqueRoomCode = (): string => {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    const code = generateRoomCode();
-    if (!roomsByCode.has(code)) {
-      return code;
-    }
-  }
-  throw new Error('Unable to allocate room code');
-};
+const mapPlayerRow = (row: RoomPlayerRow): RoomPlayer => ({
+  id: row.id,
+  roomId: row.room_id,
+  userId: row.user_id,
+  displayName: row.display_name,
+  role: row.role,
+  tokenColor: row.token_color,
+  joinedAt: row.joined_at,
+  connectionStatus: row.connection_status,
+});
+
+const mapRoom = (roomRow: HostRoomRow, playerRows: RoomPlayerRow[], stateRow: RoomGameStateRow): GameRoom => ({
+  id: roomRow.id,
+  code: roomRow.room_code,
+  hostUserId: roomRow.host_user_id,
+  boardType: roomRow.board_type,
+  createdAt: roomRow.created_at,
+  updatedAt: roomRow.updated_at,
+  status: roomRow.status,
+  players: playerRows.map(mapPlayerRow),
+  gameState: {
+    roomId: stateRow.room_id,
+    currentTurnPlayerId: stateRow.current_turn_player_id,
+    perPlayerState: stateRow.per_player_state_json,
+    moveHistory: stateRow.move_history_json,
+  },
+});
 
 const toSnapshot = (room: GameRoom): RoomSnapshot => ({
   room: {
@@ -95,6 +118,12 @@ const toSnapshot = (room: GameRoom): RoomSnapshot => ({
   players: room.players,
   gameState: room.gameState,
 });
+
+const storeInMemory = (room: GameRoom): RoomSnapshot => {
+  roomsById.set(room.id, room);
+  roomsByCode.set(room.code, room.id);
+  return toSnapshot(room);
+};
 
 const touchRoom = (room: GameRoom): void => {
   room.updatedAt = new Date().toISOString();
@@ -149,7 +178,80 @@ const nextMoveFromDice = (
   return { fromCell, toCell: cappedCell, snakeOrArrow: null };
 };
 
-export const createHostRoom = ({
+const queryRoomByIdDb = async (client: DbClient, roomId: string, forUpdate = false): Promise<GameRoom | undefined> => {
+  const roomRows = await client.query<HostRoomRow>(
+    `SELECT * FROM host_rooms WHERE id = $1 ${forUpdate ? 'FOR UPDATE' : ''}`,
+    [roomId],
+  );
+  const roomRow = roomRows.rows[0];
+  if (!roomRow) {
+    return undefined;
+  }
+  const [playerRows, stateRows] = await Promise.all([
+    client.query<RoomPlayerRow>('SELECT * FROM room_players WHERE room_id = $1 ORDER BY joined_at ASC', [roomId]),
+    client.query<RoomGameStateRow>(
+      `SELECT * FROM room_game_states WHERE room_id = $1 ${forUpdate ? 'FOR UPDATE' : ''}`,
+      [roomId],
+    ),
+  ]);
+  const stateRow = stateRows.rows[0];
+  if (!stateRow) {
+    throw new Error('ROOM_STATE_NOT_FOUND');
+  }
+  return mapRoom(roomRow, playerRows.rows, stateRow);
+};
+
+const queryRoomByCodeDb = async (client: DbClient, code: string): Promise<GameRoom | undefined> => {
+  const roomRows = await client.query<HostRoomRow>('SELECT * FROM host_rooms WHERE room_code = $1 LIMIT 1', [code]);
+  const roomRow = roomRows.rows[0];
+  if (!roomRow) {
+    return undefined;
+  }
+  return queryRoomByIdDb(client, roomRow.id);
+};
+
+const getDbRoomById = async (roomId: string): Promise<GameRoom | undefined> => {
+  const roomRows = await queryDb<HostRoomRow>('SELECT * FROM host_rooms WHERE id = $1 LIMIT 1', [roomId]);
+  const roomRow = roomRows[0];
+  if (!roomRow) {
+    return undefined;
+  }
+  const [playerRows, stateRows] = await Promise.all([
+    queryDb<RoomPlayerRow>('SELECT * FROM room_players WHERE room_id = $1 ORDER BY joined_at ASC', [roomId]),
+    queryDb<RoomGameStateRow>('SELECT * FROM room_game_states WHERE room_id = $1 LIMIT 1', [roomId]),
+  ]);
+  const stateRow = stateRows[0];
+  if (!stateRow) {
+    throw new Error('ROOM_STATE_NOT_FOUND');
+  }
+  return mapRoom(roomRow, playerRows, stateRow);
+};
+
+const persistRoomGameStateDb = async (client: DbClient, room: GameRoom): Promise<void> => {
+  await client.query(
+    `UPDATE host_rooms
+      SET status = $2,
+          updated_at = NOW()
+      WHERE id = $1`,
+    [room.id, room.status],
+  );
+  await client.query(
+    `UPDATE room_game_states
+      SET current_turn_player_id = $2,
+          per_player_state_json = $3::jsonb,
+          move_history_json = $4::jsonb,
+          updated_at = NOW()
+      WHERE room_id = $1`,
+    [
+      room.id,
+      room.gameState.currentTurnPlayerId,
+      JSON.stringify(room.gameState.perPlayerState),
+      JSON.stringify(room.gameState.moveHistory),
+    ],
+  );
+};
+
+const createHostRoomInMemory = ({
   hostUserId,
   hostDisplayName,
   boardType,
@@ -160,7 +262,7 @@ export const createHostRoom = ({
 }): RoomSnapshot => {
   const now = new Date().toISOString();
   const roomId = randomUUID();
-  const roomCode = getUniqueRoomCode();
+  const roomCode = generateRoomCode();
   const hostPlayer: RoomPlayer = {
     id: randomUUID(),
     roomId,
@@ -189,188 +291,365 @@ export const createHostRoom = ({
     gameState: {
       roomId,
       currentTurnPlayerId: hostUserId,
-      perPlayerState: {
-        [hostUserId]: hostState,
-      },
+      perPlayerState: { [hostUserId]: hostState },
       moveHistory: [],
     },
   };
-  roomsById.set(roomId, room);
-  roomsByCode.set(roomCode, roomId);
-  return toSnapshot(room);
+  return storeInMemory(room);
 };
 
-export const getRoomById = (roomId: string): RoomSnapshot | undefined => {
-  const room = roomsById.get(roomId);
-  return room ? toSnapshot(room) : undefined;
+export const createHostRoom = async ({
+  hostUserId,
+  hostDisplayName,
+  boardType,
+}: {
+  hostUserId: string;
+  hostDisplayName?: string;
+  boardType: RoomBoardType;
+}): Promise<RoomSnapshot> => {
+  if (!isPostgresEnabled()) {
+    return createHostRoomInMemory({ hostUserId, hostDisplayName, boardType });
+  }
+
+  return withDbTransaction(async (client) => {
+    const now = new Date().toISOString();
+    let roomCode = '';
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const candidate = generateRoomCode();
+      const existing = await client.query<{ exists: number }>('SELECT 1 AS exists FROM host_rooms WHERE room_code = $1 LIMIT 1', [candidate]);
+      if (!existing.rows[0]) {
+        roomCode = candidate;
+        break;
+      }
+    }
+    if (!roomCode) {
+      throw new Error('Unable to allocate room code');
+    }
+
+    const roomId = randomUUID();
+    const hostPlayerId = randomUUID();
+    const hostDisplay = resolveDisplayName(hostUserId, hostDisplayName);
+    const gameState: RoomGameState = {
+      roomId,
+      currentTurnPlayerId: hostUserId,
+      perPlayerState: {
+        [hostUserId]: {
+          userId: hostUserId,
+          currentCell: 1,
+          status: 'in_progress',
+          notesCount: 0,
+        },
+      },
+      moveHistory: [],
+    };
+
+    await client.query(
+      `INSERT INTO host_rooms (id, room_code, host_user_id, board_type, status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6::timestamptz, $7::timestamptz)`,
+      [roomId, roomCode, hostUserId, boardType, 'open', now, now],
+    );
+    await client.query(
+      `INSERT INTO room_players (id, room_id, user_id, display_name, role, token_color, joined_at, connection_status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::timestamptz, $8)`,
+      [hostPlayerId, roomId, hostUserId, hostDisplay, 'host', TOKEN_COLORS[0], now, 'online'],
+    );
+    await client.query(
+      `INSERT INTO room_game_states (room_id, current_turn_player_id, per_player_state_json, move_history_json, updated_at)
+       VALUES ($1, $2, $3::jsonb, $4::jsonb, $5::timestamptz)`,
+      [roomId, hostUserId, JSON.stringify(gameState.perPlayerState), JSON.stringify([]), now],
+    );
+    const created = await queryRoomByIdDb(client, roomId);
+    if (!created) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    return storeInMemory(created);
+  });
 };
 
-export const getRoomByCode = (code: string): RoomSnapshot | undefined => {
-  const roomId = roomsByCode.get(code.trim().toUpperCase());
-  if (!roomId) {
+export const getRoomById = async (roomId: string): Promise<RoomSnapshot | undefined> => {
+  if (!isPostgresEnabled()) {
+    const room = roomsById.get(roomId);
+    return room ? toSnapshot(room) : undefined;
+  }
+  const room = await getDbRoomById(roomId);
+  return room ? storeInMemory(room) : undefined;
+};
+
+export const getRoomByCode = async (code: string): Promise<RoomSnapshot | undefined> => {
+  const normalizedCode = code.trim().toUpperCase();
+  if (!isPostgresEnabled()) {
+    const roomId = roomsByCode.get(normalizedCode);
+    const room = roomId ? roomsById.get(roomId) : undefined;
+    return room ? toSnapshot(room) : undefined;
+  }
+  const rows = await queryDb<HostRoomRow>('SELECT * FROM host_rooms WHERE room_code = $1 LIMIT 1', [normalizedCode]);
+  if (!rows[0]) {
     return undefined;
   }
-  const room = roomsById.get(roomId);
-  return room ? toSnapshot(room) : undefined;
+  const room = await getDbRoomById(rows[0].id);
+  return room ? storeInMemory(room) : undefined;
 };
 
-export const joinRoom = ({
-  roomId,
-  userId,
-  displayName,
-}: {
-  roomId: string;
-  userId: string;
-  displayName?: string;
-}): RoomSnapshot => {
-  const room = ensureRoom(roomId);
-  const existing = room.players.find((player) => player.userId === userId);
-  if (existing) {
-    existing.connectionStatus = 'online';
+export const joinRoom = async ({ roomId, userId, displayName }: { roomId: string; userId: string; displayName?: string }): Promise<RoomSnapshot> => {
+  if (!isPostgresEnabled()) {
+    const room = ensureRoom(roomId);
+    const existing = room.players.find((player) => player.userId === userId);
+    if (existing) {
+      existing.connectionStatus = 'online';
+      touchRoom(room);
+      return toSnapshot(room);
+    }
+    if (room.players.length >= MAX_ROOM_PLAYERS) {
+      throw new Error('ROOM_FULL');
+    }
+    if (room.status === 'finished') {
+      throw new Error('ROOM_FINISHED');
+    }
+    const now = new Date().toISOString();
+    const player: RoomPlayer = {
+      id: randomUUID(),
+      roomId,
+      userId,
+      displayName: resolveDisplayName(userId, displayName),
+      role: 'player',
+      tokenColor: TOKEN_COLORS[room.players.length % TOKEN_COLORS.length],
+      joinedAt: now,
+      connectionStatus: 'online',
+    };
+    room.players.push(player);
+    room.gameState.perPlayerState[userId] = { userId, currentCell: 1, status: 'in_progress', notesCount: 0 };
+    if (!room.gameState.currentTurnPlayerId) {
+      room.gameState.currentTurnPlayerId = userId;
+    }
     touchRoom(room);
     return toSnapshot(room);
   }
-  if (room.players.length >= MAX_ROOM_PLAYERS) {
-    throw new Error('ROOM_FULL');
-  }
-  if (room.status === 'finished') {
-    throw new Error('ROOM_FINISHED');
-  }
-  const now = new Date().toISOString();
-  const player: RoomPlayer = {
-    id: randomUUID(),
-    roomId,
-    userId,
-    displayName: resolveDisplayName(userId, displayName),
-    role: 'player',
-    tokenColor: TOKEN_COLORS[room.players.length % TOKEN_COLORS.length],
-    joinedAt: now,
-    connectionStatus: 'online',
-  };
-  room.players.push(player);
-  room.gameState.perPlayerState[userId] = {
-    userId,
-    currentCell: 1,
-    status: 'in_progress',
-    notesCount: 0,
-  };
-  if (!room.gameState.currentTurnPlayerId) {
-    room.gameState.currentTurnPlayerId = userId;
-  }
-  touchRoom(room);
-  return toSnapshot(room);
-};
 
-export const setRoomConnectionState = (roomId: string, userId: string, status: 'online' | 'offline'): RoomSnapshot => {
-  const room = ensureRoom(roomId);
-  const player = ensurePlayerInRoom(room, userId);
-  player.connectionStatus = status;
-  touchRoom(room);
-  return toSnapshot(room);
-};
+  return withDbTransaction(async (client) => {
+    const room = await queryRoomByIdDb(client, roomId, true);
+    if (!room) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    const existing = room.players.find((player) => player.userId === userId);
+    if (existing) {
+      await client.query('UPDATE room_players SET connection_status = $3 WHERE room_id = $1 AND user_id = $2', [roomId, userId, 'online']);
+      const updated = await queryRoomByIdDb(client, roomId);
+      if (!updated) {
+        throw new Error('ROOM_NOT_FOUND');
+      }
+      return storeInMemory(updated);
+    }
+    if (room.players.length >= MAX_ROOM_PLAYERS) {
+      throw new Error('ROOM_FULL');
+    }
+    if (room.status === 'finished') {
+      throw new Error('ROOM_FINISHED');
+    }
 
-export const startRoom = (roomId: string, hostUserId: string): RoomSnapshot => {
-  const room = ensureRoom(roomId);
-  if (room.hostUserId !== hostUserId) {
-    throw new Error('FORBIDDEN');
-  }
-  room.status = 'in_progress';
-  if (!room.gameState.currentTurnPlayerId && room.players[0]) {
-    room.gameState.currentTurnPlayerId = room.players[0].userId;
-  }
-  touchRoom(room);
-  return toSnapshot(room);
-};
-
-export const setRoomStatus = (roomId: string, hostUserId: string, status: RoomStatus): RoomSnapshot => {
-  const room = ensureRoom(roomId);
-  if (room.hostUserId !== hostUserId) {
-    throw new Error('FORBIDDEN');
-  }
-  room.status = status;
-  touchRoom(room);
-  return toSnapshot(room);
-};
-
-export const recordRoomNote = ({
-  roomId,
-  userId,
-}: {
-  roomId: string;
-  userId: string;
-}): RoomSnapshot => {
-  const room = ensureRoom(roomId);
-  ensurePlayerInRoom(room, userId);
-  const playerState = room.gameState.perPlayerState[userId];
-  if (playerState) {
-    playerState.notesCount += 1;
-  }
-  touchRoom(room);
-  return toSnapshot(room);
-};
-
-export const rollDiceForCurrentPlayer = ({
-  roomId,
-  userId,
-}: {
-  roomId: string;
-  userId: string;
-}): {
-  snapshot: RoomSnapshot;
-  move: {
-    userId: string;
-    fromCell: number;
-    toCell: number;
-    dice: number;
-    snakeOrArrow: 'snake' | 'arrow' | null;
-    nextTurnPlayerId: string;
-  };
-} => {
-  const room = ensureRoom(roomId);
-  if (room.status !== 'in_progress') {
-    throw new Error('ROOM_NOT_IN_PROGRESS');
-  }
-  if (room.gameState.currentTurnPlayerId !== userId) {
-    throw new Error('NOT_YOUR_TURN');
-  }
-  ensurePlayerInRoom(room, userId);
-  const playerState = room.gameState.perPlayerState[userId];
-  if (!playerState || playerState.status === 'finished') {
-    throw new Error('PLAYER_ALREADY_FINISHED');
-  }
-
-  const dice = Math.floor(Math.random() * 6) + 1;
-  const { fromCell, toCell, snakeOrArrow } = nextMoveFromDice(room.boardType, playerState.currentCell, dice);
-  playerState.currentCell = toCell;
-  if (toCell >= transitionsByBoard[room.boardType].maxCell) {
-    playerState.status = 'finished';
-  }
-
-  const nextTurnPlayerId = findNextTurnPlayerId(room, userId);
-  room.gameState.currentTurnPlayerId = nextTurnPlayerId;
-  room.gameState.moveHistory.push({
-    userId,
-    fromCell,
-    toCell,
-    dice,
-    snakeOrArrow,
-    timestamp: new Date().toISOString(),
+    const now = new Date().toISOString();
+    await client.query(
+      `INSERT INTO room_players (id, room_id, user_id, display_name, role, token_color, joined_at, connection_status)
+       VALUES ($1, $2, $3, $4, 'player', $5, $6::timestamptz, 'online')`,
+      [
+        randomUUID(),
+        roomId,
+        userId,
+        resolveDisplayName(userId, displayName),
+        TOKEN_COLORS[room.players.length % TOKEN_COLORS.length],
+        now,
+      ],
+    );
+    room.gameState.perPlayerState[userId] = { userId, currentCell: 1, status: 'in_progress', notesCount: 0 };
+    if (!room.gameState.currentTurnPlayerId) {
+      room.gameState.currentTurnPlayerId = userId;
+    }
+    await persistRoomGameStateDb(client, room);
+    const updated = await queryRoomByIdDb(client, roomId);
+    if (!updated) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    return storeInMemory(updated);
   });
-  touchRoom(room);
-  return {
-    snapshot: toSnapshot(room),
-    move: {
-      userId,
-      fromCell,
-      toCell,
-      dice,
-      snakeOrArrow,
-      nextTurnPlayerId,
-    },
-  };
 };
 
-export const clearRoomsStore = (): void => {
+export const setRoomConnectionState = async (roomId: string, userId: string, status: RoomConnectionStatus): Promise<RoomSnapshot> => {
+  if (!isPostgresEnabled()) {
+    const room = ensureRoom(roomId);
+    const player = ensurePlayerInRoom(room, userId);
+    player.connectionStatus = status;
+    touchRoom(room);
+    return toSnapshot(room);
+  }
+  return withDbTransaction(async (client) => {
+    const room = await queryRoomByIdDb(client, roomId, true);
+    if (!room) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    ensurePlayerInRoom(room, userId);
+    await client.query('UPDATE room_players SET connection_status = $3 WHERE room_id = $1 AND user_id = $2', [roomId, userId, status]);
+    const updated = await queryRoomByIdDb(client, roomId);
+    if (!updated) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    return storeInMemory(updated);
+  });
+};
+
+export const startRoom = async (roomId: string, hostUserId: string): Promise<RoomSnapshot> => {
+  if (!isPostgresEnabled()) {
+    const room = ensureRoom(roomId);
+    if (room.hostUserId !== hostUserId) {
+      throw new Error('FORBIDDEN');
+    }
+    room.status = 'in_progress';
+    if (!room.gameState.currentTurnPlayerId && room.players[0]) {
+      room.gameState.currentTurnPlayerId = room.players[0].userId;
+    }
+    touchRoom(room);
+    return toSnapshot(room);
+  }
+  return withDbTransaction(async (client) => {
+    const room = await queryRoomByIdDb(client, roomId, true);
+    if (!room) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    if (room.hostUserId !== hostUserId) {
+      throw new Error('FORBIDDEN');
+    }
+    room.status = 'in_progress';
+    if (!room.gameState.currentTurnPlayerId && room.players[0]) {
+      room.gameState.currentTurnPlayerId = room.players[0].userId;
+    }
+    await persistRoomGameStateDb(client, room);
+    const updated = await queryRoomByIdDb(client, roomId);
+    if (!updated) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    return storeInMemory(updated);
+  });
+};
+
+export const setRoomStatus = async (roomId: string, hostUserId: string, status: RoomStatus): Promise<RoomSnapshot> => {
+  if (!isPostgresEnabled()) {
+    const room = ensureRoom(roomId);
+    if (room.hostUserId !== hostUserId) {
+      throw new Error('FORBIDDEN');
+    }
+    room.status = status;
+    touchRoom(room);
+    return toSnapshot(room);
+  }
+  return withDbTransaction(async (client) => {
+    const room = await queryRoomByIdDb(client, roomId, true);
+    if (!room) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    if (room.hostUserId !== hostUserId) {
+      throw new Error('FORBIDDEN');
+    }
+    room.status = status;
+    await persistRoomGameStateDb(client, room);
+    const updated = await queryRoomByIdDb(client, roomId);
+    if (!updated) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    return storeInMemory(updated);
+  });
+};
+
+export const recordRoomNote = async ({ roomId, userId }: { roomId: string; userId: string }): Promise<RoomSnapshot> => {
+  if (!isPostgresEnabled()) {
+    const room = ensureRoom(roomId);
+    ensurePlayerInRoom(room, userId);
+    const playerState = room.gameState.perPlayerState[userId];
+    if (playerState) {
+      playerState.notesCount += 1;
+    }
+    touchRoom(room);
+    return toSnapshot(room);
+  }
+  return withDbTransaction(async (client) => {
+    const room = await queryRoomByIdDb(client, roomId, true);
+    if (!room) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    ensurePlayerInRoom(room, userId);
+    const playerState = room.gameState.perPlayerState[userId];
+    if (playerState) {
+      playerState.notesCount += 1;
+    }
+    await persistRoomGameStateDb(client, room);
+    const updated = await queryRoomByIdDb(client, roomId);
+    if (!updated) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    return storeInMemory(updated);
+  });
+};
+
+export const rollDiceForCurrentPlayer = async ({
+  roomId,
+  userId,
+}: {
+  roomId: string;
+  userId: string;
+}): Promise<{
+  snapshot: RoomSnapshot;
+  move: { userId: string; fromCell: number; toCell: number; dice: number; snakeOrArrow: 'snake' | 'arrow' | null; nextTurnPlayerId: string };
+}> => {
+  const executeMove = (room: GameRoom) => {
+    if (room.status !== 'in_progress') {
+      throw new Error('ROOM_NOT_IN_PROGRESS');
+    }
+    if (room.gameState.currentTurnPlayerId !== userId) {
+      throw new Error('NOT_YOUR_TURN');
+    }
+    ensurePlayerInRoom(room, userId);
+    const playerState = room.gameState.perPlayerState[userId];
+    if (!playerState || playerState.status === 'finished') {
+      throw new Error('PLAYER_ALREADY_FINISHED');
+    }
+    const dice = Math.floor(Math.random() * 6) + 1;
+    const { fromCell, toCell, snakeOrArrow } = nextMoveFromDice(room.boardType, playerState.currentCell, dice);
+    playerState.currentCell = toCell;
+    if (toCell >= transitionsByBoard[room.boardType].maxCell) {
+      playerState.status = 'finished';
+    }
+    const nextTurnPlayerId = findNextTurnPlayerId(room, userId);
+    room.gameState.currentTurnPlayerId = nextTurnPlayerId;
+    room.gameState.moveHistory.push({ userId, fromCell, toCell, dice, snakeOrArrow, timestamp: new Date().toISOString() });
+    touchRoom(room);
+    return { room, move: { userId, fromCell, toCell, dice, snakeOrArrow, nextTurnPlayerId } };
+  };
+
+  if (!isPostgresEnabled()) {
+    const room = ensureRoom(roomId);
+    const result = executeMove(room);
+    return { snapshot: toSnapshot(result.room), move: result.move };
+  }
+
+  return withDbTransaction(async (client) => {
+    const room = await queryRoomByIdDb(client, roomId, true);
+    if (!room) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    const result = executeMove(room);
+    await persistRoomGameStateDb(client, result.room);
+    const updated = await queryRoomByIdDb(client, roomId);
+    if (!updated) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    return { snapshot: storeInMemory(updated), move: result.move };
+  });
+};
+
+export const clearRoomsStore = async (): Promise<void> => {
   roomsById.clear();
   roomsByCode.clear();
+  if (!isPostgresEnabled()) {
+    return;
+  }
+  await queryDb('DELETE FROM room_players');
+  await queryDb('DELETE FROM room_game_states');
+  await queryDb('DELETE FROM host_rooms');
 };

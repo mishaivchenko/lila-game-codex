@@ -1,12 +1,15 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { verifyTelegramWebAppInitData } from '../lib/telegramWebAppAuth.js';
-import { upsertUserFromTelegram } from '../store/usersStore.js';
+import { upgradeUserToAdmin, upsertUserFromTelegram } from '../store/usersStore.js';
 import { createAppToken } from '../lib/appToken.js';
 import { requireAuth, type AuthenticatedRequest } from '../lib/authMiddleware.js';
 
 const telegramWebAppSchema = z.object({
   initData: z.string().min(1),
+});
+const upgradeAdminSchema = z.object({
+  starsPaid: z.number().int().nonnegative(),
 });
 
 export const authRouter = Router();
@@ -19,6 +22,9 @@ const serializeUser = (user: {
   firstName?: string;
   lastName?: string;
   locale?: string;
+  role: 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
   createdAt: string;
   lastActiveAt: string;
 }) => ({
@@ -29,11 +35,14 @@ const serializeUser = (user: {
   firstName: user.firstName,
   lastName: user.lastName,
   locale: user.locale,
+  role: user.role,
+  isAdmin: user.isAdmin,
+  isSuperAdmin: user.isSuperAdmin,
   createdAt: user.createdAt,
   lastActiveAt: user.lastActiveAt,
 });
 
-const handleTelegramAuth = (req: Request, res: Response) => {
+const handleTelegramAuth = async (req: Request, res: Response) => {
   const parsed = telegramWebAppSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ ok: false, error: 'Invalid payload', details: parsed.error.flatten() });
@@ -46,7 +55,7 @@ const handleTelegramAuth = (req: Request, res: Response) => {
 
   try {
     const telegramProfile = verifyTelegramWebAppInitData(parsed.data.initData, botToken);
-    const user = upsertUserFromTelegram(telegramProfile);
+    const user = await upsertUserFromTelegram(telegramProfile);
     const token = createAppToken(user.id);
 
     return res.status(200).json({
@@ -66,8 +75,12 @@ const handleTelegramAuth = (req: Request, res: Response) => {
   }
 };
 
-authRouter.post('/telegram/webapp', handleTelegramAuth);
-authRouter.post('/telegram', handleTelegramAuth);
+authRouter.post('/telegram/webapp', (req, res) => {
+  void handleTelegramAuth(req, res);
+});
+authRouter.post('/telegram', (req, res) => {
+  void handleTelegramAuth(req, res);
+});
 
 authRouter.get('/me', requireAuth, (req: AuthenticatedRequest, res) => {
   if (!req.authUser) {
@@ -77,4 +90,32 @@ authRouter.get('/me', requireAuth, (req: AuthenticatedRequest, res) => {
     ok: true,
     user: serializeUser(req.authUser),
   });
+});
+
+authRouter.post('/upgrade-admin', requireAuth, (req: AuthenticatedRequest, res) => {
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+
+    const parsed = upgradeAdminSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ ok: false, error: 'Invalid payload', details: parsed.error.flatten() });
+    }
+
+    if (req.authUser.isAdmin) {
+      return res.status(200).json({ ok: true, user: serializeUser(req.authUser) });
+    }
+
+    if (parsed.data.starsPaid < 100) {
+      return res.status(402).json({ ok: false, error: 'Not enough stars', requiredStars: 100 });
+    }
+
+    const updated = await upgradeUserToAdmin(req.authUser.id);
+    if (!updated) {
+      return res.status(404).json({ ok: false, error: 'User not found' });
+    }
+
+    return res.status(200).json({ ok: true, user: serializeUser(updated) });
+  })();
 });

@@ -100,6 +100,16 @@ export const hostFinishRoomApi = async (token: string, roomId: string): Promise<
   return parseSnapshotResponse(response);
 };
 
+export const hostPauseRoomApi = async (token: string, roomId: string): Promise<RoomSnapshot> => {
+  const response = await apiFetch(`/api/rooms/${encodeURIComponent(roomId)}/pause`, { method: 'POST' }, token);
+  return parseSnapshotResponse(response);
+};
+
+export const hostResumeRoomApi = async (token: string, roomId: string): Promise<RoomSnapshot> => {
+  const response = await apiFetch(`/api/rooms/${encodeURIComponent(roomId)}/resume`, { method: 'POST' }, token);
+  return parseSnapshotResponse(response);
+};
+
 export type HostRoomSocket = Socket<
   {
     roomStateUpdated: (snapshot: RoomSnapshot) => void;

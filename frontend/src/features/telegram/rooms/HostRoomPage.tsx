@@ -14,6 +14,8 @@ export const HostRoomPage = () => {
     error,
     loadRoomById,
     hostStartGame,
+    hostPauseGame,
+    hostResumeGame,
     hostFinishGame,
     rollDice,
     currentUserRole,
@@ -52,6 +54,7 @@ export const HostRoomPage = () => {
   const board = BOARD_DEFINITIONS[currentRoom.room.boardType];
   const selfState = user ? currentRoom.gameState.perPlayerState[user.id] : undefined;
   const currentTurnPlayer = currentRoom.players.find((entry) => entry.userId === currentRoom.gameState.currentTurnPlayerId);
+  const joinLink = `${window.location.origin}/host-room/${currentRoom.room.id}`;
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl bg-[var(--lila-bg-main)] px-3 py-4">
@@ -67,6 +70,9 @@ export const HostRoomPage = () => {
         </div>
         <p className="mt-2 text-sm text-[var(--lila-text-muted)]">
           Статус: {currentRoom.room.status} · Connection: {connectionState}
+        </p>
+        <p className="text-xs text-[var(--lila-text-muted)]">
+          Join link: <a href={joinLink} className="underline">{joinLink}</a>
         </p>
         <p className="text-sm text-[var(--lila-text-muted)]">
           Поточний хід: <span className="font-semibold text-[var(--lila-text-primary)]">{currentTurnPlayer?.displayName ?? '—'}</span>
@@ -110,7 +116,7 @@ export const HostRoomPage = () => {
       </section>
 
       <section className="mt-3 rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 p-4">
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-5">
           <button
             type="button"
             onClick={() => void rollDice()}
@@ -126,6 +132,22 @@ export const HostRoomPage = () => {
             className="rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-4 py-3 text-sm disabled:opacity-50"
           >
             Почати гру
+          </button>
+          <button
+            type="button"
+            onClick={() => void hostPauseGame()}
+            disabled={currentUserRole !== 'host' || currentRoom.room.status !== 'in_progress'}
+            className="rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-4 py-3 text-sm disabled:opacity-50"
+          >
+            Пауза
+          </button>
+          <button
+            type="button"
+            onClick={() => void hostResumeGame()}
+            disabled={currentUserRole !== 'host' || currentRoom.room.status !== 'paused'}
+            className="rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-4 py-3 text-sm disabled:opacity-50"
+          >
+            Продовжити
           </button>
           <button
             type="button"

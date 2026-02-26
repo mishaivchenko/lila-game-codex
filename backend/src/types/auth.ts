@@ -23,6 +23,9 @@ export interface AppUser {
   firstName?: string;
   lastName?: string;
   locale?: string;
+  role: 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
   createdAt: string;
   lastActiveAt: string;
 }

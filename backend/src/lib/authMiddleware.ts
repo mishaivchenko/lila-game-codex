@@ -11,7 +11,7 @@ const unauthorized = (res: Response, message: string) => {
   return res.status(401).json({ ok: false, error: message });
 };
 
-export const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const requireAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const authorization = req.header('authorization');
   if (!authorization) {
     return unauthorized(res, 'Missing Authorization header');
@@ -24,7 +24,7 @@ export const requireAuth = (req: AuthenticatedRequest, res: Response, next: Next
 
   try {
     const payload = verifyAppToken(token);
-    const user = getUserById(payload.sub);
+    const user = await getUserById(payload.sub);
     if (!user) {
       return unauthorized(res, 'User not found');
     }

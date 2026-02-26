@@ -8,7 +8,7 @@ import { clearGamesStore } from '../src/store/gamesStore.js';
 
 const BOT_TOKEN = '123456:TEST_BOT_TOKEN';
 
-const buildTelegramInitData = (botToken: string, userId = 424242): string => {
+const buildTelegramInitData = (botToken: string, userId = 424242, username = 'misha_test'): string => {
   const payload = new URLSearchParams();
   payload.set('auth_date', `${Math.floor(Date.now() / 1000)}`);
   payload.set('query_id', 'AAEAAAE');
@@ -18,7 +18,7 @@ const buildTelegramInitData = (botToken: string, userId = 424242): string => {
       id: userId,
       first_name: 'Misha',
       last_name: 'Tester',
-      username: 'misha_test',
+      username,
       language_code: 'uk',
     }),
   );
@@ -38,12 +38,12 @@ const buildTelegramInitData = (botToken: string, userId = 424242): string => {
 describe('Telegram auth + rooms', () => {
   const app = createApp();
 
-  beforeEach(() => {
+  beforeEach(async () => {
     process.env.TELEGRAM_BOT_TOKEN = BOT_TOKEN;
     process.env.APP_AUTH_SECRET = 'test-secret';
-    clearUsersStore();
-    clearRoomsStore();
-    clearGamesStore();
+    await clearUsersStore();
+    await clearRoomsStore();
+    await clearGamesStore();
   });
 
   it('authenticates Telegram WebApp initData', async () => {
@@ -72,7 +72,7 @@ describe('Telegram auth + rooms', () => {
   });
 
   it('creates and resolves room by code for authenticated user', async () => {
-    const initData = buildTelegramInitData(BOT_TOKEN, 777001);
+    const initData = buildTelegramInitData(BOT_TOKEN, 777001, 'soulvio');
     const authResponse = await request(app).post('/api/auth/telegram/webapp').send({ initData });
     const token = authResponse.body.token as string;
 

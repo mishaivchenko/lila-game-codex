@@ -34,6 +34,9 @@ const createLocalDevAuthState = (): TelegramAuthContextValue => ({
     displayName: 'Local Dev',
     username: 'local-dev',
     locale: 'uk',
+    role: 'SUPER_ADMIN',
+    isAdmin: true,
+    isSuperAdmin: true,
   },
 });
 

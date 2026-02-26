@@ -49,75 +49,87 @@ const patchGameSchema = z.object({
 export const gamesRouter = Router();
 
 gamesRouter.get('/', requireAuth, (req: AuthenticatedRequest, res) => {
-  if (!req.authUser) {
-    return res.status(401).json({ ok: false, error: 'Unauthorized' });
-  }
-  const limitRaw = Number(req.query.limit ?? 10);
-  const limit = Number.isFinite(limitRaw) ? Math.min(20, Math.max(1, Math.floor(limitRaw))) : 10;
-  const sessions = listUserGameSessions(req.authUser.id, limit);
-  return res.status(200).json({ ok: true, sessions });
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const limitRaw = Number(req.query.limit ?? 10);
+    const limit = Number.isFinite(limitRaw) ? Math.min(20, Math.max(1, Math.floor(limitRaw))) : 10;
+    const sessions = await listUserGameSessions(req.authUser.id, limit);
+    return res.status(200).json({ ok: true, sessions });
+  })();
 });
 
 gamesRouter.get('/active', requireAuth, (req: AuthenticatedRequest, res) => {
-  if (!req.authUser) {
-    return res.status(401).json({ ok: false, error: 'Unauthorized' });
-  }
-  const session = getUserActiveGameSession(req.authUser.id);
-  return res.status(200).json({ ok: true, session: session ?? null });
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const session = await getUserActiveGameSession(req.authUser.id);
+    return res.status(200).json({ ok: true, session: session ?? null });
+  })();
 });
 
 gamesRouter.get('/:id', requireAuth, (req: AuthenticatedRequest, res) => {
-  if (!req.authUser) {
-    return res.status(401).json({ ok: false, error: 'Unauthorized' });
-  }
-  const sessionId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const session = getUserGameSessionById(req.authUser.id, sessionId);
-  if (!session) {
-    return res.status(404).json({ ok: false, error: 'Game session not found' });
-  }
-  return res.status(200).json({ ok: true, session });
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const sessionId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const session = await getUserGameSessionById(req.authUser.id, sessionId);
+    if (!session) {
+      return res.status(404).json({ ok: false, error: 'Game session not found' });
+    }
+    return res.status(200).json({ ok: true, session });
+  })();
 });
 
 gamesRouter.post('/', requireAuth, (req: AuthenticatedRequest, res) => {
-  if (!req.authUser) {
-    return res.status(401).json({ ok: false, error: 'Unauthorized' });
-  }
-  const parsed = upsertGameSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ ok: false, error: 'Invalid payload', details: parsed.error.flatten() });
-  }
-  const session = upsertGameSessionForUser(req.authUser.id, parsed.data.session);
-  return res.status(201).json({ ok: true, session });
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const parsed = upsertGameSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ ok: false, error: 'Invalid payload', details: parsed.error.flatten() });
+    }
+    const session = await upsertGameSessionForUser(req.authUser.id, parsed.data.session);
+    return res.status(201).json({ ok: true, session });
+  })();
 });
 
 gamesRouter.put('/:id', requireAuth, (req: AuthenticatedRequest, res) => {
-  if (!req.authUser) {
-    return res.status(401).json({ ok: false, error: 'Unauthorized' });
-  }
-  const parsed = upsertGameSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ ok: false, error: 'Invalid payload', details: parsed.error.flatten() });
-  }
-  const sessionId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  if (sessionId !== parsed.data.session.id) {
-    return res.status(400).json({ ok: false, error: 'Session id mismatch' });
-  }
-  const session = upsertGameSessionForUser(req.authUser.id, parsed.data.session);
-  return res.status(200).json({ ok: true, session });
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const parsed = upsertGameSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ ok: false, error: 'Invalid payload', details: parsed.error.flatten() });
+    }
+    const sessionId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (sessionId !== parsed.data.session.id) {
+      return res.status(400).json({ ok: false, error: 'Session id mismatch' });
+    }
+    const session = await upsertGameSessionForUser(req.authUser.id, parsed.data.session);
+    return res.status(200).json({ ok: true, session });
+  })();
 });
 
 gamesRouter.patch('/:id', requireAuth, (req: AuthenticatedRequest, res) => {
-  if (!req.authUser) {
-    return res.status(401).json({ ok: false, error: 'Unauthorized' });
-  }
-  const parsed = patchGameSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ ok: false, error: 'Invalid payload', details: parsed.error.flatten() });
-  }
-  const sessionId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const session = patchGameSessionForUser(req.authUser.id, sessionId, parsed.data.session);
-  if (!session) {
-    return res.status(404).json({ ok: false, error: 'Game session not found' });
-  }
-  return res.status(200).json({ ok: true, session });
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const parsed = patchGameSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ ok: false, error: 'Invalid payload', details: parsed.error.flatten() });
+    }
+    const sessionId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const session = await patchGameSessionForUser(req.authUser.id, sessionId, parsed.data.session);
+    if (!session) {
+      return res.status(404).json({ ok: false, error: 'Game session not found' });
+    }
+    return res.status(200).json({ ok: true, session });
+  })();
 });

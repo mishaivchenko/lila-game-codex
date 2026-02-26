@@ -5,6 +5,8 @@ import {
   createHostRoomSocket,
   getRoomByCodeApi,
   getRoomByIdApi,
+  hostPauseRoomApi,
+  hostResumeRoomApi,
   hostFinishRoomApi,
   hostStartRoomApi,
   joinRoomApi,
@@ -21,6 +23,8 @@ interface TelegramRoomsContextValue {
   joinRoomByCode: (code: string) => Promise<RoomSnapshot | undefined>;
   loadRoomById: (roomId: string) => Promise<RoomSnapshot | undefined>;
   hostStartGame: () => Promise<void>;
+  hostPauseGame: () => Promise<void>;
+  hostResumeGame: () => Promise<void>;
   hostFinishGame: () => Promise<void>;
   rollDice: () => Promise<void>;
 }
@@ -33,6 +37,8 @@ const TelegramRoomsContext = createContext<TelegramRoomsContextValue>({
   joinRoomByCode: async () => undefined,
   loadRoomById: async () => undefined,
   hostStartGame: async () => {},
+  hostPauseGame: async () => {},
+  hostResumeGame: async () => {},
   hostFinishGame: async () => {},
   rollDice: async () => {},
 });
@@ -186,6 +192,32 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     }
   };
 
+  const hostPauseGame = async () => {
+    if (!authToken || !currentRoom) {
+      return;
+    }
+    try {
+      const snapshot = await hostPauseRoomApi(authToken, currentRoom.room.id);
+      setCurrentRoom(snapshot);
+      socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: 'pause' });
+    } catch {
+      setError('Не вдалося поставити гру на паузу.');
+    }
+  };
+
+  const hostResumeGame = async () => {
+    if (!authToken || !currentRoom) {
+      return;
+    }
+    try {
+      const snapshot = await hostResumeRoomApi(authToken, currentRoom.room.id);
+      setCurrentRoom(snapshot);
+      socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: 'resume' });
+    } catch {
+      setError('Не вдалося відновити гру.');
+    }
+  };
+
   const rollDice = async () => {
     if (!currentRoom || !authUserId || !socketRef.current) {
       return;
@@ -223,6 +255,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       joinRoomByCode,
       loadRoomById,
       hostStartGame,
+      hostPauseGame,
+      hostResumeGame,
       hostFinishGame,
       rollDice,
     }),

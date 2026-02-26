@@ -1,7 +1,7 @@
 {
   "summary": {
     "overall_score": 89,
-    "last_updated": "2026-02-26T22:19:16Z",
+    "last_updated": "2026-02-26T22:57:59Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -11,32 +11,32 @@
     "complexity_growth_percent_max": 10
   },
   "metrics": {
-    "files_total": 167,
-    "source_files_total": 167,
-    "lines_total": 13331,
+    "files_total": 172,
+    "source_files_total": 172,
+    "lines_total": 16024,
     "frontend": {
-      "files": 152,
-      "lines": 12579
+      "files": 155,
+      "lines": 13693
     },
     "backend": {
-      "files": 15,
-      "lines": 752
+      "files": 17,
+      "lines": 2331
     },
     "tests": {
-      "files": 37,
-      "lines": 2466,
-      "test_file_ratio_vs_source_percent": 22.2,
-      "source_files_with_direct_test_match_percent": 30.3,
+      "files": 38,
+      "lines": 2757,
+      "test_file_ratio_vs_source_percent": 22.1,
+      "source_files_with_direct_test_match_percent": 29.7,
       "coverage_estimate_percent": 73,
       "coverage_band": "medium"
     },
     "smells": {
       "long_files_over_500_loc": 1,
-      "long_files_over_300_loc": 2,
-      "long_functions_over_50_loc": 16,
+      "long_files_over_300_loc": 4,
+      "long_functions_over_50_loc": 18,
       "duplicate_code_blocks_estimate": 6,
       "solid_violations_estimate": 7,
-      "smells_per_1k_loc": 2.37
+      "smells_per_1k_loc": 1.94
     },
     "risk_modules": [
       {
@@ -70,17 +70,27 @@
         "reason": "Session bootstrap now hydrates from server and then performs outbound sync; ordering is guarded but async orchestration remains sensitive."
       },
       {
-        "path": "backend/src/routes/games.ts",
+        "path": "backend/src/store/roomsStore.ts",
         "risk": "medium",
-        "reason": "Session persistence/validation endpoint surface is new and currently backed by in-memory store for MVP runtime."
+        "reason": "Room lifecycle, turn logic, persistence mapping, and Postgres fallback behavior are concentrated in one file and should eventually be split into repository + domain service."
+      },
+      {
+        "path": "backend/src/store/gamesStore.ts",
+        "risk": "medium",
+        "reason": "Session upsert/patch logic now spans payload normalization, throw counting, and Postgres persistence concerns in one unit."
+      },
+      {
+        "path": "backend/src/lib/db.ts",
+        "risk": "low",
+        "reason": "Migration runner and pool lifecycle are centralized here; small but foundational for all future persistence-dependent features including RAG."
       }
     ]
   },
   "scores": {
-    "architecture_clarity": 90,
+    "architecture_clarity": 91,
     "solid_compliance": 88,
     "test_coverage": 72,
-    "complexity": 82,
+    "complexity": 80,
     "consistency": 89
   },
   "methods": {
