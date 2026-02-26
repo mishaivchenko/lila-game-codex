@@ -171,13 +171,15 @@ export const JourneySetupHub = () => {
   };
 
   return (
-    <section className="mt-5 rounded-3xl border border-[#ead9cc] bg-[var(--lila-surface)]/92 p-3 shadow-[0_18px_40px_rgba(98,76,62,0.12)] backdrop-blur sm:p-4">
-      <div className="grid grid-cols-3 gap-2 rounded-2xl bg-[#f3e9de]/80 p-1">
+    <section className="mt-5 rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 p-3 shadow-[0_18px_40px_rgba(98,76,62,0.12)] backdrop-blur sm:p-4">
+      <div className="grid grid-cols-3 gap-2 rounded-2xl bg-[var(--lila-surface-muted)]/90 p-1">
         <button
           type="button"
           onClick={() => setActiveTab('simple')}
           className={`rounded-xl px-2 py-2 text-xs sm:text-sm ${
-            activeTab === 'simple' ? 'bg-white text-[#3a2b24] shadow-sm' : 'text-[#7d6a5e]'
+            activeTab === 'simple'
+              ? 'bg-[var(--lila-surface)] text-[var(--lila-text-primary)] shadow-sm'
+              : 'text-[var(--lila-text-muted)]'
           }`}
         >
           Проста гра
@@ -186,7 +188,9 @@ export const JourneySetupHub = () => {
           type="button"
           onClick={() => setActiveTab('deep')}
           className={`rounded-xl px-2 py-2 text-xs sm:text-sm ${
-            activeTab === 'deep' ? 'bg-white text-[#3a2b24] shadow-sm' : 'text-[#7d6a5e]'
+            activeTab === 'deep'
+              ? 'bg-[var(--lila-surface)] text-[var(--lila-text-primary)] shadow-sm'
+              : 'text-[var(--lila-text-muted)]'
           }`}
         >
           Глибока гра
@@ -195,7 +199,9 @@ export const JourneySetupHub = () => {
           type="button"
           onClick={() => setActiveTab('rules')}
           className={`rounded-xl px-2 py-2 text-xs sm:text-sm ${
-            activeTab === 'rules' ? 'bg-white text-[#3a2b24] shadow-sm' : 'text-[#7d6a5e]'
+            activeTab === 'rules'
+              ? 'bg-[var(--lila-surface)] text-[var(--lila-text-primary)] shadow-sm'
+              : 'text-[var(--lila-text-muted)]'
           }`}
         >
           Правила гри
@@ -277,27 +283,27 @@ export const JourneySetupHub = () => {
 
       {activeTab === 'deep' && (
         <div className="mt-4 space-y-3">
-          <article className="relative overflow-hidden rounded-2xl border border-[#ead9cc] bg-gradient-to-b from-[#fbf2e9] to-white p-4">
+          <article className="relative overflow-hidden rounded-2xl border border-[var(--lila-border-soft)] bg-gradient-to-b from-[var(--lila-surface)] to-[var(--lila-surface-muted)] p-4">
             <div className="space-y-3 opacity-60 blur-[1px]">
-              <h3 className="text-base font-semibold text-stone-900">Глибока гра</h3>
-              <p className="mt-1 text-sm text-stone-600">Індивідуальний простір трансформаційної роботи.</p>
-              <div className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-500">
+              <h3 className="text-base font-semibold text-[var(--lila-text-primary)]">Глибока гра</h3>
+              <p className="mt-1 text-sm text-[var(--lila-text-muted)]">Індивідуальний простір трансформаційної роботи.</p>
+              <div className="rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] px-3 py-2 text-sm text-[var(--lila-text-muted)]">
                 Запит, фокус і персональний формат будуть доступні після релізу AI.
               </div>
               <button
                 type="button"
                 disabled
-                className="w-full rounded-xl bg-[#c57b5d] px-3 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+                className="w-full rounded-xl bg-[var(--lila-accent)] px-3 py-2.5 text-sm font-medium text-white disabled:opacity-60"
               >
                 Почати гру
               </button>
             </div>
 
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#f7efe7]/88 p-4 backdrop-blur-[2px]">
-              <div className="w-full max-w-md rounded-2xl border border-[#e4d4c6] bg-[linear-gradient(135deg,#fff9f3,#f4e8dd)] p-4 text-center text-[#332823] shadow-[0_14px_36px_rgba(100,74,56,0.2)]">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[#8f6d5b]">Locked Section</p>
-                <h4 className="mt-1 text-lg font-semibold">Ask AI assistant (Coming soon)</h4>
-                <p className="mt-2 text-sm text-[#6f5d53]">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--lila-bg-main)]/86 p-4 backdrop-blur-[2px]">
+              <div className="w-full max-w-md rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4 text-center text-[var(--lila-text-primary)] shadow-[0_14px_36px_rgba(100,74,56,0.2)]">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lila-text-muted)]">Locked Section</p>
+                <h4 className="mt-1 text-lg font-semibold text-[var(--lila-text-primary)]">Ask AI assistant (Coming soon)</h4>
+                <p className="mt-2 text-sm text-[var(--lila-text-muted)]">
                   Розділ глибокої AI-роботи ще недоступний. Ви зможете активувати його після релізу.
                 </p>
               </div>
