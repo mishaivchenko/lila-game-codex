@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BoardThemeContext } from './BoardThemeContext';
-import { BOARD_THEME_LIST, DEFAULT_SPIRITUAL_THEME, resolveBoardTheme, resolveTokenColor } from './boardTheme';
+import {
+  BOARD_THEME_LIST,
+  DEFAULT_SPIRITUAL_THEME,
+  resolveBoardTheme,
+  resolveBoardThemeCssVars,
+  resolveTokenColor,
+} from './boardTheme';
 import { createRepositories } from '../repositories';
 import type { SettingsEntity } from '../domain/types';
 import type { SnakeVariantId, StairsVariantId } from './boardTheme';
@@ -46,6 +52,25 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
       isActive = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const vars = resolveBoardThemeCssVars(themeId);
+    const root = document.documentElement;
+    root.style.setProperty('--lila-bg-main', vars.bgMain);
+    root.style.setProperty('--lila-bg-start', vars.bgStart);
+    root.style.setProperty('--lila-bg-end', vars.bgEnd);
+    root.style.setProperty('--lila-surface', vars.surface);
+    root.style.setProperty('--lila-surface-muted', vars.surfaceMuted);
+    root.style.setProperty('--lila-text-primary', vars.textPrimary);
+    root.style.setProperty('--lila-text-muted', vars.textMuted);
+    root.style.setProperty('--lila-accent', vars.accent);
+    root.style.setProperty('--lila-accent-hover', vars.accentHover);
+    root.style.setProperty('--lila-accent-soft', vars.accentSoft);
+    root.style.setProperty('--lila-border-soft', vars.borderSoft);
+  }, [themeId]);
 
   const setThemeId = useCallback((nextThemeId: string) => {
     const resolved = resolveBoardTheme(nextThemeId);

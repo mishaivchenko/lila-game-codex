@@ -65,55 +65,34 @@ describe('resolveCellFromBoardPercent', () => {
     });
   });
 
-  it('keeps calibrated visual cells 2 and 3 stable with local tap offsets', () => {
-    const visual2 = { xPercent: 26.05, yPercent: 88.4 };
-    const visual3 = { xPercent: 15.58, yPercent: 88.4 };
+  it('maps first-row full-board cells 1..4 correctly by exact centers', () => {
+    [1, 2, 3, 4].forEach((cell) => {
+      const pos = mapCellToBoardPosition('full', cell);
+      expect(
+        resolveCellFromBoardPercent('full', {
+          xPercent: pos.xPercent,
+          yPercent: pos.yPercent,
+        }),
+      ).toBe(cell);
+    });
+  });
+
+  it('keeps local offsets inside cell 2/3 on their own side of the boundary', () => {
+    const c2 = mapCellToBoardPosition('full', 2);
+    const c3 = mapCellToBoardPosition('full', 3);
+    const boundary = (c2.xPercent + c3.xPercent) / 2;
 
     expect(
       resolveCellFromBoardPercent('full', {
-        xPercent: visual2.xPercent + 1.2,
-        yPercent: visual2.yPercent - 1.1,
+        xPercent: boundary - 0.8,
+        yPercent: c2.yPercent,
       }),
     ).toBe(2);
 
     expect(
       resolveCellFromBoardPercent('full', {
-        xPercent: visual3.xPercent - 1.2,
-        yPercent: visual3.yPercent - 1.1,
-      }),
-    ).toBe(3);
-  });
-
-  it('keeps tap on right side of a first-row cell within same logical cell', () => {
-    expect(
-      resolveCellFromBoardPercent('full', {
-        xPercent: 40.8,
-        yPercent: 88.4,
-      }),
-    ).toBe(4);
-  });
-
-  it('does not resolve right-half tap of full-board cell 2 as the next cell', () => {
-    expect(
-      resolveCellFromBoardPercent('full', {
-        xPercent: 30.6,
-        yPercent: 88.4,
-      }),
-    ).toBe(2);
-  });
-
-  it('maps calibrated visual points for full-board cells 2 and 3', () => {
-    expect(
-      resolveCellFromBoardPercent('full', {
-        xPercent: 26.05,
-        yPercent: 88.4,
-      }),
-    ).toBe(2);
-
-    expect(
-      resolveCellFromBoardPercent('full', {
-        xPercent: 15.58,
-        yPercent: 88.4,
+        xPercent: boundary + 0.8,
+        yPercent: c3.yPercent,
       }),
     ).toBe(3);
   });

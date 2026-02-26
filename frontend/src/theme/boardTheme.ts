@@ -99,6 +99,20 @@ export interface BoardTheme {
   layout: BoardLayoutStyle;
 }
 
+export interface BoardThemeCssVars {
+  bgMain: string;
+  bgStart: string;
+  bgEnd: string;
+  surface: string;
+  surfaceMuted: string;
+  textPrimary: string;
+  textMuted: string;
+  accent: string;
+  accentHover: string;
+  accentSoft: string;
+  borderSoft: string;
+}
+
 const DEFAULT_TOKEN_PALETTE: TokenStyle['palette'] = [
   { id: 'onyx', label: 'Onyx', value: '#1c1917' },
   { id: 'copper', label: 'Copper', value: '#c57b5d' },
@@ -320,3 +334,48 @@ export const resolveBoardTheme = (themeId: string | undefined): BoardTheme =>
 
 export const resolveTokenColor = (theme: BoardTheme, tokenColorId: string | undefined): string =>
   theme.token.palette.find((entry) => entry.id === tokenColorId)?.value ?? theme.token.defaultColor;
+
+const BOARD_THEME_CSS_VARS: Record<string, BoardThemeCssVars> = {
+  'default-spiritual': {
+    bgMain: '#f5efe6',
+    bgStart: '#fdf8f2',
+    bgEnd: '#efe6da',
+    surface: '#fffaf5',
+    surfaceMuted: '#f4ece3',
+    textPrimary: '#2f2521',
+    textMuted: '#6f6158',
+    accent: '#c57b5d',
+    accentHover: '#b96d50',
+    accentSoft: '#f4e0d2',
+    borderSoft: '#e7d8cb',
+  },
+  'cosmic-dark': {
+    bgMain: '#151824',
+    bgStart: '#212739',
+    bgEnd: '#121722',
+    surface: '#22283a',
+    surfaceMuted: '#2d354a',
+    textPrimary: '#f5efe7',
+    textMuted: '#c7baad',
+    accent: '#54b4d7',
+    accentHover: '#489ec0',
+    accentSoft: '#243847',
+    borderSoft: '#3e4963',
+  },
+  'minimal-cream': {
+    bgMain: '#f6f1e8',
+    bgStart: '#fffaf2',
+    bgEnd: '#e8dece',
+    surface: '#fffbf6',
+    surfaceMuted: '#efe5d7',
+    textPrimary: '#3b302b',
+    textMuted: '#72635a',
+    accent: '#9f7458',
+    accentHover: '#8b6349',
+    accentSoft: '#ead8c4',
+    borderSoft: '#ddcbb6',
+  },
+};
+
+export const resolveBoardThemeCssVars = (themeId: string | undefined): BoardThemeCssVars =>
+  BOARD_THEME_CSS_VARS[resolveBoardTheme(themeId).id] ?? BOARD_THEME_CSS_VARS['default-spiritual'];

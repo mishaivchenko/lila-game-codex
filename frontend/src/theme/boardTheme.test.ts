@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD_THEMES, resolveBoardTheme, DEFAULT_SPIRITUAL_THEME, resolveTokenColor } from './boardTheme';
+import {
+  BOARD_THEMES,
+  resolveBoardTheme,
+  DEFAULT_SPIRITUAL_THEME,
+  resolveTokenColor,
+  resolveBoardThemeCssVars,
+} from './boardTheme';
 import { applyPathCustomization } from './pathCustomization';
 
 describe('boardTheme', () => {
@@ -28,5 +34,15 @@ describe('boardTheme', () => {
     expect(themed.stairs.variantId).toBe('beam');
     expect(themed.snake.coreGradientStops[1]).toBe('#4798B8');
     expect(themed.stairs.railGradientStops[0]).toBe('#79CDBF');
+  });
+
+  it('resolves distinct global css vars for each theme', () => {
+    const spiritual = resolveBoardThemeCssVars('default-spiritual');
+    const cosmic = resolveBoardThemeCssVars('cosmic-dark');
+    const minimal = resolveBoardThemeCssVars('minimal-cream');
+
+    expect(spiritual.bgMain).not.toBe(cosmic.bgMain);
+    expect(minimal.accent).not.toBe(cosmic.accent);
+    expect(resolveBoardThemeCssVars('unknown').bgMain).toBe(spiritual.bgMain);
   });
 });

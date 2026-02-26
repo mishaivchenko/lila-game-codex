@@ -67,6 +67,7 @@ export class CameraEngine implements BoardCameraEngine {
   private viewportHeight = 100;
   private worldWidth = 100;
   private worldHeight = 100;
+  private maxZoom = 2.4;
   private followEntity?: BoardEntity;
   private followSmoothing = 0.16;
   private nowMs = 0;
@@ -78,6 +79,7 @@ export class CameraEngine implements BoardCameraEngine {
     worldWidth?: number;
     worldHeight?: number;
     zoom?: number;
+    maxZoom?: number;
   }) {
     if (initial?.viewportWidth) {
       this.viewportWidth = initial.viewportWidth;
@@ -94,6 +96,9 @@ export class CameraEngine implements BoardCameraEngine {
     if (initial?.zoom) {
       this.zoom = initial.zoom;
       this.targetZoom = initial.zoom;
+    }
+    if (initial?.maxZoom) {
+      this.maxZoom = Math.max(1, initial.maxZoom);
     }
   }
 
@@ -144,7 +149,7 @@ export class CameraEngine implements BoardCameraEngine {
   }
 
   animateZoom(zoomLevel: number, config: BoardCameraAnimationConfig = {}): Promise<void> {
-    this.targetZoom = clamp(zoomLevel, 1, 2.4);
+    this.targetZoom = clamp(zoomLevel, 1, this.maxZoom);
     const point = config.focusPoint ?? this.followEntity?.point ?? this.getViewportCenterWorldPoint();
     const targetPan = this.computePanForWorldPoint(point, this.targetZoom);
     return this.startAnimation({
