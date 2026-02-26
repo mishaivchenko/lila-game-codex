@@ -186,12 +186,12 @@ export const CellCoachModal = ({
               Закрити
             </button>
             <div className="flex h-full items-center justify-center overflow-hidden rounded-2xl border border-stone-200 bg-white p-2 sm:p-3">
-              <div className="relative w-full max-h-[42vh] aspect-[3/4] sm:max-h-[78vh]">
+              <div className="relative h-full w-full max-h-[42vh] aspect-[4/5] sm:max-h-[78vh]">
                 <img
                   ref={imageRef}
                   src={getCardImagePath(cellNumber)}
                   alt={`Картка ${cellNumber}`}
-                  className="absolute inset-0 h-full w-full object-contain"
+                  className="absolute inset-0 h-full w-full object-cover object-top sm:object-contain"
                   onLoad={handleImageLoaded}
                 />
               </div>
