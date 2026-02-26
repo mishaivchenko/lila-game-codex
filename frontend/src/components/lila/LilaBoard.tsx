@@ -46,13 +46,13 @@ export const LilaBoard = ({
   const { theme } = useBoardTheme();
   return (
     <section
-      className="rounded-3xl p-4 shadow-inner"
+      className="rounded-3xl p-2.5 shadow-inner sm:p-3"
       style={{
         background: theme.boardBackground.boardPanelBackground,
         color: theme.boardBackground.boardPanelText,
       }}
     >
-      <div className="mb-3 flex items-center justify-between text-sm">
+      <div className="mb-2 flex items-center justify-between text-sm">
         <span>Дошка: {board.id === 'full' ? 'Повна' : 'Коротка'}</span>
         <span>Клітина {currentCell}</span>
       </div>

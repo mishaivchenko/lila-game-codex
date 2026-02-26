@@ -495,7 +495,7 @@ export const LilaBoardCanvas = ({
 
   return (
     <div
-      className="relative mx-auto w-full max-w-[520px] rounded-3xl p-2"
+      className="relative mx-auto w-full rounded-3xl p-1.5 sm:p-2"
       style={{
         background: theme.boardBackground.canvasShellBackground,
         boxShadow: theme.boardBackground.canvasShellShadow,
