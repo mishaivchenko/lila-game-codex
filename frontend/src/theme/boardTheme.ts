@@ -119,6 +119,15 @@ export interface BoardThemeCssVars {
   chipActiveText: string;
   inputBg: string;
   inputBorder: string;
+  secondaryButtonBg: string;
+  secondaryButtonText: string;
+  secondaryButtonBorder: string;
+  dangerBg: string;
+  dangerText: string;
+  warningBg: string;
+  warningText: string;
+  successBg: string;
+  successText: string;
 }
 
 const DEFAULT_TOKEN_PALETTE: TokenStyle['palette'] = [
@@ -366,6 +375,15 @@ const BOARD_THEME_CSS_VARS: Record<string, BoardThemeCssVars> = {
     chipActiveText: '#6b4a3b',
     inputBg: '#ffffff',
     inputBorder: '#d8c8ba',
+    secondaryButtonBg: '#fffaf5',
+    secondaryButtonText: '#5f5249',
+    secondaryButtonBorder: '#d8c8ba',
+    dangerBg: '#fce9ec',
+    dangerText: '#b4233f',
+    warningBg: '#f4e6dc',
+    warningText: '#6f4a3a',
+    successBg: '#e8f5f2',
+    successText: '#2d675d',
   },
   'cosmic-dark': {
     bgMain: '#151824',
@@ -386,6 +404,15 @@ const BOARD_THEME_CSS_VARS: Record<string, BoardThemeCssVars> = {
     chipActiveText: '#f5efe7',
     inputBg: '#252b3d',
     inputBorder: '#4b5573',
+    secondaryButtonBg: '#2b3246',
+    secondaryButtonText: '#e6dacf',
+    secondaryButtonBorder: '#55607f',
+    dangerBg: '#3a2631',
+    dangerText: '#ff98b0',
+    warningBg: '#3a3442',
+    warningText: '#f5d09f',
+    successBg: '#243e42',
+    successText: '#9be8dc',
   },
   'minimal-cream': {
     bgMain: '#f6f1e8',
@@ -406,6 +433,15 @@ const BOARD_THEME_CSS_VARS: Record<string, BoardThemeCssVars> = {
     chipActiveText: '#5d4639',
     inputBg: '#fffdf8',
     inputBorder: '#d8c6b1',
+    secondaryButtonBg: '#fff8ef',
+    secondaryButtonText: '#67574c',
+    secondaryButtonBorder: '#d8c6b1',
+    dangerBg: '#f9e4e8',
+    dangerText: '#b53a55',
+    warningBg: '#f3e3d1',
+    warningText: '#6f5849',
+    successBg: '#e4f1ea',
+    successText: '#34685d',
   },
 };
 

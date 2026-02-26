@@ -22,6 +22,15 @@
   --lila-chip-active-text: #6b4a3b;
   --lila-input-bg: #ffffff;
   --lila-input-border: #d8c8ba;
+  --lila-btn-secondary-bg: #fffaf5;
+  --lila-btn-secondary-text: #5f5249;
+  --lila-btn-secondary-border: #d8c8ba;
+  --lila-danger-bg: #fce9ec;
+  --lila-danger-text: #b4233f;
+  --lila-warning-bg: #f4e6dc;
+  --lila-warning-text: #6f4a3a;
+  --lila-success-bg: #e8f5f2;
+  --lila-success-text: #2d675d;
   color: var(--lila-text-primary);
   background-color: var(--lila-bg-main);
   --tg-bg-color: var(--lila-bg-main);
@@ -64,6 +73,14 @@ body {
 :root[data-lila-theme] .border-stone-300,
 :root[data-lila-theme] .border-stone-400 {
   border-color: var(--lila-border-soft) !important;
+}
+
+:root[data-lila-theme] .bg-rose-50 {
+  background-color: var(--lila-danger-bg) !important;
+}
+
+:root[data-lila-theme] .text-rose-700 {
+  color: var(--lila-danger-text) !important;
 }
 
 button,

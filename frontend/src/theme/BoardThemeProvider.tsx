@@ -78,6 +78,15 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
     root.style.setProperty('--lila-chip-active-text', vars.chipActiveText);
     root.style.setProperty('--lila-input-bg', vars.inputBg);
     root.style.setProperty('--lila-input-border', vars.inputBorder);
+    root.style.setProperty('--lila-btn-secondary-bg', vars.secondaryButtonBg);
+    root.style.setProperty('--lila-btn-secondary-text', vars.secondaryButtonText);
+    root.style.setProperty('--lila-btn-secondary-border', vars.secondaryButtonBorder);
+    root.style.setProperty('--lila-danger-bg', vars.dangerBg);
+    root.style.setProperty('--lila-danger-text', vars.dangerText);
+    root.style.setProperty('--lila-warning-bg', vars.warningBg);
+    root.style.setProperty('--lila-warning-text', vars.warningText);
+    root.style.setProperty('--lila-success-bg', vars.successBg);
+    root.style.setProperty('--lila-success-text', vars.successText);
     root.setAttribute('data-lila-theme', themeId);
   }, [themeId]);
 

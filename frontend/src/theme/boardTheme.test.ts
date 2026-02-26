@@ -44,5 +44,7 @@ describe('boardTheme', () => {
     expect(spiritual.bgMain).not.toBe(cosmic.bgMain);
     expect(minimal.accent).not.toBe(cosmic.accent);
     expect(resolveBoardThemeCssVars('unknown').bgMain).toBe(spiritual.bgMain);
+    expect(cosmic.dangerBg).not.toBe(cosmic.bgMain);
+    expect(cosmic.secondaryButtonText).not.toBe(cosmic.secondaryButtonBg);
   });
 });

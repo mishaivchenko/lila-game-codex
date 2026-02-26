@@ -210,34 +210,34 @@ export const JourneySetupHub = () => {
 
       {activeTab === 'simple' && (
         <div className="mt-4 space-y-3">
-          <p className="text-sm text-stone-600">
+          <p className="text-sm text-[var(--lila-text-muted)]">
             Легка точка входу для групи до 4 учасників.
           </p>
 
           {players.map((player, index) => (
-            <article key={player.id} className="rounded-2xl border border-stone-200 bg-white p-3 sm:p-4">
-              <p className="text-xs uppercase tracking-wide text-stone-500">Учасник {index + 1}</p>
+            <article key={player.id} className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-3 sm:p-4">
+              <p className="text-xs uppercase tracking-wide text-[var(--lila-text-muted)]">Учасник {index + 1}</p>
 
-              <label className="mt-2 block text-sm text-stone-700">
+              <label className="mt-2 block text-sm text-[var(--lila-text-primary)]">
                 Імʼя
                 <input
                   value={player.name}
                   onChange={(event) => updatePlayer(player.id, { name: event.target.value })}
-                  className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#d6b29c]"
+                  className="mt-1 w-full rounded-xl border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-3 py-2 text-sm text-[var(--lila-text-primary)] outline-none focus:border-[var(--lila-accent)]"
                 />
               </label>
 
-              <label className="mt-2 block text-sm text-stone-700">
+              <label className="mt-2 block text-sm text-[var(--lila-text-primary)]">
                 Мій запит
                 <textarea
                   value={player.request}
                   onChange={(event) => updatePlayer(player.id, { request: event.target.value })}
-                  className="mt-1 min-h-20 w-full rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#d6b29c]"
+                  className="mt-1 min-h-20 w-full rounded-xl border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-3 py-2 text-sm text-[var(--lila-text-primary)] outline-none focus:border-[var(--lila-accent)]"
                 />
               </label>
 
               <div className="mt-2">
-                <p className="text-sm text-stone-700">Колір</p>
+                <p className="text-sm text-[var(--lila-text-primary)]">Колір</p>
                 <div className="mt-1 flex flex-wrap gap-2">
                   {colors.map((color) => (
                     <button
@@ -245,7 +245,7 @@ export const JourneySetupHub = () => {
                       type="button"
                       onClick={() => updatePlayer(player.id, { color: color.id })}
                       className={`h-7 w-7 rounded-full border-2 ${color.className} ${
-                        player.color === color.id ? 'border-stone-900 scale-110' : 'border-white'
+                        player.color === color.id ? 'border-[var(--lila-accent)] scale-110' : 'border-[var(--lila-surface)]'
                       } transition`}
                       aria-label={color.id}
                     />
@@ -259,13 +259,13 @@ export const JourneySetupHub = () => {
             type="button"
             onClick={addPlayer}
             disabled={players.length >= 4}
-            className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm text-stone-700 disabled:opacity-40"
+            className="w-full rounded-xl border border-[var(--lila-btn-secondary-border)] bg-[var(--lila-btn-secondary-bg)] px-3 py-2 text-sm text-[var(--lila-btn-secondary-text)] transition hover:bg-[var(--lila-surface-muted)] disabled:opacity-40"
           >
             Додати учасника
           </button>
 
           {simpleError && (
-            <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{simpleError}</p>
+            <p className="rounded-xl bg-[var(--lila-danger-bg)] px-3 py-2 text-sm text-[var(--lila-danger-text)]">{simpleError}</p>
           )}
 
           <button
@@ -274,7 +274,7 @@ export const JourneySetupHub = () => {
             onClick={() => {
               void startSimpleGame();
             }}
-            className="w-full rounded-xl bg-[#c57b5d] px-3 py-2.5 text-sm font-medium text-white transition hover:bg-[#b96d50] disabled:opacity-60"
+            className="w-full rounded-xl bg-[var(--lila-accent)] px-3 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--lila-accent-hover)] disabled:opacity-60"
           >
             Почати гру
           </button>
@@ -313,12 +313,12 @@ export const JourneySetupHub = () => {
       )}
 
       {activeTab === 'rules' && (
-        <div className="mt-4 rounded-2xl border border-[#ead9cc] bg-white p-4">
+        <div className="mt-4 rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4">
           <MarkdownText source={rulesMarkdown} />
-          <p className="mt-3 rounded-xl bg-[#f4e6dc] p-3 text-xs leading-5 text-[#6f4a3a]">
+          <p className="mt-3 rounded-xl bg-[var(--lila-warning-bg)] p-3 text-xs leading-5 text-[var(--lila-warning-text)]">
             Якщо щось емоційно непросто, сповільніться. У цій грі цінна не швидкість, а чесний контакт із собою.
           </p>
-          <div className="mt-3 rounded-xl border border-[#ead9cc] bg-[#fff8f2] p-3 text-xs text-[#7a6154]">
+          <div className="mt-3 rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] p-3 text-xs text-[var(--lila-text-muted)]">
             {chakraLevels.map((item) => (
               <p key={item} className="mt-1 first:mt-0">{item}</p>
             ))}
