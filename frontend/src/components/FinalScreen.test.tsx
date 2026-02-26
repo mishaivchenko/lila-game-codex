@@ -10,6 +10,9 @@ vi.mock('../theme', () => ({
   useBoardTheme: () => ({
     theme: {
       modal: {
+        imageBlendMode: 'light-blend',
+        imagePaneBackground: '#ffffff',
+        imagePaneBorder: 'transparent',
         imageCanvasBackground: '#ffffff',
         imageCanvasBorder: '#e5e7eb',
         imageCanvasShadow: 'none',
