@@ -208,20 +208,6 @@ export const JourneySetupHub = () => {
             Легка точка входу для групи до 4 учасників.
           </p>
 
-          <div className="rounded-2xl border border-stone-200 bg-white p-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">Формат кидка</p>
-            <p className="mt-2 text-sm text-stone-600">
-              Поточний режим: <span className="font-medium text-stone-800">{diceMode === 'classic' ? 'Класична' : diceMode === 'fast' ? 'Швидка' : 'Питання дня'}</span>
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate('/settings')}
-              className="mt-3 rounded-xl border border-[#d8c7b8] bg-[#fdf7f2] px-3 py-2 text-xs font-medium text-[#7d5d4e]"
-            >
-              Налаштувати у «Налаштування подорожі»
-            </button>
-          </div>
-
           {players.map((player, index) => (
             <article key={player.id} className="rounded-2xl border border-stone-200 bg-white p-3 sm:p-4">
               <p className="text-xs uppercase tracking-wide text-stone-500">Учасник {index + 1}</p>
