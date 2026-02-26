@@ -6,6 +6,19 @@ vi.mock('../content/cardAssets', () => ({
   getCardImagePath: () => '/placeholder-card.svg',
 }));
 
+vi.mock('../theme', () => ({
+  useBoardTheme: () => ({
+    theme: {
+      modal: {
+        imageCanvasBackground: '#ffffff',
+        imageCanvasBorder: '#e5e7eb',
+        imageCanvasShadow: 'none',
+        imageCanvasOverlay: 'none',
+      },
+    },
+  }),
+}));
+
 afterEach(() => {
   cleanup();
 });

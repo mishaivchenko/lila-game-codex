@@ -45,12 +45,12 @@ export const CellCoachModal = ({
   onClose,
 }: CellCoachModalProps) => {
   const { theme } = useBoardTheme();
+  const imagePath = getCardImagePath(cellNumber);
   const [text, setText] = useState(initialText);
   const [validationError, setValidationError] = useState<string | undefined>(undefined);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isVeilVisible, setIsVeilVisible] = useState(false);
   const [isVeilFading, setIsVeilFading] = useState(false);
-  const imageRef = useRef<HTMLImageElement | null>(null);
   const imageLoadHandledRef = useRef(false);
   const veilTimersRef = useRef<number[]>([]);
   const lilaContent = getLilaCellContent(cellNumber);
@@ -109,15 +109,42 @@ export const CellCoachModal = ({
     setIsVeilFading(false);
     setIsVeilVisible(useVeil);
     clearVeilTimers();
-  }, [cellNumber, useVeil]);
+  }, [cellNumber, imagePath, useVeil]);
 
   useEffect(() => {
-    const image = imageRef.current;
-    if (!image || !image.complete || image.naturalWidth <= 0) {
-      return;
+    let cancelled = false;
+    const image = new Image();
+    image.src = imagePath;
+
+    const markDecoded = () => {
+      if (cancelled) {
+        return;
+      }
+      handleImageLoaded();
+    };
+
+    if (image.decode) {
+      void image.decode().then(markDecoded).catch(() => {
+        if (image.complete && image.naturalWidth > 0) {
+          markDecoded();
+          return;
+        }
+        image.onload = markDecoded;
+        image.onerror = markDecoded;
+      });
+    } else {
+      if (image.complete && image.naturalWidth > 0) {
+        markDecoded();
+      } else {
+        image.onload = markDecoded;
+        image.onerror = markDecoded;
+      }
     }
-    handleImageLoaded();
-  }, [cellNumber, useVeil]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [imagePath, useVeil]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -181,19 +208,55 @@ export const CellCoachModal = ({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex max-h-[94vh] flex-col overflow-hidden sm:max-h-[92vh] sm:flex-row">
-          <section className="w-full shrink-0 border-b border-stone-100 bg-stone-50 p-3 sm:w-[44%] sm:border-b-0 sm:border-r sm:p-4">
+          <section
+            className="w-full shrink-0 border-b p-3 sm:w-[44%] sm:border-b-0 sm:border-r sm:p-4"
+            style={{
+              borderColor: theme.modal.imagePaneBorder,
+              background: theme.modal.imagePaneBackground,
+            }}
+          >
             <button className="mb-2 text-sm text-stone-500" onClick={onClose} type="button">
               Закрити
             </button>
-            <div className="flex h-full items-center justify-center overflow-hidden rounded-2xl border border-stone-200 bg-white p-2 sm:p-3">
+            <div
+              className="relative flex h-full items-center justify-center overflow-hidden rounded-2xl border p-2 sm:p-3"
+              style={{
+                borderColor: theme.modal.imageCanvasBorder,
+                background: theme.modal.imageCanvasBackground,
+                boxShadow: theme.modal.imageCanvasShadow,
+              }}
+            >
               <div className="relative h-full w-full max-h-[42vh] aspect-[4/5] sm:max-h-[78vh]">
                 <img
-                  ref={imageRef}
-                  src={getCardImagePath(cellNumber)}
+                  src={imagePath}
                   alt={`Картка ${cellNumber}`}
-                  className="absolute inset-0 h-full w-full object-cover object-top sm:object-contain"
+                  className="absolute inset-0 h-full w-full object-contain"
+                  style={{
+                    opacity: isImageLoaded ? 1 : 0,
+                    transition: `opacity ${DEFAULT_CARD_LOADING_SETTINGS.veilFadeDurationMs}ms ease-out`,
+                    imageRendering: 'crisp-edges',
+                    backgroundColor: theme.modal.imageCanvasBackground,
+                  }}
                   onLoad={handleImageLoaded}
                 />
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background: theme.modal.imageCanvasOverlay,
+                  }}
+                />
+                {!isImageLoaded && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      backdropFilter: 'blur(4px)',
+                      WebkitBackdropFilter: 'blur(4px)',
+                    }}
+                  />
+                )}
               </div>
             </div>
           </section>

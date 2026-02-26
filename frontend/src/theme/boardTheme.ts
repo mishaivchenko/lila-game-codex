@@ -57,6 +57,12 @@ export interface ModalStyle {
   panelBackground: string;
   panelBorder: string;
   viewportMarginPx: number;
+  imagePaneBackground: string;
+  imagePaneBorder: string;
+  imageCanvasBackground: string;
+  imageCanvasBorder: string;
+  imageCanvasShadow: string;
+  imageCanvasOverlay: string;
 }
 
 export interface BoardBackgroundStyle {
@@ -207,6 +213,12 @@ export const DEFAULT_SPIRITUAL_THEME: BoardTheme = {
     panelBackground: '#ffffff',
     panelBorder: '#f5f5f4',
     viewportMarginPx: 12,
+    imagePaneBackground: '#f7f4ef',
+    imagePaneBorder: '#ebe0d3',
+    imageCanvasBackground: '#f9f7f3',
+    imageCanvasBorder: '#e8ddd0',
+    imageCanvasShadow: 'inset 0 1px 3px rgba(95,73,58,0.08)',
+    imageCanvasOverlay: 'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(249,247,243,0) 26%, rgba(249,247,243,0) 74%, rgba(255,255,255,0.35) 100%)',
   },
   typography: {
     bodyVar: '--lila-font-body',
@@ -275,8 +287,14 @@ export const COSMIC_DARK_THEME: BoardTheme = {
   },
   modal: {
     ...DEFAULT_SPIRITUAL_THEME.modal,
-    panelBackground: '#f4f1eb',
-    panelBorder: '#3a3f53',
+    panelBackground: '#ece6db',
+    panelBorder: '#3f485f',
+    imagePaneBackground: '#1f2435',
+    imagePaneBorder: '#49526b',
+    imageCanvasBackground: '#2a3042',
+    imageCanvasBorder: '#55607c',
+    imageCanvasShadow: 'inset 0 1px 4px rgba(6,8,14,0.58), 0 10px 24px rgba(6,8,14,0.28)',
+    imageCanvasOverlay: 'linear-gradient(180deg, rgba(156,171,214,0.12) 0%, rgba(42,48,66,0) 24%, rgba(42,48,66,0) 72%, rgba(18,23,34,0.38) 100%)',
   },
   layout: {
     ...DEFAULT_SPIRITUAL_THEME.layout,

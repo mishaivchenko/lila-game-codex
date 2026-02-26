@@ -21,5 +21,5 @@ export const DEFAULT_MODAL_ANIMATION_SETTINGS: ModalAnimationSettings = {
 export const DEFAULT_CARD_LOADING_SETTINGS: CardLoadingSettings = {
   veilEnabledOnMobile: true,
   extraDelayAfterImageLoadedMs: 50,
-  veilFadeDurationMs: 220,
+  veilFadeDurationMs: 160,
 };

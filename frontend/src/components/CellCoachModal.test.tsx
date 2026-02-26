@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CellCoachModal } from './CellCoachModal';
+import { DEFAULT_CARD_LOADING_SETTINGS } from '../lib/animations/modalSettings';
 
 vi.mock('../content/cardAssets', () => ({
   getCardImagePath: () => '/placeholder-card.svg',
@@ -171,7 +172,7 @@ describe('CellCoachModal image layout', () => {
     expect(screen.queryByTestId('card-loading-veil')).not.toBeNull();
 
     act(() => {
-      vi.advanceTimersByTime(1 + 220);
+      vi.advanceTimersByTime(1 + DEFAULT_CARD_LOADING_SETTINGS.veilFadeDurationMs);
     });
     expect(screen.queryByTestId('card-loading-veil')).toBeNull();
 

@@ -1,4 +1,5 @@
 import { getCardImagePath } from '../content/cardAssets';
+import { useBoardTheme } from '../theme';
 
 interface FinalScreenProps {
   onViewPath: () => void;
@@ -6,11 +7,34 @@ interface FinalScreenProps {
 }
 
 export const FinalScreen = ({ onViewPath, onStartNew }: FinalScreenProps) => {
+  const { theme } = useBoardTheme();
   const newJourneyLabel = 'Нова подорож';
 
   return (
     <div className="space-y-4 rounded-3xl bg-white p-4 shadow-sm">
-      <img src={getCardImagePath(68)} alt="Фінальна клітина" className="h-48 w-full rounded-2xl object-cover" />
+      <div
+        className="relative h-48 w-full overflow-hidden rounded-2xl border"
+        style={{
+          background: theme.modal.imageCanvasBackground,
+          borderColor: theme.modal.imageCanvasBorder,
+          boxShadow: theme.modal.imageCanvasShadow,
+        }}
+      >
+        <img
+          src={getCardImagePath(68)}
+          alt="Фінальна клітина"
+          className="absolute inset-0 h-full w-full object-contain"
+          style={{
+            backgroundColor: theme.modal.imageCanvasBackground,
+            imageRendering: 'crisp-edges',
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{ background: theme.modal.imageCanvasOverlay }}
+        />
+      </div>
       <h2 className="text-xl font-semibold text-stone-900">Подорож завершена</h2>
       <p className="text-sm text-stone-700">
         Ви завершили шлях для цього запиту. Зробіть паузу й інтегруйте побачене.
