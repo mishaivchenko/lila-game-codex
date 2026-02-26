@@ -83,6 +83,10 @@ body {
   color: var(--lila-danger-text) !important;
 }
 
+:root[data-lila-theme] .lila-card-image-canvas {
+  background-color: #ffffff !important;
+}
+
 button,
 input,
 select,
