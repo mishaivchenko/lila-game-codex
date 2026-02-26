@@ -28,10 +28,10 @@ import { useBoardTheme } from '../theme';
 import { GameBoardLayout } from '../ui/layout/GameBoardLayout';
 import { createMovementEngine, DEFAULT_MOVEMENT_SETTINGS, normalizeMovementSettings } from '../engine/movement/MovementEngine';
 import {
-  triggerDiceHaptic,
-  triggerLandingHaptic,
-  triggerModalOpenHaptic,
-  triggerTeleportHaptic,
+  playCardOpen,
+  playDiceRoll,
+  playLadderMove,
+  playSnakeMove,
 } from '../features/telegram/telegramHaptics';
 import type {
   CoachMoveContext,
@@ -148,13 +148,13 @@ export const GamePage = () => {
 
       if (delayMs <= 0) {
         setShowCoach(true);
-        triggerModalOpenHaptic();
+        playCardOpen();
         return;
       }
 
       window.setTimeout(() => {
         setShowCoach(true);
-        triggerModalOpenHaptic();
+        playCardOpen();
       }, delayMs);
     },
     [board.maxCell, movementSettings.modalOpenDelayMs],
@@ -190,7 +190,6 @@ export const GamePage = () => {
         setAnimationMove(undefined);
         setSpecialFlowPhase('entry-card');
         setTurnState('animating');
-        triggerLandingHaptic();
         openCoachCard(
           specialFlow.headCell,
           {
@@ -212,7 +211,6 @@ export const GamePage = () => {
         setAnimationMove(undefined);
         setSpecialFlowPhase('target-card');
         setTurnState('animating');
-        triggerLandingHaptic();
         openCoachCard(
           specialFlow.tailCell,
           pendingMoveContextRef.current,
@@ -227,7 +225,6 @@ export const GamePage = () => {
       pendingSimpleMoveRef.current = undefined;
       setTurnState('idle');
       setAnimationMove(undefined);
-      triggerLandingHaptic();
       openCoachCard(
         pending.toCell,
         pendingMoveContextRef.current,
@@ -253,7 +250,6 @@ export const GamePage = () => {
     }
 
     setTurnState('idle');
-    triggerLandingHaptic();
     openCoachCard(
       pendingMoveContextRef.current?.toCell ?? safeCurrentCell,
       pendingMoveContextRef.current,
@@ -544,7 +540,7 @@ export const GamePage = () => {
     setPendingDiceRoll(rollDiceByMode(effectiveDiceMode));
     setTurnState('rolling');
     setDiceRollToken((prev) => prev + 1);
-    triggerDiceHaptic();
+    playDiceRoll();
   };
 
   const closeCoachModal = useCallback(() => {
@@ -555,7 +551,11 @@ export const GamePage = () => {
       setModalMoveContext(undefined);
       setSpecialFlowPhase('special-animation');
       setTurnState('animating');
-      triggerTeleportHaptic();
+      if (specialFlow.type === 'snake') {
+        playSnakeMove();
+      } else {
+        playLadderMove();
+      }
       setAnimationMove({
         id: specialMoveId,
         fromCell: specialFlow.headCell,

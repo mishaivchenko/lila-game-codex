@@ -1,15 +1,27 @@
 import { getTelegramWebApp } from './telegramWebApp';
 
-type HapticIntent = 'dice' | 'landing' | 'teleport' | 'modal-open';
+type HapticIntent = 'dice-roll' | 'ladder-move' | 'snake-move' | 'modal-open';
+type HapticStep =
+  | { kind: 'impact'; style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'; atMs: number }
+  | { kind: 'notification'; style: 'error' | 'success' | 'warning'; atMs: number }
+  | { kind: 'selection'; atMs: number };
 
 const intentCooldownMs: Record<HapticIntent, number> = {
-  dice: 120,
-  landing: 180,
-  teleport: 200,
+  'dice-roll': 650,
+  'ladder-move': 700,
+  'snake-move': 700,
   'modal-open': 180,
 };
 
 const lastIntentTimestamp: Partial<Record<HapticIntent, number>> = {};
+
+const canUseMobileHaptics = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return window.matchMedia?.('(pointer: coarse)').matches ?? false;
+};
 
 const canTrigger = (intent: HapticIntent): boolean => {
   const now = Date.now();
@@ -21,43 +33,60 @@ const canTrigger = (intent: HapticIntent): boolean => {
   return true;
 };
 
-const fallbackVibrate = (pattern: number | number[]): void => {
-  if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') {
-    return;
-  }
-  navigator.vibrate(pattern);
-};
-
-const withHaptics = (intent: HapticIntent, cb: () => void, fallbackPattern: number | number[]): void => {
+const runPattern = (intent: HapticIntent, pattern: HapticStep[]): void => {
   if (!canTrigger(intent)) {
     return;
   }
-  const feedback = getTelegramWebApp()?.HapticFeedback;
-  if (!feedback) {
-    fallbackVibrate(fallbackPattern);
+  if (!canUseMobileHaptics()) {
     return;
   }
-  try {
-    cb();
-  } catch {
-    fallbackVibrate(fallbackPattern);
+  const haptics = getTelegramWebApp()?.HapticFeedback;
+  if (!haptics) {
+    return;
   }
+
+  pattern.forEach((step) => {
+    window.setTimeout(() => {
+      if (step.kind === 'impact') {
+        haptics.impactOccurred(step.style);
+        return;
+      }
+      if (step.kind === 'notification') {
+        haptics.notificationOccurred(step.style);
+        return;
+      }
+      haptics.selectionChanged();
+    }, step.atMs);
+  });
 };
 
-export const triggerDiceHaptic = (): void => {
-  withHaptics('dice', () => getTelegramWebApp()?.HapticFeedback?.impactOccurred('medium'), 10);
+export const playDiceRoll = (): void => {
+  runPattern('dice-roll', [
+    { kind: 'impact', style: 'soft', atMs: 0 },
+    { kind: 'impact', style: 'light', atMs: 130 },
+    { kind: 'impact', style: 'medium', atMs: 270 },
+    { kind: 'impact', style: 'soft', atMs: 420 },
+  ]);
 };
 
-export const triggerLandingHaptic = (): void => {
-  withHaptics('landing', () => getTelegramWebApp()?.HapticFeedback?.impactOccurred('light'), 8);
+export const playLadderMove = (): void => {
+  runPattern('ladder-move', [
+    { kind: 'impact', style: 'soft', atMs: 0 },
+    { kind: 'impact', style: 'light', atMs: 140 },
+    { kind: 'impact', style: 'medium', atMs: 290 },
+  ]);
 };
 
-export const triggerTeleportHaptic = (): void => {
-  withHaptics('teleport', () => getTelegramWebApp()?.HapticFeedback?.notificationOccurred('warning'), [10, 18, 12]);
+export const playSnakeMove = (): void => {
+  runPattern('snake-move', [
+    { kind: 'impact', style: 'heavy', atMs: 0 },
+    { kind: 'impact', style: 'medium', atMs: 150 },
+    { kind: 'impact', style: 'light', atMs: 320 },
+  ]);
 };
 
-export const triggerModalOpenHaptic = (): void => {
-  withHaptics('modal-open', () => getTelegramWebApp()?.HapticFeedback?.selectionChanged(), 6);
+export const playCardOpen = (): void => {
+  runPattern('modal-open', [{ kind: 'selection', atMs: 0 }]);
 };
 
 export const resetTelegramHapticsForTests = (): void => {
