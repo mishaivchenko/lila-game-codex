@@ -1,11 +1,47 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@font-face {
+  font-family: 'Gotham';
+  src:
+    url('/fonts/Gotham-Light.woff2') format('woff2'),
+    url('/fonts/Gotham-Light.woff') format('woff'),
+    url('/fonts/Gotham-Light.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gotham';
+  src:
+    url('/fonts/Gotham-Book.woff2') format('woff2'),
+    url('/fonts/Gotham-Book.woff') format('woff'),
+    url('/fonts/Gotham-Book.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gotham';
+  src:
+    url('/fonts/Gotham-Black.woff2') format('woff2'),
+    url('/fonts/Gotham-Black.woff') format('woff'),
+    url('/fonts/Gotham-Black.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}
 
 :root {
-  --lila-font-body: 'Inter', 'Noto Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --lila-font-heading: 'Inter', 'Noto Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --lila-font-ui: 'Inter', 'Noto Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --lila-font-size-body: 15px;
-  --lila-line-height-body: 1.58;
-  --lila-line-height-heading: 1.24;
-  --lila-letter-spacing-heading: 0.005em;
+  --font-primary: 'Gotham', 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --font-heading: 'Gotham', 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --font-accent: 'Gotham', 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, sans-serif;
+
+  --lila-font-body: var(--font-primary);
+  --lila-font-heading: var(--font-heading);
+  --lila-font-ui: var(--font-accent);
+
+  --lila-font-size-body: 15.5px;
+  --lila-line-height-body: 1.62;
+  --lila-line-height-heading: 1.28;
+  --lila-letter-spacing-heading: 0.01em;
 }
