@@ -5,6 +5,23 @@ import type { TelegramAuthContextValue } from '../auth/TelegramAuthContext';
 import { getTelegramInitData, isLocalDevHost, shouldBypassTelegramAuthForLocalDev } from '../telegramWebApp';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const AUTH_TOKEN_STORAGE_KEY = 'lila:tma-auth-token';
+const persistAuthToken = (token: string | undefined) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  if (!token) {
+    window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    return;
+  }
+  window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+};
+const readPersistedAuthToken = (): string | undefined => {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+  return window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY) ?? undefined;
+};
 
 const resolveTelegramInitData = async (): Promise<string> => {
   const maxAttempts = 12;
@@ -100,7 +117,8 @@ export const useTelegramAuthBootstrap = ({
           token: result.token,
           user: currentUser,
         });
-      } catch {
+        persistAuthToken(result.token);
+      } catch (error) {
         if (cancelled) {
           return;
         }
@@ -110,10 +128,32 @@ export const useTelegramAuthBootstrap = ({
           return;
         }
 
+        const persistedToken = readPersistedAuthToken();
+        if (persistedToken) {
+          try {
+            const currentUser = await fetchCurrentUser(persistedToken);
+            if (cancelled) {
+              return;
+            }
+            setAuthState({
+              isTelegramMode: true,
+              status: 'authenticated',
+              token: persistedToken,
+              user: currentUser,
+            });
+            return;
+          } catch {
+            persistAuthToken(undefined);
+          }
+        }
+
         setAuthState({
           isTelegramMode: true,
           status: 'error',
-          error: 'Telegram-авторизація не пройшла перевірку. Спробуйте відкрити Mini App повторно.',
+          error:
+            error instanceof Error && error.message
+              ? error.message
+              : 'Telegram-авторизація не пройшла перевірку. Якщо проблема повторюється, перевірте bot token, DATABASE_URL та актуальність міграцій на VPS.',
         });
       }
     })();

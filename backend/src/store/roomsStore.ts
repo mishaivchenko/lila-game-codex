@@ -5,6 +5,7 @@ import type {
   GameRoom,
   RoomBoardType,
   RoomConnectionStatus,
+  RoomDiceMode,
   RoomGameState,
   RoomPlayer,
   RoomPlayerState,
@@ -16,6 +17,7 @@ const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ROOM_CODE_LENGTH = 6;
 const MAX_ROOM_PLAYERS = 6;
 const TOKEN_COLORS = ['#1f2937', '#c57b5d', '#2cbfaf', '#8b5cf6', '#ef4444', '#f59e0b'];
+const EMOJI_FALLBACKS = ['🦊', '🦉', '🐬', '🦁', '🐙', '🦄', '🐢', '🪷'];
 
 const SHORT_TRANSITIONS = {
   snakes: new Map<number, number>([[11, 3], [15, 8], [18, 5], [27, 13], [33, 20]]),
@@ -63,6 +65,9 @@ interface RoomGameStateRow {
   current_turn_player_id: string;
   per_player_state_json: Record<string, RoomPlayerState>;
   move_history_json: RoomGameState['moveHistory'];
+  active_card_json?: RoomGameState['activeCard'];
+  notes_json?: RoomGameState['notes'];
+  settings_json?: RoomGameState['settings'];
   updated_at: string;
 }
 
@@ -102,6 +107,16 @@ const mapRoom = (roomRow: HostRoomRow, playerRows: RoomPlayerRow[], stateRow: Ro
     currentTurnPlayerId: stateRow.current_turn_player_id,
     perPlayerState: stateRow.per_player_state_json,
     moveHistory: stateRow.move_history_json,
+    activeCard: stateRow.active_card_json ?? null,
+    notes: stateRow.notes_json ?? {
+      hostByCell: {},
+      playerByUserId: {},
+    },
+    settings: stateRow.settings_json ?? {
+      diceMode: 'classic',
+      allowHostCloseAnyCard: true,
+      hostCanPause: true,
+    },
   },
 });
 
@@ -133,7 +148,23 @@ const resolveDisplayName = (fallbackUserId: string, displayName?: string): strin
   if (displayName?.trim()) {
     return displayName.trim();
   }
-  return `Player ${fallbackUserId.slice(0, 4).toUpperCase()}`;
+  const emoji = EMOJI_FALLBACKS[fallbackUserId.length % EMOJI_FALLBACKS.length];
+  return `${emoji} Player`;
+};
+
+const getInitialRoomSettings = (): RoomGameState['settings'] => ({
+  diceMode: 'classic',
+  allowHostCloseAnyCard: true,
+  hostCanPause: true,
+});
+
+const rollDiceByMode = (mode: RoomDiceMode): { values: number[]; total: number } => {
+  const count = mode === 'triple' ? 3 : mode === 'fast' ? 2 : 1;
+  const values = Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
+  return {
+    values,
+    total: values.reduce((sum, value) => sum + value, 0),
+  };
 };
 
 const ensureRoom = (roomId: string): GameRoom => {
@@ -240,6 +271,9 @@ const persistRoomGameStateDb = async (client: DbClient, room: GameRoom): Promise
       SET current_turn_player_id = $2,
           per_player_state_json = $3::jsonb,
           move_history_json = $4::jsonb,
+          active_card_json = $5::jsonb,
+          notes_json = $6::jsonb,
+          settings_json = $7::jsonb,
           updated_at = NOW()
       WHERE room_id = $1`,
     [
@@ -247,6 +281,9 @@ const persistRoomGameStateDb = async (client: DbClient, room: GameRoom): Promise
       room.gameState.currentTurnPlayerId,
       JSON.stringify(room.gameState.perPlayerState),
       JSON.stringify(room.gameState.moveHistory),
+      JSON.stringify(room.gameState.activeCard),
+      JSON.stringify(room.gameState.notes),
+      JSON.stringify(room.gameState.settings),
     ],
   );
 };
@@ -293,6 +330,12 @@ const createHostRoomInMemory = ({
       currentTurnPlayerId: hostUserId,
       perPlayerState: { [hostUserId]: hostState },
       moveHistory: [],
+      activeCard: null,
+      notes: {
+        hostByCell: {},
+        playerByUserId: {},
+      },
+      settings: getInitialRoomSettings(),
     },
   };
   return storeInMemory(room);
@@ -341,6 +384,12 @@ export const createHostRoom = async ({
         },
       },
       moveHistory: [],
+      activeCard: null,
+      notes: {
+        hostByCell: {},
+        playerByUserId: {},
+      },
+      settings: getInitialRoomSettings(),
     };
 
     await client.query(
@@ -354,9 +403,27 @@ export const createHostRoom = async ({
       [hostPlayerId, roomId, hostUserId, hostDisplay, 'host', TOKEN_COLORS[0], now, 'online'],
     );
     await client.query(
-      `INSERT INTO room_game_states (room_id, current_turn_player_id, per_player_state_json, move_history_json, updated_at)
-       VALUES ($1, $2, $3::jsonb, $4::jsonb, $5::timestamptz)`,
-      [roomId, hostUserId, JSON.stringify(gameState.perPlayerState), JSON.stringify([]), now],
+      `INSERT INTO room_game_states (
+         room_id,
+         current_turn_player_id,
+         per_player_state_json,
+         move_history_json,
+         active_card_json,
+         notes_json,
+         settings_json,
+         updated_at
+       )
+       VALUES ($1, $2, $3::jsonb, $4::jsonb, $5::jsonb, $6::jsonb, $7::jsonb, $8::timestamptz)`,
+      [
+        roomId,
+        hostUserId,
+        JSON.stringify(gameState.perPlayerState),
+        JSON.stringify([]),
+        JSON.stringify(null),
+        JSON.stringify(gameState.notes),
+        JSON.stringify(gameState.settings),
+        now,
+      ],
     );
     const created = await queryRoomByIdDb(client, roomId);
     if (!created) {
@@ -418,6 +485,7 @@ export const joinRoom = async ({ roomId, userId, displayName }: { roomId: string
     };
     room.players.push(player);
     room.gameState.perPlayerState[userId] = { userId, currentCell: 1, status: 'in_progress', notesCount: 0 };
+    room.gameState.notes.playerByUserId[userId] ??= {};
     if (!room.gameState.currentTurnPlayerId) {
       room.gameState.currentTurnPlayerId = userId;
     }
@@ -460,6 +528,7 @@ export const joinRoom = async ({ roomId, userId, displayName }: { roomId: string
       ],
     );
     room.gameState.perPlayerState[userId] = { userId, currentCell: 1, status: 'in_progress', notesCount: 0 };
+    room.gameState.notes.playerByUserId[userId] ??= {};
     if (!room.gameState.currentTurnPlayerId) {
       room.gameState.currentTurnPlayerId = userId;
     }
@@ -557,13 +626,34 @@ export const setRoomStatus = async (roomId: string, hostUserId: string, status: 
   });
 };
 
-export const recordRoomNote = async ({ roomId, userId }: { roomId: string; userId: string }): Promise<RoomSnapshot> => {
+export const recordRoomNote = async ({
+  roomId,
+  userId,
+  cellNumber,
+  note,
+  scope,
+}: {
+  roomId: string;
+  userId: string;
+  cellNumber: number;
+  note: string;
+  scope: 'host' | 'player';
+}): Promise<RoomSnapshot> => {
   if (!isPostgresEnabled()) {
     const room = ensureRoom(roomId);
-    ensurePlayerInRoom(room, userId);
-    const playerState = room.gameState.perPlayerState[userId];
-    if (playerState) {
-      playerState.notesCount += 1;
+    const player = ensurePlayerInRoom(room, userId);
+    if (scope === 'host' && player.role !== 'host') {
+      throw new Error('FORBIDDEN');
+    }
+    if (scope === 'host') {
+      room.gameState.notes.hostByCell[String(cellNumber)] = note;
+    } else {
+      room.gameState.notes.playerByUserId[userId] ??= {};
+      room.gameState.notes.playerByUserId[userId][String(cellNumber)] = note;
+      const playerState = room.gameState.perPlayerState[userId];
+      if (playerState) {
+        playerState.notesCount += 1;
+      }
     }
     touchRoom(room);
     return toSnapshot(room);
@@ -573,12 +663,133 @@ export const recordRoomNote = async ({ roomId, userId }: { roomId: string; userI
     if (!room) {
       throw new Error('ROOM_NOT_FOUND');
     }
-    ensurePlayerInRoom(room, userId);
-    const playerState = room.gameState.perPlayerState[userId];
-    if (playerState) {
-      playerState.notesCount += 1;
+    const player = ensurePlayerInRoom(room, userId);
+    if (scope === 'host' && player.role !== 'host') {
+      throw new Error('FORBIDDEN');
+    }
+    if (scope === 'host') {
+      room.gameState.notes.hostByCell[String(cellNumber)] = note;
+    } else {
+      room.gameState.notes.playerByUserId[userId] ??= {};
+      room.gameState.notes.playerByUserId[userId][String(cellNumber)] = note;
+      const playerState = room.gameState.perPlayerState[userId];
+      if (playerState) {
+        playerState.notesCount += 1;
+      }
     }
     await persistRoomGameStateDb(client, room);
+    const updated = await queryRoomByIdDb(client, roomId);
+    if (!updated) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    return storeInMemory(updated);
+  });
+};
+
+export const closeRoomCard = async ({
+  roomId,
+  userId,
+}: {
+  roomId: string;
+  userId: string;
+}): Promise<RoomSnapshot> => {
+  const closeInRoom = (room: GameRoom): RoomSnapshot => {
+    const player = ensurePlayerInRoom(room, userId);
+    if (!room.gameState.activeCard) {
+      return toSnapshot(room);
+    }
+    if (player.role !== 'host' && room.gameState.activeCard.playerUserId !== userId) {
+      throw new Error('FORBIDDEN');
+    }
+    room.gameState.activeCard = null;
+    touchRoom(room);
+    return toSnapshot(room);
+  };
+
+  if (!isPostgresEnabled()) {
+    return closeInRoom(ensureRoom(roomId));
+  }
+
+  return withDbTransaction(async (client) => {
+    const room = await queryRoomByIdDb(client, roomId, true);
+    if (!room) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    const snapshot = closeInRoom(room);
+    await persistRoomGameStateDb(client, room);
+    return snapshot;
+  });
+};
+
+export const updateRoomSettings = async ({
+  roomId,
+  hostUserId,
+  patch,
+}: {
+  roomId: string;
+  hostUserId: string;
+  patch: Partial<RoomGameState['settings']>;
+}): Promise<RoomSnapshot> => {
+  const applyPatch = (room: GameRoom): RoomSnapshot => {
+    if (room.hostUserId !== hostUserId) {
+      throw new Error('FORBIDDEN');
+    }
+    room.gameState.settings = {
+      ...room.gameState.settings,
+      ...patch,
+    };
+    touchRoom(room);
+    return toSnapshot(room);
+  };
+  if (!isPostgresEnabled()) {
+    return applyPatch(ensureRoom(roomId));
+  }
+  return withDbTransaction(async (client) => {
+    const room = await queryRoomByIdDb(client, roomId, true);
+    if (!room) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    const snapshot = applyPatch(room);
+    await persistRoomGameStateDb(client, room);
+    return snapshot;
+  });
+};
+
+export const updateRoomPlayerTokenColor = async ({
+  roomId,
+  userId,
+  tokenColor,
+}: {
+  roomId: string;
+  userId: string;
+  tokenColor: string;
+}): Promise<RoomSnapshot> => {
+  const normalizedColor = tokenColor.trim();
+  if (!normalizedColor) {
+    throw new Error('INVALID_TOKEN_COLOR');
+  }
+
+  const applyUpdate = (room: GameRoom): RoomSnapshot => {
+    const player = ensurePlayerInRoom(room, userId);
+    player.tokenColor = normalizedColor;
+    touchRoom(room);
+    return toSnapshot(room);
+  };
+
+  if (!isPostgresEnabled()) {
+    return applyUpdate(ensureRoom(roomId));
+  }
+
+  return withDbTransaction(async (client) => {
+    const room = await queryRoomByIdDb(client, roomId, true);
+    if (!room) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    ensurePlayerInRoom(room, userId);
+    await client.query(
+      'UPDATE room_players SET token_color = $3 WHERE room_id = $1 AND user_id = $2',
+      [roomId, userId, normalizedColor],
+    );
     const updated = await queryRoomByIdDb(client, roomId);
     if (!updated) {
       throw new Error('ROOM_NOT_FOUND');
@@ -595,7 +806,7 @@ export const rollDiceForCurrentPlayer = async ({
   userId: string;
 }): Promise<{
   snapshot: RoomSnapshot;
-  move: { userId: string; fromCell: number; toCell: number; dice: number; snakeOrArrow: 'snake' | 'arrow' | null; nextTurnPlayerId: string };
+  move: { userId: string; fromCell: number; toCell: number; dice: number; diceValues: number[]; snakeOrArrow: 'snake' | 'arrow' | null; nextTurnPlayerId: string };
 }> => {
   const executeMove = (room: GameRoom) => {
     if (room.status !== 'in_progress') {
@@ -609,7 +820,7 @@ export const rollDiceForCurrentPlayer = async ({
     if (!playerState || playerState.status === 'finished') {
       throw new Error('PLAYER_ALREADY_FINISHED');
     }
-    const dice = Math.floor(Math.random() * 6) + 1;
+    const { values: diceValues, total: dice } = rollDiceByMode(room.gameState.settings.diceMode);
     const { fromCell, toCell, snakeOrArrow } = nextMoveFromDice(room.boardType, playerState.currentCell, dice);
     playerState.currentCell = toCell;
     if (toCell >= transitionsByBoard[room.boardType].maxCell) {
@@ -617,9 +828,14 @@ export const rollDiceForCurrentPlayer = async ({
     }
     const nextTurnPlayerId = findNextTurnPlayerId(room, userId);
     room.gameState.currentTurnPlayerId = nextTurnPlayerId;
-    room.gameState.moveHistory.push({ userId, fromCell, toCell, dice, snakeOrArrow, timestamp: new Date().toISOString() });
+    room.gameState.moveHistory.push({ userId, fromCell, toCell, dice, diceValues, snakeOrArrow, timestamp: new Date().toISOString() });
+    room.gameState.activeCard = {
+      cellNumber: toCell,
+      playerUserId: userId,
+      openedAt: new Date().toISOString(),
+    };
     touchRoom(room);
-    return { room, move: { userId, fromCell, toCell, dice, snakeOrArrow, nextTurnPlayerId } };
+    return { room, move: { userId, fromCell, toCell, dice, diceValues, snakeOrArrow, nextTurnPlayerId } };
   };
 
   if (!isPostgresEnabled()) {

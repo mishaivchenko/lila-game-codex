@@ -3,6 +3,9 @@ import crypto from 'node:crypto';
 interface TokenPayload {
   sub: string;
   exp: number;
+  chatInstance?: string;
+  chatType?: string;
+  startParam?: string;
 }
 
 const base64Url = (input: Buffer | string): string => {
@@ -13,10 +16,17 @@ const fromBase64Url = (input: string): Buffer => Buffer.from(input, 'base64url')
 
 const getSecret = (): string => process.env.APP_AUTH_SECRET ?? 'local-dev-secret-change-me';
 
-export const createAppToken = (userId: string, ttlSeconds = 60 * 60 * 12): string => {
+export const createAppToken = (
+  userId: string,
+  ttlSeconds = 60 * 60 * 12,
+  scope?: { chatInstance?: string; chatType?: string; startParam?: string },
+): string => {
   const payload: TokenPayload = {
     sub: userId,
     exp: Math.floor(Date.now() / 1000) + ttlSeconds,
+    chatInstance: scope?.chatInstance,
+    chatType: scope?.chatType,
+    startParam: scope?.startParam,
   };
   const encodedPayload = base64Url(JSON.stringify(payload));
   const signature = crypto.createHmac('sha256', getSecret()).update(encodedPayload).digest('base64url');

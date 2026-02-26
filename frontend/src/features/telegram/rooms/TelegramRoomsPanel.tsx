@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTelegramAuth } from '../auth/TelegramAuthContext';
 import { useTelegramRooms } from './TelegramRoomsContext';
@@ -10,8 +10,8 @@ export const TelegramRoomsPanel = () => {
   const { currentRoom, isLoading, error, createRoom, joinRoomByCode, connectionState } = useTelegramRooms();
   const [roomCodeInput, setRoomCodeInput] = useState('');
   const [selectedFlow, setSelectedFlow] = useState<'host' | 'player'>('player');
-  const [adminUnlocked, setAdminUnlocked] = useState(Boolean(user?.isAdmin));
-  const canHost = adminUnlocked || user?.isSuperAdmin;
+  const [adminUnlocked, setAdminUnlocked] = useState(Boolean(user?.canHostCurrentChat));
+  const canHost = adminUnlocked || user?.canHostCurrentChat || user?.isSuperAdmin;
   const flowOptions = useMemo(
     () => [
       { id: 'player' as const, label: 'Я гравець', caption: 'Приєднатися до вже створеної кімнати та кидати власний кубик.' },
@@ -23,6 +23,10 @@ export const TelegramRoomsPanel = () => {
   if (!isTelegramMode) {
     return null;
   }
+
+  useEffect(() => {
+    setAdminUnlocked(Boolean(user?.canHostCurrentChat));
+  }, [user?.canHostCurrentChat]);
 
   const submitJoin = (event: FormEvent) => {
     event.preventDefault();
@@ -98,7 +102,7 @@ export const TelegramRoomsPanel = () => {
             <div className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] p-4">
               <p className="text-sm font-semibold text-[var(--lila-text-primary)]">Host mode locked</p>
               <p className="mt-1 text-xs text-[var(--lila-text-muted)]">
-                Доступ до ролі ведучого відкривається після оплати 100 Telegram coins.
+                Доступ до ролі ведучого відкривається після оплати 100 Telegram coins для поточного чату.
               </p>
               <button
                 type="button"
