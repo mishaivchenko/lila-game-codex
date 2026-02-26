@@ -6,7 +6,7 @@ import { Dice3D } from '../components/dice3d/Dice3D';
 import { AnimationSettingsModal } from '../components/AnimationSettingsModal';
 import { CellCoachModal } from '../components/CellCoachModal';
 import { FinalScreen } from '../components/FinalScreen';
-import { computeNextPosition } from '../domain/gameEngine';
+import { computeNextPosition, resolveEffectiveDiceMode, rollDiceByMode, type DiceRollResult } from '../domain/gameEngine';
 import type { ChakraInfo, GameMove } from '../domain/types';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -27,7 +27,6 @@ import { useSimpleMultiplayer } from './game/useSimpleMultiplayer';
 import { useBoardTheme } from '../theme';
 import { GameBoardLayout } from '../ui/layout/GameBoardLayout';
 import { createMovementEngine, DEFAULT_MOVEMENT_SETTINGS, normalizeMovementSettings } from '../engine/movement/MovementEngine';
-import { rollDiceByMode, type DiceRollResult } from '../domain/gameEngine';
 import type {
   CoachMoveContext,
   PendingSimpleMove,
@@ -304,6 +303,7 @@ export const GamePage = () => {
         activeSimplePlayer.currentCell,
         diceValue,
         board,
+        currentSession.settings.diceMode,
         activeSimplePlayer.hasEnteredGame,
       );
       const moveId = `simple-${activeSimplePlayer.id}-${Date.now()}`;
@@ -524,7 +524,12 @@ export const GamePage = () => {
       return;
     }
     setShowCoach(false);
-    setPendingDiceRoll(rollDiceByMode(currentSession.settings.diceMode));
+    const effectiveDiceMode = resolveEffectiveDiceMode(
+      currentSession.settings.diceMode,
+      safeCurrentCell,
+      board,
+    );
+    setPendingDiceRoll(rollDiceByMode(effectiveDiceMode));
     setTurnState('rolling');
     setDiceRollToken((prev) => prev + 1);
   };
