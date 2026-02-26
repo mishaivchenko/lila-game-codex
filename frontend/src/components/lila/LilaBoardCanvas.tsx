@@ -116,9 +116,9 @@ export const LilaBoardCanvas = ({
         viewportWidth: viewportSize.width,
         viewportHeight: viewportSize.height,
         devicePixelRatio: typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1,
-        zoom: cameraState.zoom,
+        zoom: Math.max(cameraState.zoom, cameraState.targetZoom),
       }),
-    [boardProfile.imageAssets, cameraState.zoom, viewportSize.height, viewportSize.width],
+    [boardProfile.imageAssets, cameraState.targetZoom, cameraState.zoom, viewportSize.height, viewportSize.width],
   );
   const specialTransitions = useMemo(() => {
     const board = BOARD_DEFINITIONS[boardType];

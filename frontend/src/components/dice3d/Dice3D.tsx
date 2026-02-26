@@ -24,6 +24,7 @@ interface DiceSceneProps {
   targetValue: number;
   rolling: boolean;
   offsetX: number;
+  offsetZ: number;
   tiltOffset: number;
 }
 
@@ -45,7 +46,24 @@ const PIP_LAYOUTS: Record<number, Array<[number, number]>> = {
   6: [[-0.16, -0.18], [0.16, -0.18], [-0.16, 0], [0.16, 0], [-0.16, 0.18], [0.16, 0.18]],
 };
 
-const DiceBody = ({ targetValue, rolling, offsetX, tiltOffset }: DiceSceneProps) => {
+const layoutByCount = (count: number): Array<{ x: number; z: number; tilt: number }> => {
+  if (count === 1) {
+    return [{ x: 0, z: 0, tilt: 0 }];
+  }
+  if (count === 2) {
+    return [
+      { x: -0.62, z: 0.12, tilt: -0.05 },
+      { x: 0.56, z: -0.16, tilt: 0.05 },
+    ];
+  }
+  return [
+    { x: -0.74, z: 0.18, tilt: -0.07 },
+    { x: 0.04, z: -0.1, tilt: 0.02 },
+    { x: 0.78, z: 0.14, tilt: 0.08 },
+  ];
+};
+
+const DiceBody = ({ targetValue, rolling, offsetX, offsetZ, tiltOffset }: DiceSceneProps) => {
   const groupRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Group>(null);
   const startTimeRef = useRef(0);
@@ -79,13 +97,13 @@ const DiceBody = ({ targetValue, rolling, offsetX, tiltOffset }: DiceSceneProps)
       Math.random() * Math.PI,
     ];
 
-    group.position.set(offsetX, 2.8, 0);
+    group.position.set(offsetX, 2.8, offsetZ);
     group.rotation.set(
       initialRotationRef.current[0],
       initialRotationRef.current[1],
       initialRotationRef.current[2],
     );
-  }, [rolling, targetValue]);
+  }, [offsetX, offsetZ, rolling, targetValue]);
 
   useFrame((_state, delta) => {
     if (!groupRef.current || !rolling) {
@@ -179,6 +197,15 @@ export const Dice3D = ({ rollToken, diceValues, onResult, onFinished, className 
   const latestTokenRef = useRef(0);
   const onResultRef = useRef(onResult);
   const onFinishedRef = useRef(onFinished);
+  const spreadJitter = useMemo(
+    () =>
+      targetValues.map(() => ({
+        x: (Math.random() - 0.5) * 0.12,
+        z: (Math.random() - 0.5) * 0.12,
+        tilt: (Math.random() - 0.5) * 0.04,
+      })),
+    [rollToken, targetValues],
+  );
 
   useEffect(() => {
     onResultRef.current = onResult;
@@ -246,15 +273,16 @@ export const Dice3D = ({ rollToken, diceValues, onResult, onFinished, className 
           />
           {targetValues.map((value, index) => {
             const count = targetValues.length;
-            const offsetX = count === 1 ? 0 : count === 2 ? (index === 0 ? -0.72 : 0.72) : index === 0 ? -0.95 : index === 1 ? 0 : 0.95;
-            const tiltOffset = count === 1 ? 0 : (index - (count - 1) / 2) * 0.06;
+            const baseLayout = layoutByCount(count)[index] ?? { x: 0, z: 0, tilt: 0 };
+            const jitter = spreadJitter[index] ?? { x: 0, z: 0, tilt: 0 };
             return (
               <DiceBody
                 key={`die-${index}-${value}-${rollToken}`}
                 targetValue={value}
                 rolling={rolling}
-                offsetX={offsetX}
-                tiltOffset={tiltOffset}
+                offsetX={baseLayout.x + jitter.x}
+                offsetZ={baseLayout.z + jitter.z}
+                tiltOffset={baseLayout.tilt + jitter.tilt}
               />
             );
           })}
