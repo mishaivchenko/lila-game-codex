@@ -1,10 +1,10 @@
 import type {
   BoardType,
+  DiceMode,
   DepthSetting,
   GameMove,
   GameRequest,
   GameSession,
-  SpeedSetting,
 } from '../domain/types';
 
 export interface GameState {
@@ -25,7 +25,7 @@ export interface GameContextValue extends GameState {
   startNewSession: (
     boardType: BoardType,
     request: GameRequest,
-    settings: { speed: SpeedSetting; depth: DepthSetting },
+    settings: { diceMode: DiceMode; depth: DepthSetting },
   ) => Promise<void>;
   resumeLastSession: () => Promise<void>;
   performMove: (forcedDice?: number) => Promise<GameMove | undefined>;

@@ -1,8 +1,25 @@
-import type { BoardDefinition, ComputedMove } from './types';
+import type { BoardDefinition, ComputedMove, DiceMode } from './types';
 
 export const rollDice = (rng: () => number = Math.random): number => {
   const value = Math.floor(rng() * 6) + 1;
   return Math.max(1, Math.min(6, value));
+};
+
+export interface DiceRollResult {
+  dice: number[];
+  total: number;
+}
+
+export const rollDiceByMode = (
+  diceMode: DiceMode,
+  rng: () => number = Math.random,
+): DiceRollResult => {
+  const count = diceMode === 'fast' ? 2 : diceMode === 'triple' ? 3 : 1;
+  const dice = Array.from({ length: count }, () => rollDice(rng));
+  return {
+    dice,
+    total: dice.reduce((sum, value) => sum + value, 0),
+  };
 };
 
 const applyBounce = (fromCell: number, dice: number, maxCell: number): number => {

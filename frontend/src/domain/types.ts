@@ -1,6 +1,5 @@
 export type BoardType = 'short' | 'full';
-
-export type SpeedSetting = 'slow' | 'normal' | 'fast';
+export type DiceMode = 'classic' | 'fast' | 'triple';
 export type DepthSetting = 'light' | 'standard' | 'deep';
 
 export interface CellContent {
@@ -35,7 +34,7 @@ export interface GameSession {
   boardType: BoardType;
   currentCell: number;
   settings: {
-    speed: SpeedSetting;
+    diceMode: DiceMode;
     depth: DepthSetting;
   };
   request: GameRequest;
@@ -70,11 +69,10 @@ export interface SettingsEntity {
   id: 'global';
   soundEnabled: boolean;
   musicEnabled: boolean;
-  defaultSpeed: SpeedSetting;
+  defaultDiceMode: DiceMode;
   defaultDepth: DepthSetting;
   selectedThemeId: string;
   tokenColorId?: string;
-  animationSpeed?: SpeedSetting;
   snakeStyleId?: 'flow' | 'ribbon' | 'sigil';
   snakeColorId?: 'amber-violet' | 'teal-indigo' | 'rose-gold' | 'obsidian-cyan';
   stairsStyleId?: 'steps' | 'beam' | 'arc';

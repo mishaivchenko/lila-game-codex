@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BOARD_DEFINITIONS } from '../content/boards';
-import { computeNextPosition, rollDice } from './gameEngine';
+import { computeNextPosition, rollDice, rollDiceByMode } from './gameEngine';
 
 describe('gameEngine', () => {
   it('moves according to dice value from the first roll', () => {
@@ -31,5 +31,26 @@ describe('gameEngine', () => {
   it('rollDice returns deterministic value with rng', () => {
     expect(rollDice(() => 0)).toBe(1);
     expect(rollDice(() => 0.99)).toBe(6);
+  });
+
+  it('rollDiceByMode rolls 1 die for classic', () => {
+    const rolled = rollDiceByMode('classic', () => 0.4);
+    expect(rolled.dice).toHaveLength(1);
+    expect(rolled.total).toBeGreaterThanOrEqual(1);
+    expect(rolled.total).toBeLessThanOrEqual(6);
+  });
+
+  it('rollDiceByMode rolls 2 dice for fast', () => {
+    const rolled = rollDiceByMode('fast', () => 0.5);
+    expect(rolled.dice).toHaveLength(2);
+    expect(rolled.total).toBeGreaterThanOrEqual(2);
+    expect(rolled.total).toBeLessThanOrEqual(12);
+  });
+
+  it('rollDiceByMode rolls 3 dice for triple', () => {
+    const rolled = rollDiceByMode('triple', () => 0.5);
+    expect(rolled.dice).toHaveLength(3);
+    expect(rolled.total).toBeGreaterThanOrEqual(3);
+    expect(rolled.total).toBeLessThanOrEqual(18);
   });
 });

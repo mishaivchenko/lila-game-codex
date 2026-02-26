@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { logEvent } from '../api/eventsApi';
 import { BOARD_DEFINITIONS } from '../content/boards';
-import { computeNextPosition, rollDice } from '../domain/gameEngine';
+import { computeNextPosition, rollDiceByMode } from '../domain/gameEngine';
 import type { CellInsight, GameMove, GameSession } from '../domain/types';
 import type { RepositoryContainer } from '../repositories';
 import { normalizeSession } from './gameContextReducer';
@@ -94,7 +94,12 @@ export const useGameContextActions = ({
         dispatch({ type: 'SET_ERROR', payload: 'Сесію завершено. Почніть нову подорож.' });
         return undefined;
       }
-      const dice = typeof forcedDice === 'number' ? Math.min(6, Math.max(1, Math.round(forcedDice))) : rollDice(diceRng);
+      const diceMode = normalizedSession.settings.diceMode;
+      const minByMode = diceMode === 'classic' ? 1 : diceMode === 'fast' ? 2 : 3;
+      const maxByMode = diceMode === 'classic' ? 6 : diceMode === 'fast' ? 12 : 18;
+      const dice = typeof forcedDice === 'number'
+        ? Math.min(maxByMode, Math.max(minByMode, Math.round(forcedDice)))
+        : rollDiceByMode(diceMode, diceRng).total;
       const board = BOARD_DEFINITIONS[normalizedSession.boardType];
       const deepEntryGate =
         normalizedSession.request.isDeepEntry && !normalizedSession.hasEnteredGame;

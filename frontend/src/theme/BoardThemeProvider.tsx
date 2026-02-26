@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BoardThemeContext } from './BoardThemeContext';
 import { BOARD_THEME_LIST, DEFAULT_SPIRITUAL_THEME, resolveBoardTheme, resolveTokenColor } from './boardTheme';
 import { createRepositories } from '../repositories';
-import type { SettingsEntity, SpeedSetting } from '../domain/types';
+import type { SettingsEntity } from '../domain/types';
 import type { SnakeVariantId, StairsVariantId } from './boardTheme';
 import type { SnakeColorId, StairsColorId } from './pathCustomization';
 import { applyPathCustomization } from './pathCustomization';
@@ -16,7 +16,6 @@ const repositories = createRepositories();
 export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   const [themeId, setThemeIdState] = useState(DEFAULT_SPIRITUAL_THEME.id);
   const [tokenColorId, setTokenColorIdState] = useState<string | undefined>(undefined);
-  const [animationSpeed, setAnimationSpeedState] = useState<SpeedSetting>('normal');
   const [snakeStyleId, setSnakeStyleIdState] = useState<SnakeVariantId>('flow');
   const [snakeColorId, setSnakeColorIdState] = useState<SnakeColorId>('amber-violet');
   const [stairsStyleId, setStairsStyleIdState] = useState<StairsVariantId>('steps');
@@ -38,7 +37,6 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
       }
       setThemeIdState(resolveBoardTheme(settings.selectedThemeId).id);
       setTokenColorIdState(settings.tokenColorId);
-      setAnimationSpeedState(settings.animationSpeed ?? 'normal');
       setSnakeStyleIdState(settings.snakeStyleId ?? 'flow');
       setSnakeColorIdState(settings.snakeColorId ?? 'amber-violet');
       setStairsStyleIdState(settings.stairsStyleId ?? 'steps');
@@ -61,13 +59,6 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
     setTokenColorIdState(nextTokenColorId);
     saveSettingsPatch({
       tokenColorId: nextTokenColorId,
-    });
-  }, [saveSettingsPatch]);
-
-  const setAnimationSpeed = useCallback((nextSpeed: SpeedSetting) => {
-    setAnimationSpeedState(nextSpeed);
-    saveSettingsPatch({
-      animationSpeed: nextSpeed,
     });
   }, [saveSettingsPatch]);
 
@@ -118,22 +109,18 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
       themes: BOARD_THEME_LIST,
       tokenColorId,
       tokenColorValue,
-      animationSpeed,
       snakeStyleId,
       snakeColorId,
       stairsStyleId,
       stairsColorId,
       setThemeId,
       setTokenColorId,
-      setAnimationSpeed,
       setSnakeStyleId,
       setSnakeColorId,
       setStairsStyleId,
       setStairsColorId,
     }),
     [
-      animationSpeed,
-      setAnimationSpeed,
       setThemeId,
       setTokenColorId,
       setSnakeColorId,

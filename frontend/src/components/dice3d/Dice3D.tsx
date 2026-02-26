@@ -8,12 +8,13 @@ import {
   DICE_HOLD_MS,
   DICE_SETTLE_MS,
   getTopFaceRotation,
-  resolveDiceValue,
+  normalizeDiceValues,
+  sumDiceValues,
 } from './diceRoll';
 
 interface Dice3DProps {
   rollToken: number;
-  requestedValue?: number;
+  diceValues?: number[];
   onResult: (value: number) => void;
   onFinished?: () => void;
   className?: string;
@@ -22,6 +23,8 @@ interface Dice3DProps {
 interface DiceSceneProps {
   targetValue: number;
   rolling: boolean;
+  offsetX: number;
+  tiltOffset: number;
 }
 
 const FACE_MAP: Record<number, { position: [number, number, number]; rotation: [number, number, number] }> = {
@@ -42,7 +45,7 @@ const PIP_LAYOUTS: Record<number, Array<[number, number]>> = {
   6: [[-0.16, -0.18], [0.16, -0.18], [-0.16, 0], [0.16, 0], [-0.16, 0.18], [0.16, 0.18]],
 };
 
-const DiceBody = ({ targetValue, rolling }: DiceSceneProps) => {
+const DiceBody = ({ targetValue, rolling, offsetX, tiltOffset }: DiceSceneProps) => {
   const groupRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Group>(null);
   const startTimeRef = useRef(0);
@@ -76,7 +79,7 @@ const DiceBody = ({ targetValue, rolling }: DiceSceneProps) => {
       Math.random() * Math.PI,
     ];
 
-    group.position.set(0, 2.8, 0);
+    group.position.set(offsetX, 2.8, 0);
     group.rotation.set(
       initialRotationRef.current[0],
       initialRotationRef.current[1],
@@ -129,7 +132,7 @@ const DiceBody = ({ targetValue, rolling }: DiceSceneProps) => {
 
     if (settleElapsed >= DICE_SETTLE_MS) {
       group.position.y = 0;
-      group.rotation.set(targetRotation[0], targetRotation[1], targetRotation[2]);
+      group.rotation.set(targetRotation[0] + tiltOffset, targetRotation[1], targetRotation[2]);
       bodyRef.current?.scale.set(1, 1, 1);
     }
   });
@@ -168,10 +171,10 @@ const DiceBody = ({ targetValue, rolling }: DiceSceneProps) => {
   );
 };
 
-export const Dice3D = ({ rollToken, requestedValue, onResult, onFinished, className }: Dice3DProps) => {
+export const Dice3D = ({ rollToken, diceValues, onResult, onFinished, className }: Dice3DProps) => {
   const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
-  const [targetValue, setTargetValue] = useState(1);
+  const [targetValues, setTargetValues] = useState<number[]>([1]);
   const [rolling, setRolling] = useState(false);
   const latestTokenRef = useRef(0);
   const onResultRef = useRef(onResult);
@@ -191,14 +194,15 @@ export const Dice3D = ({ rollToken, requestedValue, onResult, onFinished, classN
     }
 
     latestTokenRef.current = rollToken;
-    const value = resolveDiceValue(requestedValue);
-    setTargetValue(value);
+    const values = normalizeDiceValues(diceValues);
+    const total = sumDiceValues(values);
+    setTargetValues(values);
     setVisible(true);
     setFading(false);
     setRolling(true);
 
     const resultTimer = window.setTimeout(() => {
-      onResultRef.current(value);
+      onResultRef.current(total);
     }, DICE_FALL_MS + DICE_SETTLE_MS);
 
     const fadeTimer = window.setTimeout(() => {
@@ -217,7 +221,7 @@ export const Dice3D = ({ rollToken, requestedValue, onResult, onFinished, classN
       window.clearTimeout(fadeTimer);
       window.clearTimeout(finishTimer);
     };
-  }, [requestedValue, rollToken]);
+  }, [diceValues, rollToken]);
 
   if (!visible) {
     return null;
@@ -240,12 +244,28 @@ export const Dice3D = ({ rollToken, requestedValue, onResult, onFinished, classN
             shadow-mapSize-width={1024}
             shadow-mapSize-height={1024}
           />
-          <DiceBody targetValue={targetValue} rolling={rolling} />
+          {targetValues.map((value, index) => {
+            const count = targetValues.length;
+            const offsetX = count === 1 ? 0 : count === 2 ? (index === 0 ? -0.72 : 0.72) : index === 0 ? -0.95 : index === 1 ? 0 : 0.95;
+            const tiltOffset = count === 1 ? 0 : (index - (count - 1) / 2) * 0.06;
+            return (
+              <DiceBody
+                key={`die-${index}-${value}-${rollToken}`}
+                targetValue={value}
+                rolling={rolling}
+                offsetX={offsetX}
+                tiltOffset={tiltOffset}
+              />
+            );
+          })}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.56, 0]} receiveShadow>
             <planeGeometry args={[4, 4]} />
             <shadowMaterial opacity={0.22} />
           </mesh>
         </Canvas>
+        <div className="mt-1 rounded-full bg-black/45 px-3 py-1 text-center text-xs font-medium text-white">
+          Сума: {sumDiceValues(targetValues)}
+        </div>
       </div>
     </div>
   );

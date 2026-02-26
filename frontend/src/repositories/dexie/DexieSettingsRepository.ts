@@ -7,21 +7,27 @@ const defaultSettings: SettingsEntity = {
   id: 'global',
   soundEnabled: true,
   musicEnabled: true,
-  defaultSpeed: 'normal',
+  defaultDiceMode: 'classic',
   defaultDepth: 'standard',
   selectedThemeId: DEFAULT_SPIRITUAL_THEME.id,
-  animationSpeed: 'normal',
   snakeStyleId: 'flow',
   snakeColorId: 'amber-violet',
   stairsStyleId: 'steps',
   stairsColorId: 'sand-light',
 };
 
-const normalizeSettings = (settings: Partial<SettingsEntity> | undefined): SettingsEntity => ({
-  ...defaultSettings,
-  ...settings,
-  id: 'global',
-});
+const normalizeSettings = (settings: Partial<SettingsEntity> | undefined): SettingsEntity => {
+  const legacySpeed = (settings as { defaultSpeed?: string } | undefined)?.defaultSpeed;
+  const diceModeFromLegacy =
+    legacySpeed === 'fast' ? 'fast' : legacySpeed === 'slow' ? 'triple' : undefined;
+
+  return {
+    ...defaultSettings,
+    ...settings,
+    defaultDiceMode: settings?.defaultDiceMode ?? diceModeFromLegacy ?? defaultSettings.defaultDiceMode,
+    id: 'global',
+  };
+};
 
 export class DexieSettingsRepository implements SettingsRepository {
   constructor(private readonly dexie: LilaDexieDb) {}
@@ -33,7 +39,6 @@ export class DexieSettingsRepository implements SettingsRepository {
       if (
         normalized.selectedThemeId !== settings.selectedThemeId ||
         normalized.tokenColorId !== settings.tokenColorId ||
-        normalized.animationSpeed !== settings.animationSpeed ||
         normalized.snakeStyleId !== settings.snakeStyleId ||
         normalized.snakeColorId !== settings.snakeColorId ||
         normalized.stairsStyleId !== settings.stairsStyleId ||

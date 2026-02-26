@@ -22,14 +22,12 @@ export const AppearanceCustomizationPanel = ({
     themeId,
     themes,
     tokenColorId,
-    animationSpeed,
     snakeStyleId,
     snakeColorId,
     stairsStyleId,
     stairsColorId,
     setThemeId,
     setTokenColorId,
-    setAnimationSpeed,
     setSnakeStyleId,
     setSnakeColorId,
     setStairsStyleId,
@@ -162,22 +160,6 @@ export const AppearanceCustomizationPanel = ({
                   aria-label={option.label}
                   title={option.label}
                 />
-              ))}
-            </div>
-          </div>
-
-          <div className="sm:col-span-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Швидкість анімацій</p>
-            <div className="mt-2 inline-flex rounded-full border border-stone-200 bg-white p-1 text-xs">
-              {(['slow', 'normal', 'fast'] as const).map((speed) => (
-                <button
-                  key={speed}
-                  type="button"
-                  onClick={() => setAnimationSpeed(speed)}
-                  className={`rounded-full px-3 py-1 ${animationSpeed === speed ? 'bg-[#f1dfd2] text-[#6b4a3b]' : 'text-stone-600'}`}
-                >
-                  {speed === 'slow' ? 'Повільно' : speed === 'normal' ? 'Нормально' : 'Швидко'}
-                </button>
               ))}
             </div>
           </div>

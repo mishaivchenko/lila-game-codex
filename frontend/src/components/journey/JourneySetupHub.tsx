@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameContext } from '../../context/GameContext';
 import { MarkdownText } from '../MarkdownText';
+import type { DiceMode } from '../../domain/types';
 
 const colors = [
   { id: 'червоний', className: 'bg-red-500' },
@@ -77,6 +78,7 @@ export const JourneySetupHub = () => {
   const navigate = useNavigate();
   const { startNewSession, loading } = useGameContext();
   const [activeTab, setActiveTab] = useState<TabId>('simple');
+  const [diceMode, setDiceMode] = useState<DiceMode>('classic');
 
   const [players, setPlayers] = useState<PlayerDraft[]>([createPlayer(0)]);
   const [simpleError, setSimpleError] = useState<string | undefined>(undefined);
@@ -147,7 +149,7 @@ export const JourneySetupHub = () => {
         question: JSON.stringify(multiplayerPayload),
         need: summary,
       },
-      { speed: 'normal', depth: 'standard' },
+      { diceMode, depth: 'standard' },
     );
 
     navigate('/game');
@@ -190,6 +192,30 @@ export const JourneySetupHub = () => {
           <p className="text-sm text-stone-600">
             Легка точка входу для групи до 4 учасників.
           </p>
+
+          <div className="rounded-2xl border border-stone-200 bg-white p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Режим кубиків</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {([
+                { id: 'classic', label: 'Classic · 1 кубик' },
+                { id: 'fast', label: 'Fast · 2 кубики' },
+                { id: 'triple', label: 'Question of the Day · 3 кубики' },
+              ] as const).map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setDiceMode(option.id)}
+                  className={`rounded-full border px-3 py-1.5 text-xs ${
+                    diceMode === option.id
+                      ? 'border-[#c57b5d] bg-[#f8ebe2] text-[#6b4a3b]'
+                      : 'border-stone-200 bg-white text-stone-600'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {players.map((player, index) => (
             <article key={player.id} className="rounded-2xl border border-stone-200 bg-white p-3 sm:p-4">

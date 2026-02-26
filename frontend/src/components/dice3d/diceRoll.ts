@@ -28,6 +28,16 @@ export const resolveDiceValue = (
   return generateDiceValue(rng);
 };
 
+export const normalizeDiceValues = (values: number[] | undefined): number[] => {
+  if (!values || values.length === 0) {
+    return [1];
+  }
+  return values.map((value) => clampDiceValue(value));
+};
+
+export const sumDiceValues = (values: number[]): number =>
+  values.reduce((sum, value) => sum + clampDiceValue(value), 0);
+
 export const getTopFaceRotation = (value: number): [number, number, number] => {
   const safe = clampDiceValue(value);
 
