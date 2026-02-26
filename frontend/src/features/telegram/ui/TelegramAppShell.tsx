@@ -47,7 +47,7 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
 
   return (
     <TelegramAuthProvider value={authState}>
-      <TelegramRoomsProvider authToken={authState.token}>
+      <TelegramRoomsProvider authToken={authState.token} authUserId={authState.user?.id}>
         <TelegramSessionSyncBridge />
         <div className={shellClassName} data-telegram-mode={telegramMode ? 'true' : 'false'}>
           {authState.isTelegramMode && !fullscreenRequested && (

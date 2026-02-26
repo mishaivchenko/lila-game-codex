@@ -1,44 +1,119 @@
-import { createContext, useContext, useMemo, useState } from 'react';
-import type { GameRoom } from './roomsApi';
-import { createRoomApi, getRoomByCodeApi } from './roomsApi';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import type { RoomBoardType, RoomSnapshot, HostRoomSocket } from './roomsApi';
+import {
+  createRoomApi,
+  createHostRoomSocket,
+  getRoomByCodeApi,
+  getRoomByIdApi,
+  hostFinishRoomApi,
+  hostStartRoomApi,
+  joinRoomApi,
+} from './roomsApi';
 
 interface TelegramRoomsContextValue {
-  currentRoom?: GameRoom;
+  currentRoom?: RoomSnapshot;
   isLoading: boolean;
   error?: string;
-  createRoom: () => Promise<void>;
-  joinRoomByCode: (code: string) => Promise<void>;
+  connectionState: 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
+  currentUserRole?: 'host' | 'player';
+  isMyTurn: boolean;
+  createRoom: (boardType?: RoomBoardType) => Promise<RoomSnapshot | undefined>;
+  joinRoomByCode: (code: string) => Promise<RoomSnapshot | undefined>;
+  loadRoomById: (roomId: string) => Promise<RoomSnapshot | undefined>;
+  hostStartGame: () => Promise<void>;
+  hostFinishGame: () => Promise<void>;
+  rollDice: () => Promise<void>;
 }
 
 const TelegramRoomsContext = createContext<TelegramRoomsContextValue>({
   isLoading: false,
-  createRoom: async () => {},
-  joinRoomByCode: async () => {},
+  connectionState: 'idle',
+  isMyTurn: false,
+  createRoom: async () => undefined,
+  joinRoomByCode: async () => undefined,
+  loadRoomById: async () => undefined,
+  hostStartGame: async () => {},
+  hostFinishGame: async () => {},
+  rollDice: async () => {},
 });
 
 interface TelegramRoomsProviderProps {
   authToken?: string;
+  authUserId?: string;
   children: React.ReactNode;
 }
 
-export const TelegramRoomsProvider = ({ authToken, children }: TelegramRoomsProviderProps) => {
-  const [currentRoom, setCurrentRoom] = useState<GameRoom | undefined>(undefined);
+export const TelegramRoomsProvider = ({ authToken, authUserId, children }: TelegramRoomsProviderProps) => {
+  const [currentRoom, setCurrentRoom] = useState<RoomSnapshot | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [connectionState, setConnectionState] = useState<TelegramRoomsContextValue['connectionState']>('idle');
+  const socketRef = useRef<HostRoomSocket | undefined>(undefined);
+  const roomIdRef = useRef<string | undefined>(undefined);
 
-  const createRoom = async () => {
+  useEffect(() => {
     if (!authToken) {
-      setError('Спочатку завершіть авторизацію Telegram.');
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = undefined;
+      }
+      setConnectionState('idle');
       return;
     }
 
+    const socket = createHostRoomSocket(authToken);
+    socketRef.current = socket;
+    setConnectionState('connecting');
+
+    socket.on('connect', () => {
+      setConnectionState('connected');
+      if (roomIdRef.current) {
+        socket.emit('joinRoom', { roomId: roomIdRef.current });
+      }
+    });
+    socket.on('disconnect', () => {
+      setConnectionState('disconnected');
+    });
+    socket.io.on('reconnect_attempt', () => {
+      setConnectionState('reconnecting');
+    });
+    socket.on('roomStateUpdated', (snapshot) => {
+      setCurrentRoom(snapshot);
+    });
+    socket.on('roomError', (payload) => {
+      setError(payload.message);
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = undefined;
+      setConnectionState('idle');
+    };
+  }, [authToken]);
+
+  const joinRealtimeRoom = (roomId: string) => {
+    roomIdRef.current = roomId;
+    if (!socketRef.current) {
+      return;
+    }
+    socketRef.current.emit('joinRoom', { roomId });
+  };
+
+  const createRoom = async (boardType: RoomBoardType = 'full') => {
+    if (!authToken) {
+      setError('Спочатку завершіть авторизацію Telegram.');
+      return undefined;
+    }
     setIsLoading(true);
     setError(undefined);
     try {
-      const room = await createRoomApi(authToken);
-      setCurrentRoom(room);
+      const snapshot = await createRoomApi(authToken, boardType);
+      setCurrentRoom(snapshot);
+      joinRealtimeRoom(snapshot.room.id);
+      return snapshot;
     } catch {
       setError('Не вдалося створити кімнату.');
+      return undefined;
     } finally {
       setIsLoading(false);
     }
@@ -47,30 +122,111 @@ export const TelegramRoomsProvider = ({ authToken, children }: TelegramRoomsProv
   const joinRoomByCode = async (code: string) => {
     if (!authToken) {
       setError('Спочатку завершіть авторизацію Telegram.');
-      return;
+      return undefined;
     }
-
     setIsLoading(true);
     setError(undefined);
     try {
-      const room = await getRoomByCodeApi(authToken, code);
-      setCurrentRoom(room);
+      const byCode = await getRoomByCodeApi(authToken, code);
+      const snapshot = await joinRoomApi(authToken, byCode.room.id);
+      setCurrentRoom(snapshot);
+      joinRealtimeRoom(snapshot.room.id);
+      return snapshot;
     } catch {
       setError('Кімнату не знайдено. Перевірте код.');
+      return undefined;
     } finally {
       setIsLoading(false);
     }
   };
+
+  const loadRoomById = async (roomId: string) => {
+    if (!authToken) {
+      return undefined;
+    }
+    setIsLoading(true);
+    setError(undefined);
+    try {
+      const snapshot = await getRoomByIdApi(authToken, roomId);
+      const joined = await joinRoomApi(authToken, snapshot.room.id);
+      setCurrentRoom(joined);
+      joinRealtimeRoom(snapshot.room.id);
+      return joined;
+    } catch {
+      setError('Не вдалося відкрити кімнату.');
+      return undefined;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const hostStartGame = async () => {
+    if (!authToken || !currentRoom) {
+      return;
+    }
+    try {
+      const snapshot = await hostStartRoomApi(authToken, currentRoom.room.id);
+      setCurrentRoom(snapshot);
+      socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: 'start' });
+    } catch {
+      setError('Не вдалося запустити гру.');
+    }
+  };
+
+  const hostFinishGame = async () => {
+    if (!authToken || !currentRoom) {
+      return;
+    }
+    try {
+      const snapshot = await hostFinishRoomApi(authToken, currentRoom.room.id);
+      setCurrentRoom(snapshot);
+      socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: 'finish' });
+    } catch {
+      setError('Не вдалося завершити гру.');
+    }
+  };
+
+  const rollDice = async () => {
+    if (!currentRoom || !authUserId || !socketRef.current) {
+      return;
+    }
+    if (currentRoom.gameState.currentTurnPlayerId !== authUserId) {
+      setError('Зараз не ваш хід.');
+      return;
+    }
+    socketRef.current.emit('rollDice', { roomId: currentRoom.room.id });
+  };
+
+  const currentUserRole = useMemo(() => {
+    if (!currentRoom || !authUserId) {
+      return undefined;
+    }
+    return currentRoom.players.find((player) => player.userId === authUserId)?.role;
+  }, [currentRoom, authUserId]);
+
+  const isMyTurn = Boolean(
+    currentRoom
+      && authUserId
+      && currentRoom.gameState.currentTurnPlayerId === authUserId
+      && currentRoom.room.status === 'in_progress',
+  );
 
   const value = useMemo<TelegramRoomsContextValue>(
     () => ({
       currentRoom,
       isLoading,
       error,
+      connectionState,
+      currentUserRole,
+      isMyTurn,
       createRoom,
       joinRoomByCode,
+      loadRoomById,
+      hostStartGame,
+      hostFinishGame,
+      rollDice,
     }),
-    [currentRoom, isLoading, error],
+    [currentRoom, isLoading, error, connectionState, currentUserRole, isMyTurn],
   );
 
   return <TelegramRoomsContext.Provider value={value}>{children}</TelegramRoomsContext.Provider>;

@@ -1,16 +1,19 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { TelegramRoomsPanel } from './TelegramRoomsPanel';
 import { TelegramAuthProvider, type TelegramAuthContextValue } from '../auth/TelegramAuthContext';
 import { TelegramRoomsProvider } from './TelegramRoomsContext';
 
 const renderWithProviders = (authValue: TelegramAuthContextValue) => {
   return render(
-    <TelegramAuthProvider value={authValue}>
-      <TelegramRoomsProvider authToken={authValue.token}>
-        <TelegramRoomsPanel />
-      </TelegramRoomsProvider>
-    </TelegramAuthProvider>,
+    <MemoryRouter>
+      <TelegramAuthProvider value={authValue}>
+        <TelegramRoomsProvider authToken={authValue.token} authUserId={authValue.user?.id}>
+          <TelegramRoomsPanel />
+        </TelegramRoomsProvider>
+      </TelegramAuthProvider>
+    </MemoryRouter>,
   );
 };
 
@@ -32,7 +35,7 @@ describe('TelegramRoomsPanel', () => {
       },
     });
 
-    expect(screen.getByText('Підготовка до спільної гри')).not.toBeNull();
-    expect(screen.getByRole('button', { name: 'Створити кімнату' })).not.toBeNull();
+    expect(screen.getByText('Спільна подорож')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Створити Host Room' })).not.toBeNull();
   });
 });

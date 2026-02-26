@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
+import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { eventsRouter } from './routes/events.js';
@@ -8,6 +9,7 @@ import { authRouter } from './routes/auth.js';
 import { roomsRouter } from './routes/rooms.js';
 import { gamesRouter } from './routes/games.js';
 import { requireAuth, type AuthenticatedRequest } from './lib/authMiddleware.js';
+import { attachHostRoomSocket } from './socket/hostRoomSocket.js';
 
 export const createApp = (): express.Express => {
   const app = express();
@@ -54,7 +56,9 @@ export const createApp = (): express.Express => {
 if (process.env.NODE_ENV !== 'test') {
   const app = createApp();
   const port = Number(process.env.PORT ?? 3001);
-  app.listen(port, () => {
+  const server = createServer(app);
+  attachHostRoomSocket(server);
+  server.listen(port, () => {
     console.log(`Lila events API listening on port ${port}`);
   });
 }

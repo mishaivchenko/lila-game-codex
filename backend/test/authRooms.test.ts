@@ -79,21 +79,30 @@ describe('Telegram auth + rooms', () => {
     const createRoomResponse = await request(app)
       .post('/api/rooms')
       .set('Authorization', `Bearer ${token}`)
-      .send({});
+      .send({ boardType: 'full' });
 
     expect(createRoomResponse.status).toBe(201);
     expect(createRoomResponse.body.ok).toBe(true);
     expect(createRoomResponse.body.room.code).toMatch(/^[A-Z2-9]{6}$/);
+    expect(createRoomResponse.body.room.status).toBe('open');
 
     const roomCode = createRoomResponse.body.room.code as string;
+    const roomId = createRoomResponse.body.room.id as string;
 
     const roomResponse = await request(app)
-      .get(`/api/rooms/${roomCode}`)
+      .get(`/api/rooms/code/${roomCode}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(roomResponse.status).toBe(200);
     expect(roomResponse.body.ok).toBe(true);
     expect(roomResponse.body.room.code).toBe(roomCode);
+
+    const joinResponse = await request(app)
+      .post(`/api/rooms/${roomId}/join`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({});
+    expect(joinResponse.status).toBe(200);
+    expect(joinResponse.body.ok).toBe(true);
   });
 
   it('returns current user via /api/auth/me for valid token', async () => {

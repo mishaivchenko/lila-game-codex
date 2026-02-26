@@ -6,7 +6,7 @@ import { HistoryPage } from '../pages/HistoryPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { RouteErrorPage } from '../pages/RouteErrorPage';
 import { DeepModePage, DEEP_MODE_ROUTE } from '../features/deep-mode';
-import { TelegramAppShell } from '../features/telegram';
+import { HostRoomPage, TelegramAppShell } from '../features/telegram';
 
 export const AppRouter = () => {
   return (
@@ -19,6 +19,7 @@ export const AppRouter = () => {
           <Route path="/game" element={<GamePage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/host-room/:roomId" element={<HostRoomPage />} />
           <Route path={DEEP_MODE_ROUTE} element={<DeepModePage />} />
           <Route path="/error" element={<RouteErrorPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
