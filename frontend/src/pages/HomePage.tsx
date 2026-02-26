@@ -14,9 +14,9 @@ export const HomePage = () => {
   return (
     <main className="mx-auto min-h-screen max-w-3xl bg-gradient-to-b from-[var(--lila-bg-start)] to-[var(--lila-bg-end)] px-4 py-6 sm:px-6">
       <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/90 p-6 shadow-[0_20px_48px_rgba(98,76,62,0.12)]">
-        <h1 className="text-2xl font-semibold text-stone-900 sm:text-3xl">Привіт, люба душа, готова почати свій шлях?</h1>
+        <h1 className="text-2xl font-semibold text-[var(--lila-text-primary)] sm:text-3xl">Привіт, люба душа, готова почати свій шлях?</h1>
         {isTelegramMode && user && (
-          <p className="mt-2 text-xs uppercase tracking-[0.14em] text-[#8f6d5b]">
+          <p className="mt-2 text-xs uppercase tracking-[0.14em] text-[var(--lila-text-muted)]">
             Telegram: {user.displayName}
           </p>
         )}
@@ -44,7 +44,7 @@ export const HomePage = () => {
         </div>
 
         {!showSetup && (
-          <Link to="/setup" className="mt-3 inline-block text-xs text-stone-500 underline underline-offset-2">
+          <Link to="/setup" className="mt-3 inline-block text-xs text-[var(--lila-text-muted)] underline underline-offset-2">
             Відкрити налаштування на окремій сторінці
           </Link>
         )}

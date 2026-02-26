@@ -71,6 +71,14 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
     root.style.setProperty('--lila-accent-hover', vars.accentHover);
     root.style.setProperty('--lila-accent-soft', vars.accentSoft);
     root.style.setProperty('--lila-border-soft', vars.borderSoft);
+    root.style.setProperty('--lila-chip-bg', vars.chipBg);
+    root.style.setProperty('--lila-chip-text', vars.chipText);
+    root.style.setProperty('--lila-chip-border', vars.chipBorder);
+    root.style.setProperty('--lila-chip-active-bg', vars.chipActiveBg);
+    root.style.setProperty('--lila-chip-active-text', vars.chipActiveText);
+    root.style.setProperty('--lila-input-bg', vars.inputBg);
+    root.style.setProperty('--lila-input-border', vars.inputBorder);
+    root.setAttribute('data-lila-theme', themeId);
   }, [themeId]);
 
   const setThemeId = useCallback((nextThemeId: string) => {

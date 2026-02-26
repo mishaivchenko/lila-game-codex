@@ -63,6 +63,7 @@ export interface BoardBackgroundStyle {
   canvasShellBackground: string;
   canvasShellShadow: string;
   canvasFrameBackground: string;
+  boardImageFilter: string;
   boardPanelBackground: string;
   boardPanelText: string;
   transitionHintArrowBackground: string;
@@ -111,6 +112,13 @@ export interface BoardThemeCssVars {
   accentHover: string;
   accentSoft: string;
   borderSoft: string;
+  chipBg: string;
+  chipText: string;
+  chipBorder: string;
+  chipActiveBg: string;
+  chipActiveText: string;
+  inputBg: string;
+  inputBorder: string;
 }
 
 const DEFAULT_TOKEN_PALETTE: TokenStyle['palette'] = [
@@ -131,6 +139,7 @@ export const DEFAULT_SPIRITUAL_THEME: BoardTheme = {
     canvasShellBackground: 'rgba(231, 229, 228, 0.7)',
     canvasShellShadow: 'inset 0 1px 6px rgba(41, 37, 36, 0.08)',
     canvasFrameBackground: 'transparent',
+    boardImageFilter: 'none',
     boardPanelBackground: 'rgb(245 245 244)',
     boardPanelText: 'rgb(87 83 78)',
     transitionHintArrowBackground: '#f4e6dc',
@@ -213,6 +222,7 @@ export const COSMIC_DARK_THEME: BoardTheme = {
     ...DEFAULT_SPIRITUAL_THEME.boardBackground,
     canvasShellBackground: 'rgba(25, 28, 40, 0.76)',
     canvasShellShadow: 'inset 0 1px 8px rgba(12, 14, 25, 0.38)',
+    boardImageFilter: 'saturate(1.08) contrast(1.06) brightness(0.9) hue-rotate(-8deg)',
     boardPanelBackground: '#1f2331',
     boardPanelText: '#ece7df',
     transitionHintArrowBackground: '#2f3549',
@@ -277,6 +287,7 @@ export const MINIMAL_CREAM_THEME: BoardTheme = {
     ...DEFAULT_SPIRITUAL_THEME.boardBackground,
     canvasShellBackground: 'rgba(247, 241, 233, 0.9)',
     canvasShellShadow: 'inset 0 1px 5px rgba(124, 102, 86, 0.1)',
+    boardImageFilter: 'saturate(0.88) contrast(0.96) brightness(1.03)',
     boardPanelBackground: '#f6efe6',
     boardPanelText: '#57473f',
     transitionHintArrowBackground: '#e8f5f2',
@@ -348,6 +359,13 @@ const BOARD_THEME_CSS_VARS: Record<string, BoardThemeCssVars> = {
     accentHover: '#b96d50',
     accentSoft: '#f4e0d2',
     borderSoft: '#e7d8cb',
+    chipBg: '#ffffff',
+    chipText: '#6f6158',
+    chipBorder: '#ddcec1',
+    chipActiveBg: '#f8ebe2',
+    chipActiveText: '#6b4a3b',
+    inputBg: '#ffffff',
+    inputBorder: '#d8c8ba',
   },
   'cosmic-dark': {
     bgMain: '#151824',
@@ -361,6 +379,13 @@ const BOARD_THEME_CSS_VARS: Record<string, BoardThemeCssVars> = {
     accentHover: '#489ec0',
     accentSoft: '#243847',
     borderSoft: '#3e4963',
+    chipBg: '#2c3347',
+    chipText: '#dfd3c8',
+    chipBorder: '#495370',
+    chipActiveBg: '#374662',
+    chipActiveText: '#f5efe7',
+    inputBg: '#252b3d',
+    inputBorder: '#4b5573',
   },
   'minimal-cream': {
     bgMain: '#f6f1e8',
@@ -374,6 +399,13 @@ const BOARD_THEME_CSS_VARS: Record<string, BoardThemeCssVars> = {
     accentHover: '#8b6349',
     accentSoft: '#ead8c4',
     borderSoft: '#ddcbb6',
+    chipBg: '#fff9f2',
+    chipText: '#72635a',
+    chipBorder: '#d8c5b1',
+    chipActiveBg: '#f1dfcd',
+    chipActiveText: '#5d4639',
+    inputBg: '#fffdf8',
+    inputBorder: '#d8c6b1',
   },
 };
 

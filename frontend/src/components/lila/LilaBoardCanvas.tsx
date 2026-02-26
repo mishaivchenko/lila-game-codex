@@ -549,6 +549,7 @@ export const LilaBoardCanvas = ({
               style={{
                 opacity: isBoardImageReady ? 1 : 0,
                 imageRendering: 'auto',
+                filter: theme.boardBackground.boardImageFilter,
                 transform: 'translateZ(0)',
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden',

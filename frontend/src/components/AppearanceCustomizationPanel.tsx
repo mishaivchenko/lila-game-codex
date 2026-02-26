@@ -77,17 +77,17 @@ export const AppearanceCustomizationPanel = ({
   };
 
   return (
-    <section className={`rounded-2xl border border-[#ead9cc] bg-[var(--lila-surface)]/92 p-4 shadow-[0_12px_28px_rgba(98,76,62,0.1)] ${className ?? ''}`}>
+    <section className={`rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 p-4 shadow-[0_12px_28px_rgba(98,76,62,0.1)] ${className ?? ''}`}>
       <button
         type="button"
         onClick={() => setExpanded((prev) => !prev)}
         className="flex w-full items-center justify-between text-left"
       >
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[#8b6f60]">Appearance Studio</p>
-          <h3 className="text-sm font-semibold text-stone-900">{title}</h3>
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--lila-text-muted)]">Appearance Studio</p>
+          <h3 className="text-sm font-semibold text-[var(--lila-text-primary)]">{title}</h3>
         </div>
-        <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs text-stone-600">
+        <span className="rounded-full border border-[var(--lila-chip-border)] bg-[var(--lila-chip-bg)] px-3 py-1 text-xs text-[var(--lila-chip-text)]">
           {expanded ? 'Згорнути' : 'Розгорнути'}
         </span>
       </button>
@@ -95,7 +95,7 @@ export const AppearanceCustomizationPanel = ({
       {expanded && (
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Формат кидка</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--lila-text-muted)]">Формат кидка</p>
             <div className="mt-2 grid gap-2 sm:grid-cols-3">
               {diceModeOptions.map((option) => (
                 <button
@@ -106,15 +106,15 @@ export const AppearanceCustomizationPanel = ({
                   }}
                   className={`rounded-2xl border px-3 py-3 text-left transition ${
                     defaultDiceMode === option.id
-                      ? 'border-[#c57b5d] bg-[#fff1e8] shadow-[0_8px_24px_rgba(197,123,93,0.18)]'
-                      : 'border-stone-200 bg-white hover:border-[#dcc5b7] hover:bg-[#fdf9f5]'
+                      ? 'border-[var(--lila-accent)] bg-[var(--lila-chip-active-bg)] shadow-[0_8px_24px_rgba(197,123,93,0.18)]'
+                      : 'border-[var(--lila-chip-border)] bg-[var(--lila-chip-bg)] hover:border-[var(--lila-border-soft)] hover:bg-[var(--lila-surface-muted)]'
                   }`}
                 >
-                  <p className={`text-sm font-semibold ${defaultDiceMode === option.id ? 'text-[#6b4a3b]' : 'text-stone-800'}`}>
+                  <p className={`text-sm font-semibold ${defaultDiceMode === option.id ? 'text-[var(--lila-chip-active-text)]' : 'text-[var(--lila-text-primary)]'}`}>
                     {option.title}
                   </p>
                   <p className="mt-1 text-lg leading-none">{option.emoji}</p>
-                  <p className={`mt-1 text-xs ${defaultDiceMode === option.id ? 'text-[#8d6b5a]' : 'text-stone-500'}`}>
+                  <p className={`mt-1 text-xs ${defaultDiceMode === option.id ? 'text-[var(--lila-text-muted)]' : 'text-[var(--lila-text-muted)]'}`}>
                     {option.note}
                   </p>
                 </button>
@@ -123,7 +123,7 @@ export const AppearanceCustomizationPanel = ({
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Тема</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--lila-text-muted)]">Тема</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {themes.map((themeOption) => (
                 <button
@@ -132,8 +132,8 @@ export const AppearanceCustomizationPanel = ({
                   onClick={() => setThemeId(themeOption.id)}
                   className={`rounded-full border px-3 py-1.5 text-xs ${
                     themeId === themeOption.id
-                      ? 'border-[#c57b5d] bg-[#f8ebe2] text-[#6b4a3b]'
-                      : 'border-stone-200 bg-white text-stone-600'
+                      ? 'border-[var(--lila-accent)] bg-[var(--lila-chip-active-bg)] text-[var(--lila-chip-active-text)]'
+                      : 'border-[var(--lila-chip-border)] bg-[var(--lila-chip-bg)] text-[var(--lila-chip-text)]'
                   }`}
                 >
                   {themeOption.name}
@@ -143,7 +143,7 @@ export const AppearanceCustomizationPanel = ({
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Фішка</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--lila-text-muted)]">Фішка</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {tokenOptions.map((token) => (
                 <button
@@ -152,8 +152,8 @@ export const AppearanceCustomizationPanel = ({
                   onClick={() => setTokenColorId(token.id)}
                   className={`flex items-center gap-2 rounded-full border px-2 py-1 text-xs ${
                     tokenColorId === token.id
-                      ? 'border-[#c57b5d] bg-[#f8ebe2] text-[#6b4a3b]'
-                      : 'border-stone-200 bg-white text-stone-600'
+                      ? 'border-[var(--lila-accent)] bg-[var(--lila-chip-active-bg)] text-[var(--lila-chip-active-text)]'
+                      : 'border-[var(--lila-chip-border)] bg-[var(--lila-chip-bg)] text-[var(--lila-chip-text)]'
                   }`}
                 >
                   <span className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: token.value }} />
@@ -164,7 +164,7 @@ export const AppearanceCustomizationPanel = ({
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Стиль змії</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--lila-text-muted)]">Стиль змії</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {SNAKE_STYLE_OPTIONS.map((option) => (
                 <button
@@ -173,8 +173,8 @@ export const AppearanceCustomizationPanel = ({
                   onClick={() => setSnakeStyleId(option.id)}
                   className={`rounded-full border px-3 py-1.5 text-xs ${
                     snakeStyleId === option.id
-                      ? 'border-[#c57b5d] bg-[#f8ebe2] text-[#6b4a3b]'
-                      : 'border-stone-200 bg-white text-stone-600'
+                      ? 'border-[var(--lila-accent)] bg-[var(--lila-chip-active-bg)] text-[var(--lila-chip-active-text)]'
+                      : 'border-[var(--lila-chip-border)] bg-[var(--lila-chip-bg)] text-[var(--lila-chip-text)]'
                   }`}
                 >
                   {option.label}
@@ -187,7 +187,7 @@ export const AppearanceCustomizationPanel = ({
                   key={option.id}
                   type="button"
                   onClick={() => setSnakeColorId(option.id)}
-                  className={`h-7 w-7 rounded-full border-2 ${snakeColorId === option.id ? 'scale-110 border-[#6b4a3b]' : 'border-white'}`}
+                  className={`h-7 w-7 rounded-full border-2 ${snakeColorId === option.id ? 'scale-110 border-[var(--lila-accent)]' : 'border-[var(--lila-surface)]'}`}
                   style={{ backgroundColor: option.preview }}
                   aria-label={option.label}
                   title={option.label}
@@ -197,7 +197,7 @@ export const AppearanceCustomizationPanel = ({
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Стиль сходів/стріл</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--lila-text-muted)]">Стиль сходів/стріл</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {STAIRS_STYLE_OPTIONS.map((option) => (
                 <button
@@ -206,8 +206,8 @@ export const AppearanceCustomizationPanel = ({
                   onClick={() => setStairsStyleId(option.id)}
                   className={`rounded-full border px-3 py-1.5 text-xs ${
                     stairsStyleId === option.id
-                      ? 'border-[#c57b5d] bg-[#f8ebe2] text-[#6b4a3b]'
-                      : 'border-stone-200 bg-white text-stone-600'
+                      ? 'border-[var(--lila-accent)] bg-[var(--lila-chip-active-bg)] text-[var(--lila-chip-active-text)]'
+                      : 'border-[var(--lila-chip-border)] bg-[var(--lila-chip-bg)] text-[var(--lila-chip-text)]'
                   }`}
                 >
                   {option.label}
@@ -220,7 +220,7 @@ export const AppearanceCustomizationPanel = ({
                   key={option.id}
                   type="button"
                   onClick={() => setStairsColorId(option.id)}
-                  className={`h-7 w-7 rounded-full border-2 ${stairsColorId === option.id ? 'scale-110 border-[#6b4a3b]' : 'border-white'}`}
+                  className={`h-7 w-7 rounded-full border-2 ${stairsColorId === option.id ? 'scale-110 border-[var(--lila-accent)]' : 'border-[var(--lila-surface)]'}`}
                   style={{ backgroundColor: option.preview }}
                   aria-label={option.label}
                   title={option.label}
