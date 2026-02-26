@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BoardThemeContext } from './BoardThemeContext';
 import {
   BOARD_THEME_LIST,
@@ -20,6 +20,7 @@ interface BoardThemeProviderProps {
 const repositories = createRepositories();
 
 export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
+  const userChangedRef = useRef(false);
   const [themeId, setThemeIdState] = useState(DEFAULT_SPIRITUAL_THEME.id);
   const [tokenColorId, setTokenColorIdState] = useState<string | undefined>(undefined);
   const [snakeStyleId, setSnakeStyleIdState] = useState<SnakeVariantId>('flow');
@@ -38,7 +39,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   useEffect(() => {
     let isActive = true;
     void repositories.settingsRepository.getSettings().then((settings) => {
-      if (!isActive) {
+      if (!isActive || userChangedRef.current) {
         return;
       }
       setThemeIdState(resolveBoardTheme(settings.selectedThemeId).id);
@@ -73,6 +74,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   }, [themeId]);
 
   const setThemeId = useCallback((nextThemeId: string) => {
+    userChangedRef.current = true;
     const resolved = resolveBoardTheme(nextThemeId);
     setThemeIdState(resolved.id);
     saveSettingsPatch({
@@ -81,6 +83,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   }, [saveSettingsPatch]);
 
   const setTokenColorId = useCallback((nextTokenColorId: string) => {
+    userChangedRef.current = true;
     setTokenColorIdState(nextTokenColorId);
     saveSettingsPatch({
       tokenColorId: nextTokenColorId,
@@ -88,6 +91,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   }, [saveSettingsPatch]);
 
   const setSnakeStyleId = useCallback((nextStyleId: SnakeVariantId) => {
+    userChangedRef.current = true;
     setSnakeStyleIdState(nextStyleId);
     saveSettingsPatch({
       snakeStyleId: nextStyleId,
@@ -95,6 +99,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   }, [saveSettingsPatch]);
 
   const setSnakeColorId = useCallback((nextColorId: SnakeColorId) => {
+    userChangedRef.current = true;
     setSnakeColorIdState(nextColorId);
     saveSettingsPatch({
       snakeColorId: nextColorId,
@@ -102,6 +107,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   }, [saveSettingsPatch]);
 
   const setStairsStyleId = useCallback((nextStyleId: StairsVariantId) => {
+    userChangedRef.current = true;
     setStairsStyleIdState(nextStyleId);
     saveSettingsPatch({
       stairsStyleId: nextStyleId,
@@ -109,6 +115,7 @@ export const BoardThemeProvider = ({ children }: BoardThemeProviderProps) => {
   }, [saveSettingsPatch]);
 
   const setStairsColorId = useCallback((nextColorId: StairsColorId) => {
+    userChangedRef.current = true;
     setStairsColorIdState(nextColorId);
     saveSettingsPatch({
       stairsColorId: nextColorId,
