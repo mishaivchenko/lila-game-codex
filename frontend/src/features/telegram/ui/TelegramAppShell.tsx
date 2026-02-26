@@ -42,7 +42,7 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
   useTelegramAuthBootstrap({ telegramMode, setAuthState });
 
   const shellClassName = telegramMode
-    ? 'mx-auto min-h-screen w-full max-w-[560px] bg-gradient-to-b from-[var(--lila-bg-start)] to-[var(--lila-bg-end)] px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+12px)] sm:px-4'
+    ? 'tma-shell mx-auto min-h-[100dvh] w-full max-w-[560px] bg-gradient-to-b from-[var(--lila-bg-start)] to-[var(--lila-bg-end)] px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+12px)] sm:px-4'
     : '';
 
   return (

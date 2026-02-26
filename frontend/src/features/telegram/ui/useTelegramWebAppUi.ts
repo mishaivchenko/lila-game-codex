@@ -23,25 +23,30 @@ export const useTelegramWebAppUi = ({
     const webApp = getTelegramWebApp();
     webApp?.ready();
     webApp?.expand();
-    applyTelegramThemeToRoot(webApp?.themeParams);
+    applyTelegramThemeToRoot(webApp?.themeParams, webApp?.colorScheme);
+    document.documentElement.setAttribute('data-tg-mode', 'true');
 
     const backButton = webApp?.BackButton;
     const handleBack = () => navigateBack();
+    const handleThemeChanged = () => applyTelegramThemeToRoot(webApp?.themeParams, webApp?.colorScheme);
+    const isHomeRoute = pathname === '/' || pathname === '/telegram';
 
     if (backButton) {
-      if (pathname === '/' || pathname === '/telegram') {
+      if (isHomeRoute) {
         backButton.hide();
       } else {
         backButton.show();
         backButton.onClick(handleBack);
       }
     }
+    webApp?.onEvent?.('themeChanged', handleThemeChanged);
 
     return () => {
+      document.documentElement.removeAttribute('data-tg-mode');
+      webApp?.offEvent?.('themeChanged', handleThemeChanged);
       if (backButton) {
         backButton.offClick(handleBack);
       }
     };
   }, [navigateBack, pathname, telegramMode]);
 };
-

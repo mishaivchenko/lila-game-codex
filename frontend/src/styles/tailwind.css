@@ -50,6 +50,31 @@ body {
   background: radial-gradient(circle at top, var(--lila-bg-start), var(--lila-bg-end) 65%);
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+  background-color: var(--lila-bg-main);
+}
+
+:root[data-tg-mode='true'],
+:root[data-tg-mode='true'] body,
+:root[data-tg-mode='true'] #root {
+  overscroll-behavior: none;
+  background: linear-gradient(180deg, var(--lila-bg-start) 0%, var(--lila-bg-end) 100%);
+}
+
+:root[data-tg-mode='true'] .tma-shell {
+  min-height: 100dvh;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+  overflow-x: hidden;
+}
+
+:root[data-tg-mode='true'] .tma-shell main {
+  min-height: auto;
+}
+
 :root[data-lila-theme] .text-stone-900,
 :root[data-lila-theme] .text-stone-800,
 :root[data-lila-theme] .text-stone-700 {

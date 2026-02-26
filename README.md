@@ -40,6 +40,12 @@ This implementation provides:
 - Infrastructure prepared for production VPS deployment and CI/CD.
 - BoardTheme system with persisted user customization (theme, token color, animation speed).
 
+## Telegram Mini App UX
+- Native Telegram shell integration with route-aware **BackButton** behavior.
+- Gentle **haptic feedback** for key moments (dice throw, landing, snake/arrow transition, card open).
+- Improved fullscreen + safe-area behavior (`env(safe-area-inset-*)`) for iPhone notch / Android gesture areas.
+- Runtime Telegram theme sync with `themeChanged` event and `colorScheme` handling.
+
 ## Board Themes & Preferences
 - `BoardTheme` is centralized in `/frontend/src/theme/boardTheme.ts`.
 - Active theme is managed by `/frontend/src/theme/BoardThemeProvider.tsx`.
@@ -181,6 +187,8 @@ Critical variables:
 - `TELEGRAM_BOT_TOKEN`
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
 - `FRONTEND_IMAGE`, `BACKEND_IMAGE` (for deployment)
+- `VITE_TELEGRAM_BOT_USERNAME` (optional, used for Telegram invite links)
+- `VITE_TELEGRAM_STARTAPP_PARAM` (optional, default `play`)
 
 More details:
 - Telegram setup: [`docs/TELEGRAM_MINI_APP_SETUP.md`](docs/TELEGRAM_MINI_APP_SETUP.md)

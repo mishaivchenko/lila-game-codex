@@ -2,7 +2,10 @@ import { useCallback, useState } from 'react';
 import { getTelegramWebApp } from '../telegramWebApp';
 
 export const useTelegramFullscreen = () => {
-  const [fullscreenRequested, setFullscreenRequested] = useState(false);
+  const [fullscreenRequested, setFullscreenRequested] = useState(() => {
+    const webApp = getTelegramWebApp();
+    return Boolean(webApp?.isExpanded || webApp?.isFullscreen);
+  });
 
   const requestFullScreen = useCallback(async () => {
     const webApp = getTelegramWebApp();
@@ -39,4 +42,3 @@ export const useTelegramFullscreen = () => {
     requestFullScreen,
   };
 };
-

@@ -96,7 +96,6 @@ export const HomePage = () => {
             Продовжити гру
           </button>
         </div>
-
         {!showSetup && (
           <Link to="/setup" className="mt-3 inline-block text-xs text-[var(--lila-text-muted)] underline underline-offset-2">
             Відкрити налаштування на окремій сторінці
