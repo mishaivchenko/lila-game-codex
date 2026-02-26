@@ -534,11 +534,6 @@ export const LilaBoardCanvas = ({
           )}
 
           <picture>
-            <source
-              type="image/webp"
-              srcSet={toResolvedSrcSet(boardImageSelection.webpSrcSet)}
-              sizes={boardImageSelection.sizes}
-            />
             <img
               src={activeBoardSrc ?? resolveAssetUrl(boardImageSelection.fallbackSrc)}
               srcSet={toResolvedSrcSet(boardImageSelection.pngSrcSet)}
