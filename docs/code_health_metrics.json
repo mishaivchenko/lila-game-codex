@@ -1,7 +1,7 @@
 {
   "summary": {
     "overall_score": 89,
-    "last_updated": "2026-02-26T23:15:30Z",
+    "last_updated": "2026-02-27T01:38:00Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -13,18 +13,18 @@
   "metrics": {
     "files_total": 172,
     "source_files_total": 172,
-    "lines_total": 16024,
+    "lines_total": 16695,
     "frontend": {
       "files": 155,
-      "lines": 13693
+      "lines": 13944
     },
     "backend": {
       "files": 17,
-      "lines": 2331
+      "lines": 2751
     },
     "tests": {
       "files": 38,
-      "lines": 2757,
+      "lines": 2827,
       "test_file_ratio_vs_source_percent": 22.1,
       "source_files_with_direct_test_match_percent": 29.7,
       "coverage_estimate_percent": 73,
@@ -72,7 +72,17 @@
       {
         "path": "backend/src/store/roomsStore.ts",
         "risk": "medium",
-        "reason": "Room lifecycle, turn logic, persistence mapping, and Postgres fallback behavior are concentrated in one file and should eventually be split into repository + domain service."
+        "reason": "Room lifecycle, turn logic, card state, note persistence, player preferences, and Postgres fallback behavior are concentrated in one file and should eventually be split into repository + domain service."
+      },
+      {
+        "path": "frontend/src/features/telegram/rooms/TelegramRoomsContext.tsx",
+        "risk": "medium",
+        "reason": "Context now owns room loading, socket lifecycle, host commands, note/card actions, and player preference sync; this should be reduced into smaller hooks/services."
+      },
+      {
+        "path": "frontend/src/features/telegram/rooms/HostRoomPage.tsx",
+        "risk": "medium",
+        "reason": "Desktop host console, shared board composition, modal permissions, and token color controls are currently assembled in one page-level component."
       },
       {
         "path": "backend/src/store/gamesStore.ts",

@@ -1,15 +1,27 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import type { RoomBoardType, RoomSnapshot, HostRoomSocket } from './roomsApi';
+import type {
+  HostRoomSocket,
+  RoomBoardType,
+  RoomDiceRolledPayload,
+  RoomNoteScope,
+  RoomSettings,
+  RoomSnapshot,
+  RoomTokenMovedPayload,
+} from './roomsApi';
 import {
+  closeRoomCardApi,
   createRoomApi,
   createHostRoomSocket,
   getRoomByCodeApi,
   getRoomByIdApi,
+  hostFinishRoomApi,
   hostPauseRoomApi,
   hostResumeRoomApi,
-  hostFinishRoomApi,
   hostStartRoomApi,
   joinRoomApi,
+  saveRoomNoteApi,
+  updateRoomPreferencesApi,
+  updateRoomSettingsApi,
 } from './roomsApi';
 
 interface TelegramRoomsContextValue {
@@ -19,6 +31,8 @@ interface TelegramRoomsContextValue {
   connectionState: 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
   currentUserRole?: 'host' | 'player';
   isMyTurn: boolean;
+  lastDiceRoll?: RoomDiceRolledPayload;
+  lastTokenMove?: RoomTokenMovedPayload;
   createRoom: (boardType?: RoomBoardType) => Promise<RoomSnapshot | undefined>;
   joinRoomByCode: (code: string) => Promise<RoomSnapshot | undefined>;
   loadRoomById: (roomId: string) => Promise<RoomSnapshot | undefined>;
@@ -26,7 +40,11 @@ interface TelegramRoomsContextValue {
   hostPauseGame: () => Promise<void>;
   hostResumeGame: () => Promise<void>;
   hostFinishGame: () => Promise<void>;
+  hostUpdateSettings: (patch: Partial<RoomSettings>) => Promise<void>;
   rollDice: () => Promise<void>;
+  closeActiveCard: () => Promise<void>;
+  saveRoomNote: (payload: { cellNumber: number; note: string; scope: RoomNoteScope }) => Promise<void>;
+  updatePlayerTokenColor: (tokenColor: string) => Promise<void>;
 }
 
 const TelegramRoomsContext = createContext<TelegramRoomsContextValue>({
@@ -40,7 +58,11 @@ const TelegramRoomsContext = createContext<TelegramRoomsContextValue>({
   hostPauseGame: async () => {},
   hostResumeGame: async () => {},
   hostFinishGame: async () => {},
+  hostUpdateSettings: async () => {},
   rollDice: async () => {},
+  closeActiveCard: async () => {},
+  saveRoomNote: async () => {},
+  updatePlayerTokenColor: async () => {},
 });
 
 interface TelegramRoomsProviderProps {
@@ -54,6 +76,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
   const [connectionState, setConnectionState] = useState<TelegramRoomsContextValue['connectionState']>('idle');
+  const [lastDiceRoll, setLastDiceRoll] = useState<RoomDiceRolledPayload | undefined>(undefined);
+  const [lastTokenMove, setLastTokenMove] = useState<RoomTokenMovedPayload | undefined>(undefined);
   const socketRef = useRef<HostRoomSocket | undefined>(undefined);
   const roomIdRef = useRef<string | undefined>(undefined);
 
@@ -63,6 +87,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
         socketRef.current.disconnect();
         socketRef.current = undefined;
       }
+      setCurrentRoom(undefined);
       setConnectionState('idle');
       return;
     }
@@ -85,6 +110,13 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     });
     socket.on('roomStateUpdated', (snapshot) => {
       setCurrentRoom(snapshot);
+      setError(undefined);
+    });
+    socket.on('diceRolled', (payload) => {
+      setLastDiceRoll(payload);
+    });
+    socket.on('tokenMoved', (payload) => {
+      setLastTokenMove(payload);
     });
     socket.on('roomError', (payload) => {
       setError(payload.message);
@@ -99,24 +131,27 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
 
   const joinRealtimeRoom = (roomId: string) => {
     roomIdRef.current = roomId;
-    if (!socketRef.current) {
-      return;
-    }
-    socketRef.current.emit('joinRoom', { roomId });
+    socketRef.current?.emit('joinRoom', { roomId });
   };
 
-  const createRoom = async (boardType: RoomBoardType = 'full') => {
+  const withAuth = async <T,>(action: () => Promise<T>): Promise<T | undefined> => {
     if (!authToken) {
       setError('Спочатку завершіть авторизацію Telegram.');
       return undefined;
     }
-    setIsLoading(true);
     setError(undefined);
+    return action();
+  };
+
+  const createRoom = async (boardType: RoomBoardType = 'full') => {
+    setIsLoading(true);
     try {
-      const snapshot = await createRoomApi(authToken, boardType);
-      setCurrentRoom(snapshot);
-      joinRealtimeRoom(snapshot.room.id);
-      return snapshot;
+      return await withAuth(async () => {
+        const snapshot = await createRoomApi(authToken!, boardType);
+        setCurrentRoom(snapshot);
+        joinRealtimeRoom(snapshot.room.id);
+        return snapshot;
+      });
     } catch {
       setError('Не вдалося створити кімнату.');
       return undefined;
@@ -126,18 +161,15 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
   };
 
   const joinRoomByCode = async (code: string) => {
-    if (!authToken) {
-      setError('Спочатку завершіть авторизацію Telegram.');
-      return undefined;
-    }
     setIsLoading(true);
-    setError(undefined);
     try {
-      const byCode = await getRoomByCodeApi(authToken, code);
-      const snapshot = await joinRoomApi(authToken, byCode.room.id);
-      setCurrentRoom(snapshot);
-      joinRealtimeRoom(snapshot.room.id);
-      return snapshot;
+      return await withAuth(async () => {
+        const byCode = await getRoomByCodeApi(authToken!, code);
+        const snapshot = await joinRoomApi(authToken!, byCode.room.id);
+        setCurrentRoom(snapshot);
+        joinRealtimeRoom(snapshot.room.id);
+        return snapshot;
+      });
     } catch {
       setError('Кімнату не знайдено. Перевірте код.');
       return undefined;
@@ -147,17 +179,15 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
   };
 
   const loadRoomById = async (roomId: string) => {
-    if (!authToken) {
-      return undefined;
-    }
     setIsLoading(true);
-    setError(undefined);
     try {
-      const snapshot = await getRoomByIdApi(authToken, roomId);
-      const joined = await joinRoomApi(authToken, snapshot.room.id);
-      setCurrentRoom(joined);
-      joinRealtimeRoom(snapshot.room.id);
-      return joined;
+      return await withAuth(async () => {
+        const snapshot = await getRoomByIdApi(authToken!, roomId);
+        const joined = await joinRoomApi(authToken!, snapshot.room.id);
+        setCurrentRoom(joined);
+        joinRealtimeRoom(snapshot.room.id);
+        return joined;
+      });
     } catch {
       setError('Не вдалося відкрити кімнату.');
       return undefined;
@@ -166,55 +196,68 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     }
   };
 
+  const currentUserRole = useMemo(() => {
+    if (!currentRoom || !authUserId) {
+      return undefined;
+    }
+    return currentRoom.players.find((player) => player.userId === authUserId)?.role;
+  }, [currentRoom, authUserId]);
+
+  const runHostAction = async (
+    action: () => Promise<RoomSnapshot>,
+    socketAction: 'start' | 'pause' | 'resume' | 'finish' | 'updateSettings',
+    payload?: Partial<RoomSettings>,
+  ) => {
+    if (!currentRoom || currentUserRole !== 'host') {
+      return;
+    }
+    try {
+      const snapshot = await action();
+      setCurrentRoom(snapshot);
+      socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: socketAction, payload });
+    } catch {
+      setError('Не вдалося виконати дію ведучого.');
+    }
+  };
+
   const hostStartGame = async () => {
     if (!authToken || !currentRoom) {
       return;
     }
-    try {
-      const snapshot = await hostStartRoomApi(authToken, currentRoom.room.id);
-      setCurrentRoom(snapshot);
-      socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: 'start' });
-    } catch {
-      setError('Не вдалося запустити гру.');
-    }
-  };
-
-  const hostFinishGame = async () => {
-    if (!authToken || !currentRoom) {
-      return;
-    }
-    try {
-      const snapshot = await hostFinishRoomApi(authToken, currentRoom.room.id);
-      setCurrentRoom(snapshot);
-      socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: 'finish' });
-    } catch {
-      setError('Не вдалося завершити гру.');
-    }
+    await runHostAction(() => hostStartRoomApi(authToken, currentRoom.room.id), 'start');
   };
 
   const hostPauseGame = async () => {
     if (!authToken || !currentRoom) {
       return;
     }
-    try {
-      const snapshot = await hostPauseRoomApi(authToken, currentRoom.room.id);
-      setCurrentRoom(snapshot);
-      socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: 'pause' });
-    } catch {
-      setError('Не вдалося поставити гру на паузу.');
-    }
+    await runHostAction(() => hostPauseRoomApi(authToken, currentRoom.room.id), 'pause');
   };
 
   const hostResumeGame = async () => {
     if (!authToken || !currentRoom) {
       return;
     }
+    await runHostAction(() => hostResumeRoomApi(authToken, currentRoom.room.id), 'resume');
+  };
+
+  const hostFinishGame = async () => {
+    if (!authToken || !currentRoom) {
+      return;
+    }
+    await runHostAction(() => hostFinishRoomApi(authToken, currentRoom.room.id), 'finish');
+  };
+
+  const hostUpdateSettings = async (patch: Partial<RoomSettings>) => {
+    if (!authToken || !currentRoom || currentUserRole !== 'host') {
+      return;
+    }
     try {
-      const snapshot = await hostResumeRoomApi(authToken, currentRoom.room.id);
+      const snapshot = await updateRoomSettingsApi(authToken, currentRoom.room.id, patch);
       setCurrentRoom(snapshot);
-      socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: 'resume' });
+      socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: 'updateSettings', payload: patch });
     } catch {
-      setError('Не вдалося відновити гру.');
+      setError('Не вдалося оновити параметри кімнати.');
     }
   };
 
@@ -229,12 +272,52 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     socketRef.current.emit('rollDice', { roomId: currentRoom.room.id });
   };
 
-  const currentUserRole = useMemo(() => {
-    if (!currentRoom || !authUserId) {
-      return undefined;
+  const closeActiveCard = async () => {
+    if (!authToken || !currentRoom) {
+      return;
     }
-    return currentRoom.players.find((player) => player.userId === authUserId)?.role;
-  }, [currentRoom, authUserId]);
+    try {
+      const snapshot = await closeRoomCardApi(authToken, currentRoom.room.id);
+      setCurrentRoom(snapshot);
+      socketRef.current?.emit('closeCard', { roomId: currentRoom.room.id });
+    } catch {
+      setError('Не вдалося закрити картку.');
+    }
+  };
+
+  const saveRoomNote = async ({
+    cellNumber,
+    note,
+    scope,
+  }: {
+    cellNumber: number;
+    note: string;
+    scope: RoomNoteScope;
+  }) => {
+    if (!authToken || !currentRoom) {
+      return;
+    }
+    try {
+      const snapshot = await saveRoomNoteApi(authToken, currentRoom.room.id, { cellNumber, note, scope });
+      setCurrentRoom(snapshot);
+      socketRef.current?.emit('updateNote', { roomId: currentRoom.room.id, cell: cellNumber, note, scope });
+    } catch {
+      setError('Не вдалося зберегти нотатку.');
+    }
+  };
+
+  const updatePlayerTokenColor = async (tokenColor: string) => {
+    if (!authToken || !currentRoom) {
+      return;
+    }
+    try {
+      const snapshot = await updateRoomPreferencesApi(authToken, currentRoom.room.id, { tokenColor });
+      setCurrentRoom(snapshot);
+      socketRef.current?.emit('updatePlayerPreferences', { roomId: currentRoom.room.id, tokenColor });
+    } catch {
+      setError('Не вдалося оновити колір фішки.');
+    }
+  };
 
   const isMyTurn = Boolean(
     currentRoom
@@ -251,6 +334,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       connectionState,
       currentUserRole,
       isMyTurn,
+      lastDiceRoll,
+      lastTokenMove,
       createRoom,
       joinRoomByCode,
       loadRoomById,
@@ -258,9 +343,13 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       hostPauseGame,
       hostResumeGame,
       hostFinishGame,
+      hostUpdateSettings,
       rollDice,
+      closeActiveCard,
+      saveRoomNote,
+      updatePlayerTokenColor,
     }),
-    [currentRoom, isLoading, error, connectionState, currentUserRole, isMyTurn],
+    [connectionState, currentRoom, currentUserRole, error, isLoading, isMyTurn, lastDiceRoll, lastTokenMove],
   );
 
   return <TelegramRoomsContext.Provider value={value}>{children}</TelegramRoomsContext.Provider>;

@@ -2,6 +2,7 @@ export type RoomStatus = 'open' | 'in_progress' | 'paused' | 'finished';
 export type RoomBoardType = 'short' | 'full';
 export type RoomPlayerRole = 'host' | 'player';
 export type RoomConnectionStatus = 'online' | 'offline';
+export type RoomDiceMode = 'classic' | 'fast' | 'triple';
 
 export interface RoomPlayer {
   id: string;
@@ -21,6 +22,23 @@ export interface RoomPlayerState {
   notesCount: number;
 }
 
+export interface RoomCardState {
+  cellNumber: number;
+  playerUserId: string;
+  openedAt: string;
+}
+
+export interface RoomNotesState {
+  hostByCell: Record<string, string>;
+  playerByUserId: Record<string, Record<string, string>>;
+}
+
+export interface RoomSettings {
+  diceMode: RoomDiceMode;
+  allowHostCloseAnyCard: boolean;
+  hostCanPause: boolean;
+}
+
 export interface RoomGameState {
   roomId: string;
   currentTurnPlayerId: string;
@@ -30,9 +48,13 @@ export interface RoomGameState {
     fromCell: number;
     toCell: number;
     dice: number;
+    diceValues?: number[];
     snakeOrArrow: 'snake' | 'arrow' | null;
     timestamp: string;
   }>;
+  activeCard: RoomCardState | null;
+  notes: RoomNotesState;
+  settings: RoomSettings;
 }
 
 export interface GameRoom {

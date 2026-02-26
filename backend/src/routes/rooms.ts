@@ -2,12 +2,16 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth, type AuthenticatedRequest } from '../lib/authMiddleware.js';
 import {
+  closeRoomCard,
   createHostRoom,
   getRoomByCode,
   getRoomById,
   joinRoom,
+  recordRoomNote,
   setRoomStatus,
   startRoom,
+  updateRoomPlayerTokenColor,
+  updateRoomSettings,
 } from '../store/roomsStore.js';
 import { upsertGameSessionForUser } from '../store/gamesStore.js';
 
@@ -18,6 +22,22 @@ const createRoomSchema = z.object({
 const joinRoomSchema = z.object({
   roomCode: z.string().min(4).optional(),
 });
+const roomNoteSchema = z.object({
+  cellNumber: z.number().int().min(1),
+  note: z.string().max(4000),
+  scope: z.enum(['host', 'player']),
+});
+const roomSettingsSchema = z.object({
+  diceMode: z.enum(['classic', 'fast', 'triple']).optional(),
+  allowHostCloseAnyCard: z.boolean().optional(),
+  hostCanPause: z.boolean().optional(),
+});
+const roomPlayerPreferencesSchema = z.object({
+  tokenColor: z.string().min(1).max(32),
+});
+
+const resolveParticipantLabel = (user: NonNullable<AuthenticatedRequest['authUser']>): string =>
+  user.username ? `@${user.username}` : user.displayName;
 
 export const roomsRouter = Router();
 
@@ -37,7 +57,7 @@ roomsRouter.post('/', requireAuth, (req: AuthenticatedRequest, res) => {
     try {
       const snapshot = await createHostRoom({
         hostUserId: req.authUser.id,
-        hostDisplayName: req.authUser.displayName,
+        hostDisplayName: resolveParticipantLabel(req.authUser),
         boardType: parsed.data.boardType,
       });
       return res.status(201).json({ ok: true, ...snapshot, joinUrl: `/host-room/${snapshot.room.id}` });
@@ -95,7 +115,7 @@ roomsRouter.post('/:roomId/join', requireAuth, (req: AuthenticatedRequest, res) 
       const snapshot = await joinRoom({
         roomId: resolvedRoomId,
         userId: req.authUser.id,
-        displayName: req.authUser.displayName,
+        displayName: resolveParticipantLabel(req.authUser),
       });
       return res.status(200).json({ ok: true, ...snapshot });
     } catch (error) {
@@ -105,6 +125,108 @@ roomsRouter.post('/:roomId/join', requireAuth, (req: AuthenticatedRequest, res) 
       }
       if (code === 'ROOM_FINISHED') {
         return res.status(409).json({ ok: false, error: 'Room is finished' });
+      }
+      return res.status(404).json({ ok: false, error: 'Room not found' });
+    }
+  })();
+});
+
+roomsRouter.post('/:roomId/card/close', requireAuth, (req: AuthenticatedRequest, res) => {
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const roomId = Array.isArray(req.params.roomId) ? req.params.roomId[0] : req.params.roomId;
+    try {
+      const snapshot = await closeRoomCard({ roomId, userId: req.authUser.id });
+      return res.status(200).json({ ok: true, ...snapshot });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : '';
+      if (code === 'FORBIDDEN') {
+        return res.status(403).json({ ok: false, error: 'You cannot close this card' });
+      }
+      return res.status(404).json({ ok: false, error: 'Room not found' });
+    }
+  })();
+});
+
+roomsRouter.post('/:roomId/notes', requireAuth, (req: AuthenticatedRequest, res) => {
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const parsed = roomNoteSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ ok: false, error: 'Invalid payload' });
+    }
+    const roomId = Array.isArray(req.params.roomId) ? req.params.roomId[0] : req.params.roomId;
+    try {
+      const snapshot = await recordRoomNote({
+        roomId,
+        userId: req.authUser.id,
+        cellNumber: parsed.data.cellNumber,
+        note: parsed.data.note,
+        scope: parsed.data.scope,
+      });
+      return res.status(200).json({ ok: true, ...snapshot });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : '';
+      if (code === 'FORBIDDEN') {
+        return res.status(403).json({ ok: false, error: 'Only host can save host notes' });
+      }
+      return res.status(404).json({ ok: false, error: 'Room not found' });
+    }
+  })();
+});
+
+roomsRouter.patch('/:roomId/settings', requireAuth, (req: AuthenticatedRequest, res) => {
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const parsed = roomSettingsSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ ok: false, error: 'Invalid payload' });
+    }
+    const roomId = Array.isArray(req.params.roomId) ? req.params.roomId[0] : req.params.roomId;
+    try {
+      const snapshot = await updateRoomSettings({
+        roomId,
+        hostUserId: req.authUser.id,
+        patch: parsed.data,
+      });
+      return res.status(200).json({ ok: true, ...snapshot });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : '';
+      if (code === 'FORBIDDEN') {
+        return res.status(403).json({ ok: false, error: 'Only host can update room settings' });
+      }
+      return res.status(404).json({ ok: false, error: 'Room not found' });
+    }
+  })();
+});
+
+roomsRouter.patch('/:roomId/preferences', requireAuth, (req: AuthenticatedRequest, res) => {
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const parsed = roomPlayerPreferencesSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ ok: false, error: 'Invalid payload' });
+    }
+    const roomId = Array.isArray(req.params.roomId) ? req.params.roomId[0] : req.params.roomId;
+    try {
+      const snapshot = await updateRoomPlayerTokenColor({
+        roomId,
+        userId: req.authUser.id,
+        tokenColor: parsed.data.tokenColor,
+      });
+      return res.status(200).json({ ok: true, ...snapshot });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : '';
+      if (code === 'INVALID_TOKEN_COLOR') {
+        return res.status(400).json({ ok: false, error: 'Invalid token color' });
       }
       return res.status(404).json({ ok: false, error: 'Room not found' });
     }
