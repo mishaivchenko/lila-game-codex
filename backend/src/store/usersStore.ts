@@ -12,8 +12,10 @@ export const upsertUserFromTelegram = (telegram: TelegramAuthResult): AppUser =>
       ...existing,
       displayName: telegram.displayName,
       username: telegram.username,
+      firstName: telegram.firstName,
+      lastName: telegram.lastName,
       locale: telegram.locale,
-      updatedAt: now,
+      lastActiveAt: now,
     };
     usersByTelegramId.set(telegram.telegramId, updated);
     usersById.set(updated.id, updated);
@@ -25,9 +27,11 @@ export const upsertUserFromTelegram = (telegram: TelegramAuthResult): AppUser =>
     telegramId: telegram.telegramId,
     displayName: telegram.displayName,
     username: telegram.username,
+    firstName: telegram.firstName,
+    lastName: telegram.lastName,
     locale: telegram.locale,
     createdAt: now,
-    updatedAt: now,
+    lastActiveAt: now,
   };
   usersByTelegramId.set(telegram.telegramId, created);
   usersById.set(created.id, created);

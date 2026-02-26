@@ -1,8 +1,9 @@
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { verifyTelegramWebAppInitData } from '../lib/telegramWebAppAuth.js';
 import { upsertUserFromTelegram } from '../store/usersStore.js';
 import { createAppToken } from '../lib/appToken.js';
+import { requireAuth, type AuthenticatedRequest } from '../lib/authMiddleware.js';
 
 const telegramWebAppSchema = z.object({
   initData: z.string().min(1),
@@ -10,7 +11,29 @@ const telegramWebAppSchema = z.object({
 
 export const authRouter = Router();
 
-authRouter.post('/telegram/webapp', (req, res) => {
+const serializeUser = (user: {
+  id: string;
+  telegramId: string;
+  displayName: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  locale?: string;
+  createdAt: string;
+  lastActiveAt: string;
+}) => ({
+  id: user.id,
+  telegramId: user.telegramId,
+  displayName: user.displayName,
+  username: user.username,
+  firstName: user.firstName,
+  lastName: user.lastName,
+  locale: user.locale,
+  createdAt: user.createdAt,
+  lastActiveAt: user.lastActiveAt,
+});
+
+const handleTelegramAuth = (req: Request, res: Response) => {
   const parsed = telegramWebAppSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ ok: false, error: 'Invalid payload', details: parsed.error.flatten() });
@@ -29,13 +52,7 @@ authRouter.post('/telegram/webapp', (req, res) => {
     return res.status(200).json({
       ok: true,
       token,
-      user: {
-        id: user.id,
-        telegramId: user.telegramId,
-        displayName: user.displayName,
-        username: user.username,
-        locale: user.locale,
-      },
+      user: serializeUser(user),
     });
   } catch (error) {
     console.warn(
@@ -47,4 +64,17 @@ authRouter.post('/telegram/webapp', (req, res) => {
     );
     return res.status(401).json({ ok: false, error: 'Telegram auth validation failed' });
   }
+};
+
+authRouter.post('/telegram/webapp', handleTelegramAuth);
+authRouter.post('/telegram', handleTelegramAuth);
+
+authRouter.get('/me', requireAuth, (req: AuthenticatedRequest, res) => {
+  if (!req.authUser) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  }
+  return res.status(200).json({
+    ok: true,
+    user: serializeUser(req.authUser),
+  });
 });

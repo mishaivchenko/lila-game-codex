@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { eventsRouter } from './routes/events.js';
 import { authRouter } from './routes/auth.js';
 import { roomsRouter } from './routes/rooms.js';
+import { gamesRouter } from './routes/games.js';
+import { requireAuth, type AuthenticatedRequest } from './lib/authMiddleware.js';
 
 export const createApp = (): express.Express => {
   const app = express();
@@ -22,7 +24,14 @@ export const createApp = (): express.Express => {
 
   app.use('/api/events', eventsRouter);
   app.use('/api/auth', authRouter);
+  app.get('/api/me', requireAuth, (req: AuthenticatedRequest, res) => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    return res.status(200).json({ ok: true, user: req.authUser });
+  });
   app.use('/api/rooms', roomsRouter);
+  app.use('/api/games', gamesRouter);
 
   if (process.env.NODE_ENV === 'production') {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
