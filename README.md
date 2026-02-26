@@ -2,233 +2,248 @@
 
 # Lila Game
 
-### A mindful digital Leela journey for web and Telegram Mini Apps
+### A Telegram Mini App about fate, snakes, ladders, reflection, and a suspicious amount of vibe-coded engineering
 
 [![Build and Deploy to VPS](https://img.shields.io/github/actions/workflow/status/mishaivchenko/lila-game-codex/deploy.yml?branch=main&label=VPS%20Deploy)](https://github.com/mishaivchenko/lila-game-codex/actions/workflows/deploy.yml)
 [![CI/CD](https://img.shields.io/github/actions/workflow/status/mishaivchenko/lila-game-codex/ci-cd.yml?branch=main&label=CI%2FCD)](https://github.com/mishaivchenko/lila-game-codex/actions/workflows/ci-cd.yml)
-[![License](https://img.shields.io/badge/License-No%20License-lightgrey)](#license)
 [![Last Commit](https://img.shields.io/github/last-commit/mishaivchenko/lila-game-codex/main)](https://github.com/mishaivchenko/lila-game-codex/commits/main)
-[![Stars](https://img.shields.io/github/stars/mishaivchenko/lila-game-codex?style=social)](https://github.com/mishaivchenko/lila-game-codex/stargazers)
-
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
-![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
-![Node.js](https://img.shields.io/badge/Node.js-43853D?logo=node.js&logoColor=white)
-![Telegram Mini App](https://img.shields.io/badge/Telegram-Mini%20App-26A5E4?logo=telegram&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+[![Telegram Mini App](https://img.shields.io/badge/Telegram-Mini%20App-26A5E4?logo=telegram&logoColor=white)](https://core.telegram.org/bots/webapps)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-43853D?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
 </div>
 
-## What This Project Is
-**Lila Game** is a modern digital interpretation of Leela (Leela Chakra), designed for reflective play, journaling, and guided movement through symbolic cells.
+## What Is This
+This is a digital version of **Lila / Leela**: a symbolic self-reflection game where players move through cells, hit snakes and ladders, open cards, write notes, and occasionally get emotionally read by their own dice.
 
-This implementation provides:
-- **Full board** and **short board** modes.
-- **"Глибока гра" (Deep Mode)** teaser experience (locked/coming soon UX).
-- **Snake / ladder path animations** tied to board profiles (`snakePaths[]`, `ladderPaths[]`).
-- **Card reflection modals** with markdown-capable content and persistent notes.
-- **Telegram Mini App + browser support** from the same codebase.
+It runs as:
+- a **Telegram Mini App**
+- a **regular web app**
+- a **single-player reflective flow**
+- an evolving **host room / group session** system
 
-## Core Features
-- Click/tap a cell to open the card modal and reflection flow.
-- Token movement animation with cell-by-cell path visualization.
-- Snake/ladder transitions rendered on board using profile path points.
-- Move history with explicit transition path labels (including bounce edge cases).
-- Card journaling with local persistence via IndexedDB (Dexie repositories).
-- Smooth UI transitions and mobile-first interaction patterns.
-- Deep Mode promo overlay integrated into active game UI.
-- Telegram shell with WebApp auth handshake and room create/join skeleton.
-- Infrastructure prepared for production VPS deployment and CI/CD.
-- BoardTheme system with persisted user customization (theme, token color, animation speed).
+In short: part game, part journaling tool, part spiritual UX experiment, part "I can explain this architecture, probably".
 
-## Telegram Mini App UX
-- Native Telegram shell integration with route-aware **BackButton** behavior.
-- Gentle **haptic feedback** for key moments (dice throw, landing, snake/arrow transition, card open).
-- Improved fullscreen + safe-area behavior (`env(safe-area-inset-*)`) for iPhone notch / Android gesture areas.
-- Runtime Telegram theme sync with `themeChanged` event and `colorScheme` handling.
+## Why It Exists
+Because a board like this should not live only as a static print artifact.
+It should:
+- feel alive,
+- animate smoothly,
+- work on mobile,
+- save progress,
+- support both personal and guided play,
+- and not collapse the moment someone double-taps the board on an iPhone.
 
-## Board Themes & Preferences
-- `BoardTheme` is centralized in `/frontend/src/theme/boardTheme.ts`.
-- Active theme is managed by `/frontend/src/theme/BoardThemeProvider.tsx`.
-- Player preferences are persisted via `settingsRepository` (`selectedThemeId`, `tokenColorId`, `animationSpeed`).
-- Current built-in themes:
-  - `default-spiritual`
-  - `cosmic-dark`
-  - `minimal-cream`
+## What You Get
+- Full board and short board modes
+- Smooth token movement with step-by-step travel
+- Snake and ladder transitions with card sequencing
+- Click/tap a cell to open its card
+- Notes and reflections saved per journey
+- Theme system with light/dark variants
+- Telegram auth and Telegram-adapted shell behavior
+- Game history and resumable sessions
+- Host room online mode with synchronized board state
+- Board zoom, mobile-safe layout, haptics, and generally too much care for tiny UX details
 
-## Screenshots / Previews
-> Replace or extend these with fresh UI captures when new visuals are shipped.
+## Screenshots
+### Board
+![Board](frontend/public/assets/board/web/full/board-full-1536.webp)
 
-### Board Example
-![Lila Board](frontend/public/assets/board/web/short/board-short-1024.webp)
+### Card
+![Card](cards/IMG_2677.JPEG)
 
-### Card Example
-![Card Example](cards/IMG_2677.JPEG)
+### Short Board
+![Short Board](frontend/public/assets/board/web/short/board-short-1024.webp)
 
-### Full Board Asset
-![Full Board](frontend/public/assets/board/web/full/board-full-1536.webp)
+## Main Flows
+### 1. Solo Journey
+You start a game, roll dice, move through the board, open cards, write notes, and pretend you are "just testing the UI" while actually being called out by the symbolism.
 
-### Deep Journey Visual Reference
-![Deep Journey Reference](tmp/pdfs/lila_guide_p1.png)
+### 2. Telegram Mini App
+The app runs inside Telegram with:
+- Telegram auth
+- theme sync
+- safe-area handling
+- haptics
+- mobile-first layout
 
-## Tech Stack
-- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Dexie.
-- **Backend:** Node.js, Express 5, TypeScript, Zod.
-- **Infra:** Docker, Docker Compose, Caddy reverse proxy, PostgreSQL.
-- **Integrations:** Telegram Mini App WebApp SDK + server-side initData validation.
+### 3. Host Room
+A host creates a shared room, players join, and everyone sees the same board state in real time.
+Each player rolls their **own** dice. As it should be. Fate is outsourced to no one.
+
+## Stack
+### Frontend
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS
+- Dexie / IndexedDB
+- Framer Motion and custom animation utilities
+
+### Backend
+- Node.js
+- Express
+- TypeScript
+- Zod
+- Socket.IO
+- Postgres-backed persistence with SQL migrations
+
+### Infra
+- Docker
+- Docker Compose
+- Caddy reverse proxy
+- GitHub Actions CI/CD
+- VPS deployment
 
 ## Project Structure
 ```text
 lila-game-codex/
 ├─ frontend/
-│  ├─ src/
-│  │  ├─ app/                 # Router composition
-│  │  ├─ pages/               # Route-level screens
-│  │  ├─ components/          # Reusable UI
-│  │  ├─ components/lila/     # Board & path animation renderers
-│  │  ├─ context/             # Game session state orchestration
-│  │  ├─ domain/              # Core game rules/engine
-│  │  ├─ features/deep-mode/  # Deep mode UI module
-│  │  ├─ features/telegram/   # Telegram shell/auth/rooms
-│  │  ├─ lib/lila/            # Coordinates, profiles, move visualization
-│  │  ├─ repositories/        # Storage contracts + Dexie adapters
-│  │  └─ content/             # Boards/cards/chakras metadata
-│  └─ Dockerfile
+│  ├─ src/app/                  # router/bootstrap
+│  ├─ src/pages/                # page-level screens
+│  ├─ src/components/           # shared UI
+│  ├─ src/components/lila/      # board, token, snake/ladder rendering
+│  ├─ src/context/              # game state provider
+│  ├─ src/domain/               # game rules
+│  ├─ src/features/telegram/    # Telegram auth, shell, rooms, sync
+│  ├─ src/repositories/         # Dexie + contracts
+│  ├─ src/theme/                # board theme + UI tokens
+│  └─ public/assets/board/      # optimized board assets
 ├─ backend/
-│  ├─ src/
-│  │  ├─ routes/              # API routes (auth/events/rooms)
-│  │  ├─ lib/                 # Token auth + Telegram signature verification
-│  │  ├─ store/               # In-memory stores (MVP)
-│  │  └─ types/               # API/domain typings
-│  └─ Dockerfile
-├─ deploy/
-│  └─ Caddyfile               # Reverse proxy routing
-├─ docs/                      # Setup, deploy and architecture docs
-├─ docker-compose.yml
-└─ README.md
+│  ├─ src/routes/               # REST API
+│  ├─ src/socket/               # realtime room sync
+│  ├─ src/store/                # persistence-facing domain stores
+│  ├─ src/lib/                  # auth, db, Telegram verification
+│  └─ migrations/               # SQL migrations
+├─ docs/                        # architecture, setup, deploy docs
+├─ cards/                       # card image assets
+├─ field/                       # legacy/static field assets
+└─ deploy/                      # VPS/reverse-proxy config
 ```
 
-## Architecture Snapshot
+## Architecture In One Diagram
 ```mermaid
 flowchart LR
-  TG["Telegram Client"] --> FE["Frontend SPA (React/Vite)"]
-  BR["Web Browser"] --> FE
-  FE -->|"/api/*"| RP["Caddy Reverse Proxy"]
-  RP --> BE["Backend API (Express)"]
-  FE -->|"Local persistence"| IDB["IndexedDB (Dexie)"]
-  BE --> PG["PostgreSQL (infra-ready)"]
+  TG["Telegram Mini App"] --> FE["Frontend SPA"]
+  WEB["Web Browser"] --> FE
+  FE -->|"/api + ws"| BE["Backend API / Socket Server"]
+  FE -->|"local cache"| IDB["IndexedDB / Dexie"]
+  BE --> PG["Postgres"]
+  BE --> TGAUTH["Telegram WebApp auth validation"]
 ```
 
-## Modes and Gameplay Flow
-### Boards
-- `full` board profile with full coordinate + transition map.
-- `short` board profile for reduced journey mode.
-
-### Movement
-1. Dice result resolves the move path.
-2. Token animates through **explicit intermediate cells**.
-3. If snake/ladder is hit, the renderer uses board profile transition points.
-4. Final card modal opens with contextual move information.
-
-### Deep Mode
-- UI-level "Глибока гра" card and overlay are present.
-- Experience is intentionally locked for now (`Coming Soon — AI Journey`).
-
-## Getting Started
+## Running Locally
 ### Requirements
-- **Node.js:** `20+`
-- **npm:** `10+`
-- Docker optional for containerized run.
+- Node.js `20+`
+- npm `10+`
+- Docker optional, but useful when you want to feel like production is nearby and judging you
 
-### Clone and Install
+### Install
 ```bash
 git clone https://github.com/mishaivchenko/lila-game-codex.git
 cd lila-game-codex
 npm install
 ```
 
-### Run in Development (frontend + backend)
+### Start frontend + backend
 ```bash
 npm run dev
 ```
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:3001`
 
-### Run Tests
-```bash
-npm run test:all
-```
+Default URLs:
+- frontend: `http://localhost:5173`
+- backend: `http://localhost:3001`
 
 ### Build
 ```bash
 npm run build
 ```
 
-## Docker and Local Production-like Run
+### Test
+```bash
+npm run test:all
+```
+
+## Docker
+Run the whole stack:
 ```bash
 docker compose up --build
 ```
-Services:
-- App entrypoint via Caddy: `http://localhost` (or configured `CADDY_SITE_ADDR`)
-- Backend health: `http://localhost/health`
 
-Build individual images:
-```bash
-docker build -f frontend/Dockerfile -t lila-frontend:local .
-docker build -f backend/Dockerfile -t lila-backend:local .
-```
+Useful when you want:
+- production-like behavior
+- backend + frontend together
+- fewer "works on my machine" speeches
 
-## Environment Configuration
-Use `.env.example` at repository root as a base.
-
-Critical variables:
-- `PUBLIC_URL`
-- `CADDY_SITE_ADDR`
+## Environment
+Main variables:
+- `DATABASE_URL`
+- `DATABASE_SSL`
 - `APP_AUTH_SECRET`
 - `TELEGRAM_BOT_TOKEN`
-- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
-- `FRONTEND_IMAGE`, `BACKEND_IMAGE` (for deployment)
-- `VITE_TELEGRAM_BOT_USERNAME` (optional, used for Telegram invite links)
-- `VITE_TELEGRAM_STARTAPP_PARAM` (optional, default `play`)
+- `PUBLIC_URL`
+- `CADDY_SITE_ADDR`
+- `VITE_TELEGRAM_BOT_USERNAME`
+- `VITE_TELEGRAM_STARTAPP_PARAM`
 
-More details:
-- Telegram setup: [`docs/TELEGRAM_MINI_APP_SETUP.md`](docs/TELEGRAM_MINI_APP_SETUP.md)
-- VPS deployment (UA): [`docs/VPS_UA_DEPLOY.md`](docs/VPS_UA_DEPLOY.md)
-- Time4VPS deployment: [`docs/TIME4VPS_DEPLOY.md`](docs/TIME4VPS_DEPLOY.md)
-- Full architecture report: [`docs/PROJECT_REPORT.md`](docs/PROJECT_REPORT.md)
+More setup details:
+- [Telegram Mini App setup](docs/TELEGRAM_MINI_APP_SETUP.md)
+- [VPS deploy guide](docs/VPS_UA_DEPLOY.md)
+- [Time4VPS deploy guide](docs/TIME4VPS_DEPLOY.md)
+- [Project report](docs/PROJECT_REPORT.md)
+- [Code health dashboard](docs/code_health_dashboard.md)
 
-## CI/CD and Deployment
-### Workflows
-- [`deploy.yml`](.github/workflows/deploy.yml)
-  - Builds frontend/backend images.
-  - Pushes to GHCR.
-  - SSH deploys to VPS via Docker Compose.
-- [`ci-cd.yml`](.github/workflows/ci-cd.yml)
-  - Runs tests and build.
-  - Builds Docker image and supports Hugging Face fallback flow.
+## Current Product Areas
+### Gameplay
+- board movement
+- card opening flow
+- snakes/ladders transitions
+- notes and reflections
+- history and resume
 
-### Standard VPS deploy cycle
-1. Push changes to `main`.
-2. GitHub Actions builds and publishes images.
-3. Deploy job executes on VPS:
-   - `docker compose pull`
-   - `docker compose up -d --remove-orphans`
+### UX / Visual System
+- board zoom
+- theme system
+- typography system
+- mobile-safe layout
+- modal transitions
+- Telegram-aware dark/light behavior
+
+### Multiplayer / Guided Flow
+- host room creation
+- join by code/link
+- per-player turns
+- realtime shared board state
+- pause/resume lifecycle
+
+## Engineering Notes
+A few things are intentionally true here:
+- the board is the hero, not the chrome around it;
+- Telegram-specific behavior is isolated instead of smeared across the app;
+- gameplay logic is not supposed to depend on presentation code;
+- persistence is moving toward a proper server-authoritative model;
+- future RAG/AI work should extend the data layer, not hijack the runtime game loop.
+
+That last point matters. If we do AI Lila properly later, it should consume structured journey data, not reverse-engineer chaos from UI state.
+
+## Status
+This project is actively evolving.
+Some parts are polished.
+Some parts are dangerously close to being polished.
+Some parts are still honest about being MVP.
+
+That is normal.
+This whole thing was, in fact, vibe-coded. Just not irresponsibly.
 
 ## Contributing
-1. Create a feature branch from `main`.
-2. Keep changes focused and test-covered.
-3. Run before PR:
-   - `npm run test:all`
-   - `npm run build`
-4. Update docs when changing architecture, deployment, or major UX flows.
-
-## Quality & Engineering Notes
-- Domain gameplay logic is isolated from rendering modules.
-- Storage is abstracted behind repositories (`contracts` + adapters).
-- Telegram-specific logic is centralized in `features/telegram`.
-- Current technical debt and health metrics are tracked in:
-  - [`docs/code_health_dashboard.md`](docs/code_health_dashboard.md)
-  - [`docs/code_health_metrics.json`](docs/code_health_metrics.json)
+1. Branch from `main`
+2. Keep changes focused
+3. Run tests/build before pushing
+4. Update docs when changing architecture or flows
+5. If you touch game logic, do not "just quickly patch it" unless you enjoy meeting the board bug again in three days
 
 ## License
-No explicit license file is currently published in this repository.
-If this project is intended to be open-source, add a `LICENSE` file and update this section.
+No explicit license is currently published in this repository.
