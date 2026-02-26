@@ -57,6 +57,7 @@ export interface ModalStyle {
   panelBackground: string;
   panelBorder: string;
   viewportMarginPx: number;
+  imageBlendMode: 'light-blend' | 'dark-framed';
   imagePaneBackground: string;
   imagePaneBorder: string;
   imageCanvasBackground: string;
@@ -213,12 +214,13 @@ export const DEFAULT_SPIRITUAL_THEME: BoardTheme = {
     panelBackground: '#ffffff',
     panelBorder: '#f5f5f4',
     viewportMarginPx: 12,
-    imagePaneBackground: '#f7f4ef',
-    imagePaneBorder: '#ebe0d3',
-    imageCanvasBackground: '#f9f7f3',
-    imageCanvasBorder: '#e8ddd0',
-    imageCanvasShadow: 'inset 0 1px 3px rgba(95,73,58,0.08)',
-    imageCanvasOverlay: 'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(249,247,243,0) 26%, rgba(249,247,243,0) 74%, rgba(255,255,255,0.35) 100%)',
+    imageBlendMode: 'light-blend',
+    imagePaneBackground: '#ffffff',
+    imagePaneBorder: 'transparent',
+    imageCanvasBackground: '#ffffff',
+    imageCanvasBorder: 'transparent',
+    imageCanvasShadow: 'none',
+    imageCanvasOverlay: 'none',
   },
   typography: {
     bodyVar: '--lila-font-body',
@@ -287,14 +289,15 @@ export const COSMIC_DARK_THEME: BoardTheme = {
   },
   modal: {
     ...DEFAULT_SPIRITUAL_THEME.modal,
-    panelBackground: '#ece6db',
-    panelBorder: '#3f485f',
-    imagePaneBackground: '#1f2435',
-    imagePaneBorder: '#49526b',
-    imageCanvasBackground: '#2a3042',
-    imageCanvasBorder: '#55607c',
-    imageCanvasShadow: 'inset 0 1px 4px rgba(6,8,14,0.58), 0 10px 24px rgba(6,8,14,0.28)',
-    imageCanvasOverlay: 'linear-gradient(180deg, rgba(156,171,214,0.12) 0%, rgba(42,48,66,0) 24%, rgba(42,48,66,0) 72%, rgba(18,23,34,0.38) 100%)',
+    panelBackground: '#202638',
+    panelBorder: '#4c5774',
+    imageBlendMode: 'dark-framed',
+    imagePaneBackground: '#1a2031',
+    imagePaneBorder: '#414d69',
+    imageCanvasBackground: '#f6f2eb',
+    imageCanvasBorder: '#8c94ac',
+    imageCanvasShadow: '0 14px 30px rgba(8, 11, 20, 0.34), inset 0 0 0 1px rgba(255,255,255,0.22)',
+    imageCanvasOverlay: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(246,242,235,0) 26%, rgba(246,242,235,0) 76%, rgba(15,19,30,0.1) 100%)',
   },
   layout: {
     ...DEFAULT_SPIRITUAL_THEME.layout,
@@ -357,6 +360,17 @@ export const MINIMAL_CREAM_THEME: BoardTheme = {
     floatingControlsShadow: '0 18px 36px rgba(120, 95, 76, 0.22)',
     zoomModeGradient: 'radial-gradient(circle at center, rgba(131, 200, 190, 0.14), rgba(131, 200, 190, 0))',
   },
+};
+
+MINIMAL_CREAM_THEME.modal = {
+  ...MINIMAL_CREAM_THEME.modal,
+  imageBlendMode: 'light-blend',
+  imagePaneBackground: '#ffffff',
+  imagePaneBorder: 'transparent',
+  imageCanvasBackground: '#ffffff',
+  imageCanvasBorder: 'transparent',
+  imageCanvasShadow: 'none',
+  imageCanvasOverlay: 'none',
 };
 
 export const BOARD_THEMES: Record<string, BoardTheme> = {

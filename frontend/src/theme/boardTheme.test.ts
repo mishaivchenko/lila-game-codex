@@ -47,4 +47,17 @@ describe('boardTheme', () => {
     expect(cosmic.dangerBg).not.toBe(cosmic.bgMain);
     expect(cosmic.secondaryButtonText).not.toBe(cosmic.secondaryButtonBg);
   });
+
+  it('uses light card blending for cream themes and framed mode for cosmic', () => {
+    const spiritual = resolveBoardTheme('default-spiritual');
+    const minimal = resolveBoardTheme('minimal-cream');
+    const cosmic = resolveBoardTheme('cosmic-dark');
+
+    expect(spiritual.modal.imageBlendMode).toBe('light-blend');
+    expect(spiritual.modal.imageCanvasShadow).toBe('none');
+    expect(minimal.modal.imageBlendMode).toBe('light-blend');
+    expect(minimal.modal.imageCanvasBackground).toBe('#ffffff');
+    expect(cosmic.modal.imageBlendMode).toBe('dark-framed');
+    expect(cosmic.modal.imageCanvasShadow).not.toBe('none');
+  });
 });

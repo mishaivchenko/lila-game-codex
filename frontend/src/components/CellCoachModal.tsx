@@ -68,6 +68,8 @@ export const CellCoachModal = ({
   const isTouchDevice = typeof window !== 'undefined'
     && (window.matchMedia?.('(pointer: coarse)').matches || 'ontouchstart' in window);
   const useVeil = DEFAULT_CARD_LOADING_SETTINGS.veilEnabledOnMobile && isTouchDevice;
+  const isDarkFramedBlend = theme.modal.imageBlendMode === 'dark-framed';
+  const contentPanelBackground = isDarkFramedBlend ? 'var(--lila-surface)' : theme.modal.panelBackground;
   useOverlayLock(true);
 
   const clearVeilTimers = () => {
@@ -226,7 +228,7 @@ export const CellCoachModal = ({
                 boxShadow: theme.modal.imageCanvasShadow,
               }}
             >
-              <div className="relative h-full w-full max-h-[42vh] aspect-[4/5] sm:max-h-[78vh]">
+              <div className="relative h-full w-full max-h-[42vh] max-w-[21.5rem] aspect-[4/5] sm:max-h-[78vh]">
                 <img
                   src={imagePath}
                   alt={`Картка ${cellNumber}`}
@@ -234,18 +236,20 @@ export const CellCoachModal = ({
                   style={{
                     opacity: isImageLoaded ? 1 : 0,
                     transition: `opacity ${DEFAULT_CARD_LOADING_SETTINGS.veilFadeDurationMs}ms ease-out`,
-                    imageRendering: 'crisp-edges',
+                    imageRendering: 'auto',
                     backgroundColor: theme.modal.imageCanvasBackground,
                   }}
                   onLoad={handleImageLoaded}
                 />
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0"
-                  style={{
-                    background: theme.modal.imageCanvasOverlay,
-                  }}
-                />
+                {isDarkFramedBlend && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                      background: theme.modal.imageCanvasOverlay,
+                    }}
+                  />
+                )}
                 {!isImageLoaded && (
                   <div
                     aria-hidden="true"
@@ -261,7 +265,10 @@ export const CellCoachModal = ({
             </div>
           </section>
 
-          <section className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+          <section
+            className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6"
+            style={{ background: contentPanelBackground }}
+          >
             <h3 className="text-xl font-semibold text-stone-900">{lilaContent.title}</h3>
             {moveContext && (
               <div className="mt-2 flex items-center gap-2">
@@ -275,12 +282,23 @@ export const CellCoachModal = ({
                 )}
               </div>
             )}
-            <div className="mt-3 rounded-2xl border border-[#ead9cc] bg-[#fff9f4] p-3">
+            <div
+              className="mt-3 rounded-2xl border p-3"
+              style={{
+                borderColor: 'var(--lila-border-soft)',
+                backgroundColor: 'var(--lila-surface-muted)',
+              }}
+            >
               <MarkdownText source={combinedMarkdown} />
             </div>
 
             <textarea
-              className="mt-5 min-h-32 max-h-[42vh] w-full resize-y overflow-y-auto rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-[15px] leading-6 text-stone-900"
+              className="mt-5 min-h-32 max-h-[42vh] w-full resize-y overflow-y-auto rounded-xl border px-3 py-2.5 text-[15px] leading-6 placeholder:text-[color:var(--lila-text-muted)]"
+              style={{
+                backgroundColor: 'var(--lila-input-bg)',
+                borderColor: 'var(--lila-input-border)',
+                color: 'var(--lila-text-primary)',
+              }}
               value={text}
               onChange={(event) => {
                 setText(event.target.value);
@@ -300,7 +318,8 @@ export const CellCoachModal = ({
 
             <div className="mt-5 flex gap-2">
               <motion.button
-                className="flex-1 rounded-xl bg-[#c57b5d] px-3 py-3 text-sm font-medium text-white disabled:opacity-50"
+                className="flex-1 rounded-xl px-3 py-3 text-sm font-medium text-white disabled:opacity-50"
+                style={{ backgroundColor: 'var(--lila-accent)' }}
                 type="button"
                 onClick={handleSave}
                 disabled={readOnly && text.trim().length === 0}
