@@ -62,7 +62,13 @@ const isBackendUnavailableError = (error: unknown): boolean => {
     return false;
   }
   const message = error.message.toLowerCase();
-  return message.includes('502') || message.includes('503') || message.includes('gateway');
+  return (
+    message.includes('500')
+    || message.includes('502')
+    || message.includes('503')
+    || message.includes('gateway')
+    || message.includes('temporarily unavailable')
+  );
 };
 
 const createTelegramRuntimeFallbackState = (): TelegramAuthContextValue | undefined => {

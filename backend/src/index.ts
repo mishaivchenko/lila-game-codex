@@ -56,7 +56,18 @@ export const createApp = (): express.Express => {
 
 if (process.env.NODE_ENV !== 'test') {
   void (async () => {
-    await ensureDbReady();
+    try {
+      await ensureDbReady();
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          scope: 'startup',
+          message: 'Database initialization failed. Starting API in degraded mode.',
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    }
+
     const app = createApp();
     const port = Number(process.env.PORT ?? 3001);
     const server = createServer(app);

@@ -47,9 +47,10 @@ const buildTelegramInitData = (
 };
 
 describe('Telegram auth + rooms', () => {
-  const app = createApp();
+  let app: ReturnType<typeof createApp>;
 
   beforeEach(async () => {
+    app = createApp();
     process.env.TELEGRAM_BOT_TOKEN = BOT_TOKEN;
     process.env.APP_AUTH_SECRET = 'test-secret';
     await clearUsersStore();
