@@ -73,8 +73,8 @@ export const attachHostRoomSocket = (server: HttpServer): Server => {
             displayName: resolveParticipantLabel(authUser),
           });
           namespace.to(`room:${roomId}`).emit('roomStateUpdated', snapshot);
-        } catch {
-          socket.emit('roomError', { message: 'Unable to join room' });
+        } catch (error) {
+          socket.emit('roomError', { message: error instanceof Error ? error.message : 'Unable to join room' });
         }
       })();
     });
@@ -128,8 +128,8 @@ export const attachHostRoomSocket = (server: HttpServer): Server => {
             targetPlayerId,
           });
           namespace.to(`room:${roomId}`).emit('roomStateUpdated', snapshot);
-        } catch {
-          socket.emit('roomError', { message: 'Failed to update note' });
+        } catch (error) {
+          socket.emit('roomError', { message: error instanceof Error ? error.message : 'Failed to update note' });
         }
       })();
     });
@@ -188,8 +188,8 @@ export const attachHostRoomSocket = (server: HttpServer): Server => {
                     ? await updateRoomSettings({ roomId, hostUserId: authUser.id, patch: payload ?? {} })
                     : await setRoomStatus(roomId, authUser.id, 'finished');
           namespace.to(`room:${roomId}`).emit('roomStateUpdated', snapshot);
-        } catch {
-          socket.emit('roomError', { message: 'Failed to execute host command' });
+        } catch (error) {
+          socket.emit('roomError', { message: error instanceof Error ? error.message : 'Failed to execute host command' });
         }
       })();
     });

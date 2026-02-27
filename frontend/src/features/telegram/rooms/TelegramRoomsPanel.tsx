@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTelegramAuth } from '../auth/TelegramAuthContext';
 import { useTelegramRooms } from './TelegramRoomsContext';
-import { upgradeToAdmin } from '../auth/telegramAuthApi';
 
 interface TelegramRoomsPanelProps {
   defaultFlow?: 'host' | 'player';
@@ -11,11 +10,10 @@ interface TelegramRoomsPanelProps {
 export const TelegramRoomsPanel = ({ defaultFlow = 'player' }: TelegramRoomsPanelProps) => {
   const navigate = useNavigate();
   const { status, isTelegramMode, user, token } = useTelegramAuth();
-  const { currentRoom, currentUserRole, isLoading, error, createRoom, joinRoomByCode, connectionState } = useTelegramRooms();
+  const { currentRoom, currentUserRole, isLoading, error, createRoom, joinRoomByCode, connectionState, myRooms, refreshMyRooms } = useTelegramRooms();
   const [roomCodeInput, setRoomCodeInput] = useState('');
   const [selectedFlow, setSelectedFlow] = useState<'host' | 'player'>(defaultFlow);
-  const [adminUnlocked, setAdminUnlocked] = useState(Boolean(user?.canHostCurrentChat));
-  const canHost = adminUnlocked || user?.canHostCurrentChat || user?.isSuperAdmin;
+  const canHost = Boolean(user?.canHostCurrentChat || user?.isSuperAdmin);
   const backendUnavailable = status === 'authenticated' && !token;
   const amCurrentRoomHost = currentUserRole === 'host';
   const flowOptions = useMemo(
@@ -31,12 +29,15 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player' }: TelegramRoomsPane
   }
 
   useEffect(() => {
-    setAdminUnlocked(Boolean(user?.canHostCurrentChat));
-  }, [user?.canHostCurrentChat]);
-
-  useEffect(() => {
     setSelectedFlow(defaultFlow);
   }, [defaultFlow]);
+
+  useEffect(() => {
+    if (!token || backendUnavailable) {
+      return;
+    }
+    void refreshMyRooms();
+  }, [backendUnavailable, token]);
 
   const submitJoin = (event: FormEvent) => {
     event.preventDefault();
@@ -48,18 +49,6 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player' }: TelegramRoomsPane
         navigate(`/host-room/${snapshot.room.id}`);
       }
     });
-  };
-
-  const unlockAdminAccess = async () => {
-    if (!token) {
-      return;
-    }
-    try {
-      await upgradeToAdmin(token, 100);
-      setAdminUnlocked(true);
-    } catch {
-      // keep existing panel-level error source for now
-    }
   };
 
   return (
@@ -126,16 +115,8 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player' }: TelegramRoomsPane
             <div className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] p-4">
               <p className="text-sm font-semibold text-[var(--lila-text-primary)]">Host mode locked</p>
               <p className="mt-1 text-xs text-[var(--lila-text-muted)]">
-                Доступ до ролі ведучого відкривається після оплати 100 Telegram coins для поточного чату.
+                Лише адмін чату може створювати групові сесії. Зверніться до ведучого або бота для доступу.
               </p>
-              <button
-                type="button"
-                onClick={() => void unlockAdminAccess()}
-                disabled={!token || backendUnavailable}
-                className="mt-3 w-full rounded-xl bg-[var(--lila-accent)] px-4 py-3 text-sm font-medium text-white disabled:opacity-50"
-              >
-                Відкрити доступ за 100 coins
-              </button>
             </div>
           )}
         </div>
@@ -174,6 +155,29 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player' }: TelegramRoomsPane
           >
             Відкрити кімнату
           </button>
+        </div>
+      )}
+
+      {myRooms.length > 0 && (
+        <div className="mt-3 rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-3 py-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lila-text-muted)]">Збережені групові сесії</p>
+          <ul className="mt-2 space-y-2">
+            {myRooms.slice(0, 5).map((roomSnapshot) => (
+              <li key={roomSnapshot.room.id} className="flex items-center justify-between gap-2 rounded-lg bg-[var(--lila-surface)] px-2 py-2">
+                <div>
+                  <p className="text-xs font-semibold text-[var(--lila-text-primary)]">#{roomSnapshot.room.code}</p>
+                  <p className="text-[11px] text-[var(--lila-text-muted)]">{roomSnapshot.room.status}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/host-room/${roomSnapshot.room.id}`)}
+                  className="rounded-lg border border-[var(--lila-border-soft)] px-2 py-1 text-xs text-[var(--lila-text-primary)]"
+                >
+                  Відкрити
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

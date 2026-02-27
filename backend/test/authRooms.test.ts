@@ -351,22 +351,14 @@ describe('Telegram auth + rooms', () => {
       .set('Authorization', `Bearer ${hostToken}`)
       .send({});
 
-    const hostUserId = hostAuth.body.user.id as string;
     const playerOneUserId = playerOneAuth.body.user.id as string;
     const playerTwoUserId = playerTwoAuth.body.user.id as string;
-
-    await rollDiceForCurrentPlayer({ roomId, userId: hostUserId });
-
-    const closeHostCard = await request(app)
-      .post(`/api/rooms/${roomId}/card/close`)
-      .set('Authorization', `Bearer ${hostToken}`)
-      .send({});
-    expect(closeHostCard.status).toBe(200);
 
     const roomBeforePlayerRoll = await request(app)
       .get(`/api/rooms/${roomId}`)
       .set('Authorization', `Bearer ${hostToken}`);
     const currentTurnAfterHostRoll = roomBeforePlayerRoll.body.gameState.currentTurnPlayerId as string;
+    expect([playerOneUserId, playerTwoUserId]).toContain(currentTurnAfterHostRoll);
     const currentPlayerToken =
       currentTurnAfterHostRoll === playerOneUserId ? playerOneToken
         : currentTurnAfterHostRoll === playerTwoUserId ? playerTwoToken
@@ -469,6 +461,43 @@ describe('Telegram auth + rooms', () => {
       .set('Authorization', `Bearer ${playerToken}`)
       .send({ scope: 'host_player', targetPlayerId: playerUserId, cellNumber: 1, note: 'should fail' });
     expect(playerAttempt.status).toBe(403);
+  });
+
+  it('prevents host dice roll and requires at least one player to start', async () => {
+    const hostAuth = await request(app)
+      .post('/api/auth/telegram/webapp')
+      .send({ initData: buildTelegramInitData(BOT_TOKEN, 66001, 'soulvio') });
+    const hostToken = hostAuth.body.token as string;
+
+    const createRoomResponse = await request(app)
+      .post('/api/rooms')
+      .set('Authorization', `Bearer ${hostToken}`)
+      .send({ boardType: 'full' });
+    const roomId = createRoomResponse.body.room.id as string;
+
+    const startWithoutPlayers = await request(app)
+      .post(`/api/rooms/${roomId}/start`)
+      .set('Authorization', `Bearer ${hostToken}`)
+      .send({});
+    expect(startWithoutPlayers.status).toBe(409);
+
+    const playerAuth = await request(app)
+      .post('/api/auth/telegram/webapp')
+      .send({ initData: buildTelegramInitData(BOT_TOKEN, 66002, 'room_player') });
+    const playerToken = playerAuth.body.token as string;
+
+    await request(app)
+      .post(`/api/rooms/${roomId}/join`)
+      .set('Authorization', `Bearer ${playerToken}`)
+      .send({});
+
+    const startResponse = await request(app)
+      .post(`/api/rooms/${roomId}/start`)
+      .set('Authorization', `Bearer ${hostToken}`)
+      .send({});
+    expect(startResponse.status).toBe(200);
+
+    await expect(rollDiceForCurrentPlayer({ roomId, userId: hostAuth.body.user.id as string })).rejects.toThrow('HOST_CANNOT_ROLL');
   });
 
   it('binds admin access to the current Telegram chat scope', async () => {

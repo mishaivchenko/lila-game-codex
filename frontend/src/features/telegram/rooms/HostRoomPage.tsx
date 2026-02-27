@@ -49,6 +49,7 @@ export const HostRoomPage = () => {
   } = useTelegramRooms();
   const [inviteCopied, setInviteCopied] = useState(false);
   const [finishRequested, setFinishRequested] = useState(false);
+  const [showAppearanceModal, setShowAppearanceModal] = useState(false);
   const [selectedHostNotesPlayerId, setSelectedHostNotesPlayerId] = useState<string | undefined>(undefined);
   const [hostPrivateNote, setHostPrivateNote] = useState('');
 
@@ -139,8 +140,8 @@ export const HostRoomPage = () => {
     }
     return currentRoom.gameState.notes.playerByUserId[user.id]?.[String(activeCellNumber)] ?? '';
   })();
-  const joinLink = `${window.location.origin}/host-room/${currentRoom.room.id}`;
   const botInviteUrl = buildRoomInviteUrl(currentRoom.room.id);
+  const joinLink = botInviteUrl;
   const hostNotesPlayers = currentRoom.players.filter((player) => player.role === 'player');
   const boardOtherTokens = currentRoom.players
     .filter((player) => player.userId !== user?.id)
@@ -208,7 +209,8 @@ export const HostRoomPage = () => {
   const hostCanPause = currentRoom.gameState.settings.hostCanPause;
 
   return (
-    <main className="mx-auto min-h-screen max-w-[1460px] bg-[var(--lila-bg-main)] px-3 py-4 sm:px-4 lg:px-5">
+    <>
+      <main className="mx-auto min-h-screen max-w-[1460px] bg-[var(--lila-bg-main)] px-3 py-4 sm:px-4 lg:px-5">
       <div className="grid gap-4 xl:grid-cols-[320px,minmax(0,1fr),320px]">
         <aside className="space-y-4">
           <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 p-4 shadow-[0_18px_48px_rgba(42,36,31,0.12)]">
@@ -315,7 +317,7 @@ export const HostRoomPage = () => {
                       return;
                     }
                     setFinishRequested(true);
-                    void hostFinishGame().then(() => {
+                    void hostFinishGame().finally(() => {
                       setFinishRequested(false);
                     });
                   }}
@@ -346,6 +348,14 @@ export const HostRoomPage = () => {
                   ))}
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowAppearanceModal(true)}
+                className="mt-5 w-full rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-4 py-3 text-sm text-[var(--lila-text-primary)]"
+              >
+                Локальний вигляд (Appearance Studio)
+              </button>
 
                 <label className="flex items-center justify-between rounded-2xl border border-[var(--lila-border-soft)] px-3 py-2 text-sm text-[var(--lila-text-primary)]">
                   <span>Ведучий може закривати будь-яку картку</span>
@@ -421,10 +431,12 @@ export const HostRoomPage = () => {
             </section>
           )}
 
-          <AppearanceCustomizationPanel
-            defaultExpanded={false}
-            title={currentUserRole === 'host' ? 'Ваш локальний вигляд та атмосферa' : 'Мої локальні налаштування'}
-          />
+          {currentUserRole !== 'host' && (
+            <AppearanceCustomizationPanel
+              defaultExpanded={false}
+              title="Мої локальні налаштування"
+            />
+          )}
         </aside>
 
         <section className="space-y-4">
@@ -458,14 +470,20 @@ export const HostRoomPage = () => {
                   {isMyTurn ? 'Ваш хід' : `Хід: ${currentTurnPlayer?.displayName ?? '—'}`}
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => void rollDice()}
-                disabled={!isMyTurn || currentRoom.room.status !== 'in_progress'}
-                className="rounded-2xl bg-[var(--lila-accent)] px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Кинути кубики
-              </button>
+              {currentUserRole === 'player' ? (
+                <button
+                  type="button"
+                  onClick={() => void rollDice()}
+                  disabled={!isMyTurn || currentRoom.room.status !== 'in_progress'}
+                  className="rounded-2xl bg-[var(--lila-accent)] px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Кинути кубики
+                </button>
+              ) : (
+                <span className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-4 py-2 text-xs font-medium text-[var(--lila-text-muted)]">
+                  Ведучий не кидає кубики
+                </span>
+              )}
             </div>
             <p className="mt-2 text-sm text-[var(--lila-text-muted)]">
               Гравці самі кидають кубики. Ведучий утримує простір і може ставити кімнату на паузу без втрати стану.
@@ -585,6 +603,27 @@ export const HostRoomPage = () => {
           </p>
         </div>
       )}
-    </main>
+      </main>
+
+      <AnimatePresence>
+        {showAppearanceModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-3">
+            <div className="max-h-[88dvh] w-full max-w-[560px] overflow-y-auto rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4 shadow-[0_28px_64px_rgba(20,18,24,0.35)]">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-[var(--lila-text-primary)]">Appearance Studio</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowAppearanceModal(false)}
+                  className="rounded-xl border border-[var(--lila-border-soft)] px-3 py-1.5 text-xs text-[var(--lila-text-primary)]"
+                >
+                  Закрити
+                </button>
+              </div>
+              <AppearanceCustomizationPanel defaultExpanded title="Ваш локальний вигляд та атмосферa" />
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
