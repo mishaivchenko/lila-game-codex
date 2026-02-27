@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { BOARD_DEFINITIONS } from '../../../content/boards';
 import { AppearanceCustomizationPanel } from '../../../components/AppearanceCustomizationPanel';
 import { CellCoachModal } from '../../../components/CellCoachModal';
-import { LilaBoard } from '../../../components/lila/LilaBoard';
+import { LilaBoard, type LilaTransition } from '../../../components/lila/LilaBoard';
+import { Dice3D } from '../../../components/dice3d/Dice3D';
 import { useTelegramAuth } from '../auth/TelegramAuthContext';
 import { getTelegramWebApp } from '../telegramWebApp';
 import { BOT_USERNAME, CHANNEL_URL, buildRoomInviteByIdUrl, buildRoomInviteUrl } from '../telegramLinks';
 import { ROOM_TOKEN_COLOR_PALETTE } from './roomsApi';
 import { useTelegramRooms } from './TelegramRoomsContext';
+import { buildStepwiseCellPath, resolveTransitionEntryCell } from '../../../lib/lila/moveVisualization';
+import { getBoardTransitionPath } from '../../../lib/lila/boardProfiles';
 
 const roomStatusLabel: Record<'open' | 'in_progress' | 'paused' | 'finished', string> = {
   open: 'Відкрита',
@@ -53,6 +56,12 @@ export const HostRoomPage = () => {
   const [previewCellNumber, setPreviewCellNumber] = useState<number | undefined>(undefined);
   const [selectedHostNotesPlayerId, setSelectedHostNotesPlayerId] = useState<string | undefined>(undefined);
   const [hostPrivateNote, setHostPrivateNote] = useState('');
+  const [hostNoteStatus, setHostNoteStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [diceRollToken, setDiceRollToken] = useState(0);
+  const [pendingDiceValues, setPendingDiceValues] = useState<number[] | undefined>(undefined);
+  const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>(undefined);
+  const [animatedPlayerId, setAnimatedPlayerId] = useState<string | undefined>(undefined);
+  const processedMoveKeyRef = useRef<string | undefined>(undefined);
   const isCurrentUserHost = currentRoom?.room.hostUserId === user?.id;
 
   useEffect(() => {
@@ -94,6 +103,55 @@ export const HostRoomPage = () => {
     setSelectedHostNotesPlayerId(fallbackPlayerId);
     setHostPrivateNote(currentRoom.gameState.notes.hostByPlayerId?.[fallbackPlayerId] ?? '');
   }, [currentRoom, isCurrentUserHost, selectedHostNotesPlayerId]);
+
+  useEffect(() => {
+    if (!currentRoom) {
+      processedMoveKeyRef.current = undefined;
+      setAnimationMove(undefined);
+      setAnimatedPlayerId(undefined);
+      setPendingDiceValues(undefined);
+      return;
+    }
+    const lastMove = currentRoom.gameState.moveHistory.at(-1);
+    if (!lastMove) {
+      return;
+    }
+    const moveKey = `${lastMove.userId}:${lastMove.timestamp}:${lastMove.fromCell}:${lastMove.toCell}`;
+    if (processedMoveKeyRef.current === moveKey) {
+      return;
+    }
+    processedMoveKeyRef.current = moveKey;
+    setPendingDiceValues(lastMove.diceValues?.length ? lastMove.diceValues : [lastMove.dice]);
+    setDiceRollToken((value) => value + 1);
+
+    const board = BOARD_DEFINITIONS[currentRoom.room.boardType];
+    const moveType = lastMove.snakeOrArrow;
+    const entryCell = resolveTransitionEntryCell(
+      lastMove.fromCell,
+      lastMove.dice,
+      board,
+      moveType,
+      lastMove.toCell,
+    );
+    const pathPoints = moveType && entryCell
+      ? getBoardTransitionPath(currentRoom.room.boardType, moveType, entryCell, lastMove.toCell)?.points
+      : undefined;
+    const tokenPathCells = moveType && entryCell
+      ? buildStepwiseCellPath(lastMove.fromCell, lastMove.dice, board.maxCell).filter((cell, index, list) =>
+        index === 0 || index === list.length - 1 || cell <= (entryCell ?? cell))
+      : undefined;
+
+    setAnimatedPlayerId(lastMove.userId);
+    setAnimationMove({
+      id: moveKey,
+      fromCell: lastMove.fromCell,
+      toCell: lastMove.toCell,
+      type: moveType,
+      entryCell,
+      pathPoints,
+      tokenPathCells,
+    });
+  }, [currentRoom]);
 
   if (!roomId) {
     return (
@@ -169,9 +227,14 @@ export const HostRoomPage = () => {
   const botInviteUrl = buildRoomInviteUrl(currentRoom.room.code);
   const joinLink = botInviteUrl;
   const hostNotesPlayers = currentRoom.players.filter((player) => player.role === 'player');
-  const primaryTokenPlayer = isCurrentUserHost
+  const primaryTokenPlayer = useMemo(() => {
+    if (animatedPlayerId) {
+      return playerEntries.find((player) => player.userId === animatedPlayerId);
+    }
+    return isCurrentUserHost
     ? (currentTurnPlayer?.role === 'player' ? currentTurnPlayer : playerEntries[0])
     : selfPlayer;
+  }, [animatedPlayerId, currentTurnPlayer, isCurrentUserHost, playerEntries, selfPlayer]);
   const primaryTokenCell = primaryTokenPlayer
     ? (currentRoom.gameState.perPlayerState[primaryTokenPlayer.userId]?.currentCell ?? 1)
     : 1;
@@ -230,6 +293,7 @@ export const HostRoomPage = () => {
   };
 
   const hostCanPause = currentRoom.gameState.settings.hostCanPause;
+  const canShowCardModal = canSeeActiveCard && currentCellContent && activeCellNumber && !animationMove;
 
   return (
     <>
@@ -441,17 +505,31 @@ export const HostRoomPage = () => {
                         if (!selectedHostNotesPlayerId) {
                           return;
                         }
+                        setHostNoteStatus('saving');
                         void saveRoomNote({
                           cellNumber: 1,
                           note: hostPrivateNote,
                           scope: 'host_player',
                           targetPlayerId: selectedHostNotesPlayerId,
-                        });
+                        })
+                          .then(() => {
+                            setHostNoteStatus('saved');
+                            window.setTimeout(() => setHostNoteStatus('idle'), 1400);
+                          })
+                          .catch(() => {
+                            setHostNoteStatus('error');
+                          });
                       }}
                       className="mt-2 w-full rounded-xl bg-[var(--lila-accent)] px-3 py-2 text-sm font-medium text-white"
                     >
-                      Зберегти нотатку ведучого
+                      {hostNoteStatus === 'saving' ? 'Збереження...' : 'Зберегти нотатку ведучого'}
                     </button>
+                    {hostNoteStatus === 'saved' && (
+                      <p className="mt-2 text-xs text-emerald-700">Нотатку збережено.</p>
+                    )}
+                    {hostNoteStatus === 'error' && (
+                      <p className="mt-2 text-xs text-rose-700">Не вдалося зберегти нотатку.</p>
+                    )}
                   </>
                 ) : (
                   <p className="mt-2 text-xs text-[var(--lila-text-muted)]">Зʼявиться, коли в кімнаті буде хоча б один гравець.</p>
@@ -487,6 +565,11 @@ export const HostRoomPage = () => {
               currentCell={primaryTokenCell}
               otherTokens={boardOtherTokens}
               tokenColor={primaryTokenPlayer?.tokenColor}
+              animationMove={animationMove}
+              onMoveAnimationComplete={() => {
+                setAnimationMove(undefined);
+                setAnimatedPlayerId(undefined);
+              }}
               onCellSelect={(cellNumber) => {
                 setPreviewCellNumber(cellNumber);
               }}
@@ -519,6 +602,14 @@ export const HostRoomPage = () => {
             <p className="mt-2 text-sm text-[var(--lila-text-muted)]">
               Гравці самі кидають кубики. Ведучий утримує простір і може ставити кімнату на паузу без втрати стану.
             </p>
+            <div className="relative z-10">
+              <Dice3D
+                rollToken={diceRollToken}
+                diceValues={pendingDiceValues}
+                onResult={() => {}}
+                onFinished={() => setPendingDiceValues(undefined)}
+              />
+            </div>
           </section>
 
           {currentRoom.room.status === 'finished' && (
@@ -593,13 +684,31 @@ export const HostRoomPage = () => {
               Цей параметр синхронізується для всієї кімнати. Решта візуальних тем у панелі ліворуч діють локально на ваш клієнт.
             </p>
           </section>
+
+          <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 p-4 shadow-[0_18px_48px_rgba(42,36,31,0.12)]">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--lila-text-muted)]">Історія ходів</p>
+            <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto pr-1">
+              {currentRoom.gameState.moveHistory.slice(-12).reverse().map((move) => {
+                const player = currentRoom.players.find((entry) => entry.userId === move.userId);
+                const marker = move.snakeOrArrow === 'snake' ? '⇩' : move.snakeOrArrow === 'arrow' ? '⇧' : '→';
+                return (
+                  <li key={`${move.userId}-${move.timestamp}`} className="rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-3 py-2">
+                    <p className="text-xs font-semibold text-[var(--lila-text-primary)]">{player?.displayName ?? 'Гравець'}</p>
+                    <p className="text-xs text-[var(--lila-text-muted)]">
+                      {move.fromCell} {marker} {move.toCell} · {move.diceValues?.join(' + ') ?? move.dice}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
         </aside>
       </div>
 
       <AnimatePresence>
-        {canSeeActiveCard && currentCellContent && activeCard && (
+        {canShowCardModal && (
           <CellCoachModal
-            cellNumber={activeCard.cellNumber}
+            cellNumber={activeCellNumber}
             cellContent={currentCellContent}
             depth="standard"
             initialText={initialModalText}
@@ -617,8 +726,8 @@ export const HostRoomPage = () => {
               setPreviewCellNumber(undefined);
             }}
             moveContext={{
-              fromCell: currentRoom.gameState.moveHistory.at(-1)?.fromCell ?? activeCard.cellNumber,
-              toCell: activeCard.cellNumber,
+              fromCell: currentRoom.gameState.moveHistory.at(-1)?.fromCell ?? activeCellNumber,
+              toCell: activeCellNumber,
               type: currentRoom.gameState.moveHistory.at(-1)?.snakeOrArrow === 'snake'
                 ? 'snake'
                 : currentRoom.gameState.moveHistory.at(-1)?.snakeOrArrow === 'arrow'

@@ -390,6 +390,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       socketRef.current?.emit('updateNote', { roomId: currentRoom.room.id, cell: cellNumber, note, scope, targetPlayerId });
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося зберегти нотатку.');
+      throw error;
     }
   };
 
