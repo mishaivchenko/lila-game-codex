@@ -371,7 +371,7 @@ const createHostRoomInMemory = ({
     players: [hostPlayer],
     gameState: {
       roomId,
-      currentTurnPlayerId: '',
+      currentTurnPlayerId: hostUserId,
       perPlayerState: { [hostUserId]: hostState },
       moveHistory: [],
       activeCard: null,
@@ -419,7 +419,7 @@ export const createHostRoom = async ({
     const hostDisplay = resolveDisplayName(hostUserId, hostDisplayName);
     const gameState: RoomGameState = {
       roomId,
-      currentTurnPlayerId: '',
+      currentTurnPlayerId: hostUserId,
       perPlayerState: {
         [hostUserId]: {
           userId: hostUserId,
@@ -462,7 +462,7 @@ export const createHostRoom = async ({
        VALUES ($1, $2, $3::jsonb, $4::jsonb, $5::jsonb, $6::jsonb, $7::jsonb, $8::timestamptz)`,
       [
         roomId,
-        '',
+        hostUserId,
         JSON.stringify(gameState.perPlayerState),
         JSON.stringify([]),
         JSON.stringify(null),

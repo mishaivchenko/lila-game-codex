@@ -26,10 +26,6 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode }: 
     [],
   );
 
-  if (!isTelegramMode) {
-    return null;
-  }
-
   useEffect(() => {
     setSelectedFlow(defaultFlow);
   }, [defaultFlow]);
@@ -54,6 +50,10 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode }: 
     }
     void refreshMyRooms();
   }, [backendUnavailable, token]);
+
+  if (!isTelegramMode) {
+    return null;
+  }
 
   const submitJoin = (event: FormEvent) => {
     event.preventDefault();
