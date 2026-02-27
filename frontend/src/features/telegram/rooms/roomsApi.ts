@@ -5,7 +5,7 @@ export type RoomStatus = 'open' | 'in_progress' | 'paused' | 'finished';
 export type RoomBoardType = 'short' | 'full';
 export type RoomPlayerRole = 'host' | 'player';
 export type RoomDiceMode = 'classic' | 'fast' | 'triple';
-export type RoomNoteScope = 'host' | 'player';
+export type RoomNoteScope = 'host' | 'player' | 'host_player';
 
 export interface RoomPlayer {
   id: string;
@@ -33,6 +33,7 @@ export interface RoomCardState {
 
 export interface RoomNotesState {
   hostByCell: Record<string, string>;
+  hostByPlayerId: Record<string, string>;
   playerByUserId: Record<string, Record<string, string>>;
 }
 
@@ -144,7 +145,7 @@ export const closeRoomCardApi = async (token: string, roomId: string): Promise<R
 export const saveRoomNoteApi = async (
   token: string,
   roomId: string,
-  payload: { cellNumber: number; note: string; scope: RoomNoteScope },
+  payload: { cellNumber: number; note: string; scope: RoomNoteScope; targetPlayerId?: string },
 ): Promise<RoomSnapshot> =>
   parseRoomRequest(`/api/rooms/${encodeURIComponent(roomId)}/notes`, { method: 'POST', body: JSON.stringify(payload) }, token);
 
@@ -174,7 +175,7 @@ export type HostRoomSocket = Socket<
   {
     joinRoom: (payload: { roomId: string }) => void;
     rollDice: (payload: { roomId: string }) => void;
-    updateNote: (payload: { roomId: string; cell: number; note: string; scope: RoomNoteScope }) => void;
+    updateNote: (payload: { roomId: string; cell: number; note: string; scope: RoomNoteScope; targetPlayerId?: string }) => void;
     closeCard: (payload: { roomId: string }) => void;
     updatePlayerPreferences: (payload: { roomId: string; tokenColor: string }) => void;
     hostCommand: (payload: {

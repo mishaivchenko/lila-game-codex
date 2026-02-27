@@ -26,7 +26,8 @@ const joinRoomSchema = z.object({
 const roomNoteSchema = z.object({
   cellNumber: z.number().int().min(1),
   note: z.string().max(4000),
-  scope: z.enum(['host', 'player']),
+  scope: z.enum(['host', 'player', 'host_player']),
+  targetPlayerId: z.string().uuid().optional(),
 });
 const roomSettingsSchema = z.object({
   diceMode: z.enum(['classic', 'fast', 'triple']).optional(),
@@ -171,12 +172,16 @@ roomsRouter.post('/:roomId/notes', requireAuth, (req: AuthenticatedRequest, res)
         cellNumber: parsed.data.cellNumber,
         note: parsed.data.note,
         scope: parsed.data.scope,
+        targetPlayerId: parsed.data.targetPlayerId,
       });
       return res.status(200).json({ ok: true, ...snapshot });
     } catch (error) {
       const code = error instanceof Error ? error.message : '';
       if (code === 'FORBIDDEN') {
         return res.status(403).json({ ok: false, error: 'Only host can save host notes' });
+      }
+      if (code === 'TARGET_PLAYER_REQUIRED') {
+        return res.status(400).json({ ok: false, error: 'Host player note requires targetPlayerId' });
       }
       return res.status(404).json({ ok: false, error: 'Room not found' });
     }

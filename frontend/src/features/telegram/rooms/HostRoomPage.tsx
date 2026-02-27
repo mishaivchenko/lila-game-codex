@@ -7,6 +7,7 @@ import { CellCoachModal } from '../../../components/CellCoachModal';
 import { LilaBoard } from '../../../components/lila/LilaBoard';
 import { useTelegramAuth } from '../auth/TelegramAuthContext';
 import { getTelegramWebApp } from '../telegramWebApp';
+import { BOT_USERNAME, CHANNEL_URL, buildRoomInviteUrl } from '../telegramLinks';
 import { ROOM_TOKEN_COLOR_PALETTE } from './roomsApi';
 import { useTelegramRooms } from './TelegramRoomsContext';
 
@@ -48,6 +49,8 @@ export const HostRoomPage = () => {
   } = useTelegramRooms();
   const [inviteCopied, setInviteCopied] = useState(false);
   const [finishRequested, setFinishRequested] = useState(false);
+  const [selectedHostNotesPlayerId, setSelectedHostNotesPlayerId] = useState<string | undefined>(undefined);
+  const [hostPrivateNote, setHostPrivateNote] = useState('');
 
   useEffect(() => {
     if (!isTelegramMode) {
@@ -80,9 +83,7 @@ export const HostRoomPage = () => {
   }
 
   if (!isTelegramMode) {
-    const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME;
-    const startParam = `room_${roomId}`;
-    const telegramLink = botUsername ? `https://t.me/${botUsername}?startapp=${encodeURIComponent(startParam)}` : undefined;
+    const telegramLink = buildRoomInviteUrl(roomId);
     return (
       <main className="mx-auto min-h-screen max-w-2xl px-4 py-8">
         <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-6 shadow-[0_18px_48px_rgba(42,36,31,0.12)]">
@@ -91,20 +92,14 @@ export const HostRoomPage = () => {
           <p className="mt-3 text-sm text-[var(--lila-text-muted)]">
             Посилання на кімнату працює тільки в Telegram Mini App. Відкрийте бота в Telegram та перейдіть у кімнату звідти.
           </p>
-          {telegramLink ? (
-            <a
-              href={telegramLink}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 inline-flex rounded-2xl bg-[var(--lila-accent)] px-4 py-2 text-sm font-medium text-white"
-            >
-              Відкрити в Telegram
-            </a>
-          ) : (
-            <p className="mt-4 text-xs text-[var(--lila-text-muted)]">
-              Додайте `VITE_TELEGRAM_BOT_USERNAME` щоб отримати кнопку швидкого відкриття.
-            </p>
-          )}
+          <a
+            href={telegramLink}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-flex rounded-2xl bg-[var(--lila-accent)] px-4 py-2 text-sm font-medium text-white"
+          >
+            Відкрити в Telegram
+          </a>
         </section>
       </main>
     );
@@ -145,6 +140,8 @@ export const HostRoomPage = () => {
     return currentRoom.gameState.notes.playerByUserId[user.id]?.[String(activeCellNumber)] ?? '';
   })();
   const joinLink = `${window.location.origin}/host-room/${currentRoom.room.id}`;
+  const botInviteUrl = buildRoomInviteUrl(currentRoom.room.id);
+  const hostNotesPlayers = currentRoom.players.filter((player) => player.role === 'player');
   const boardOtherTokens = currentRoom.players
     .filter((player) => player.userId !== user?.id)
     .map((player) => ({
@@ -171,14 +168,26 @@ export const HostRoomPage = () => {
   };
 
   const openInviteInTelegram = () => {
-    const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME;
-    if (!botUsername || !currentRoom) {
+    if (!currentRoom) {
       return;
     }
-    const deepLink = `https://t.me/${botUsername}?startapp=${encodeURIComponent(`room_${currentRoom.room.id}`)}`;
+    const deepLink = buildRoomInviteUrl(currentRoom.room.id);
     const webApp = getTelegramWebApp();
     webApp?.openTelegramLink?.(deepLink);
   };
+
+  useEffect(() => {
+    if (!hostNotesPlayers.length) {
+      setSelectedHostNotesPlayerId(undefined);
+      setHostPrivateNote('');
+      return;
+    }
+    const fallbackPlayerId = selectedHostNotesPlayerId && hostNotesPlayers.some((player) => player.userId === selectedHostNotesPlayerId)
+      ? selectedHostNotesPlayerId
+      : hostNotesPlayers[0].userId;
+    setSelectedHostNotesPlayerId(fallbackPlayerId);
+    setHostPrivateNote(currentRoom.gameState.notes.hostByPlayerId?.[fallbackPlayerId] ?? '');
+  }, [currentRoom.gameState.notes.hostByPlayerId, hostNotesPlayers, selectedHostNotesPlayerId]);
 
   const handleCardSave = async (text: string) => {
     if (!activeCellNumber) {
@@ -250,6 +259,22 @@ export const HostRoomPage = () => {
                 >
                   Відкрити invite в Telegram
                 </button>
+                <a
+                  href={botInviteUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 block w-full rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] px-3 py-2 text-center text-sm text-[var(--lila-text-primary)]"
+                >
+                  Bot: @{BOT_USERNAME}
+                </a>
+                <a
+                  href={CHANNEL_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 block w-full rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] px-3 py-2 text-center text-sm text-[var(--lila-text-primary)]"
+                >
+                  Канал про гру
+                </a>
               </div>
             </dl>
           </section>
@@ -306,21 +331,21 @@ export const HostRoomPage = () => {
                   <p className="text-xs font-semibold uppercase tracking-wide text-[var(--lila-text-muted)]">Режим кубиків кімнати</p>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     {(['classic', 'fast', 'triple'] as const).map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => void hostUpdateSettings({ diceMode: mode })}
-                        className={`rounded-2xl border px-3 py-2 text-sm ${
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => void hostUpdateSettings({ diceMode: mode })}
+                        className={`min-h-[56px] rounded-2xl border px-2 py-2 text-center text-xs leading-tight sm:text-sm ${
                           currentRoom.gameState.settings.diceMode === mode
                             ? 'border-[var(--lila-accent)] bg-[var(--lila-chip-active-bg)] text-[var(--lila-chip-active-text)]'
                             : 'border-[var(--lila-chip-border)] bg-[var(--lila-chip-bg)] text-[var(--lila-chip-text)]'
                         }`}
                       >
-                        {diceModeLabel[mode]}
-                      </button>
-                    ))}
-                  </div>
+                      {diceModeLabel[mode]}
+                    </button>
+                  ))}
                 </div>
+              </div>
 
                 <label className="flex items-center justify-between rounded-2xl border border-[var(--lila-border-soft)] px-3 py-2 text-sm text-[var(--lila-text-primary)]">
                   <span>Ведучий може закривати будь-яку картку</span>
@@ -343,6 +368,55 @@ export const HostRoomPage = () => {
                     }}
                   />
                 </label>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--lila-text-muted)]">Приватні нотатки ведучого</p>
+                <p className="mt-1 text-xs text-[var(--lila-text-muted)]">Видимі лише вам, не показуються гравцям.</p>
+                {hostNotesPlayers.length > 0 ? (
+                  <>
+                    <select
+                      value={selectedHostNotesPlayerId}
+                      onChange={(event) => {
+                        const playerId = event.target.value;
+                        setSelectedHostNotesPlayerId(playerId);
+                        setHostPrivateNote(currentRoom.gameState.notes.hostByPlayerId?.[playerId] ?? '');
+                      }}
+                      className="mt-2 w-full rounded-xl border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-3 py-2 text-sm text-[var(--lila-text-primary)]"
+                    >
+                      {hostNotesPlayers.map((player) => (
+                        <option key={player.userId} value={player.userId}>
+                          {player.displayName}
+                        </option>
+                      ))}
+                    </select>
+                    <textarea
+                      value={hostPrivateNote}
+                      onChange={(event) => setHostPrivateNote(event.target.value)}
+                      placeholder="Спостереження, реакції, фокус для ведення..."
+                      className="mt-2 min-h-24 w-full rounded-xl border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-3 py-2 text-sm text-[var(--lila-text-primary)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!selectedHostNotesPlayerId) {
+                          return;
+                        }
+                        void saveRoomNote({
+                          cellNumber: 1,
+                          note: hostPrivateNote,
+                          scope: 'host_player',
+                          targetPlayerId: selectedHostNotesPlayerId,
+                        });
+                      }}
+                      className="mt-2 w-full rounded-xl bg-[var(--lila-accent)] px-3 py-2 text-sm font-medium text-white"
+                    >
+                      Зберегти нотатку ведучого
+                    </button>
+                  </>
+                ) : (
+                  <p className="mt-2 text-xs text-[var(--lila-text-muted)]">Зʼявиться, коли в кімнаті буде хоча б один гравець.</p>
+                )}
               </div>
             </section>
           )}

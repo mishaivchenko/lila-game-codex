@@ -127,9 +127,10 @@ const mapRoom = (roomRow: HostRoomRow, playerRows: RoomPlayerRow[], stateRow: Ro
     perPlayerState: stateRow.per_player_state_json,
     moveHistory: stateRow.move_history_json,
     activeCard: stateRow.active_card_json ?? null,
-    notes: stateRow.notes_json ?? {
-      hostByCell: {},
-      playerByUserId: {},
+    notes: {
+      hostByCell: stateRow.notes_json?.hostByCell ?? {},
+      hostByPlayerId: stateRow.notes_json?.hostByPlayerId ?? {},
+      playerByUserId: stateRow.notes_json?.playerByUserId ?? {},
     },
     settings: stateRow.settings_json ?? {
       diceMode: 'classic',
@@ -352,6 +353,7 @@ const createHostRoomInMemory = ({
       activeCard: null,
       notes: {
         hostByCell: {},
+        hostByPlayerId: {},
         playerByUserId: {},
       },
       settings: getInitialRoomSettings(),
@@ -406,6 +408,7 @@ export const createHostRoom = async ({
       activeCard: null,
       notes: {
         hostByCell: {},
+        hostByPlayerId: {},
         playerByUserId: {},
       },
       settings: getInitialRoomSettings(),
@@ -670,21 +673,29 @@ export const recordRoomNote = async ({
   cellNumber,
   note,
   scope,
+  targetPlayerId,
 }: {
   roomId: string;
   userId: string;
   cellNumber: number;
   note: string;
-  scope: 'host' | 'player';
+  scope: 'host' | 'player' | 'host_player';
+  targetPlayerId?: string;
 }): Promise<RoomSnapshot> => {
   if (!isPostgresEnabled()) {
     const room = ensureRoom(roomId);
     const player = ensurePlayerInRoom(room, userId);
-    if (scope === 'host' && player.role !== 'host') {
+    if ((scope === 'host' || scope === 'host_player') && player.role !== 'host') {
       throw new Error('FORBIDDEN');
     }
     if (scope === 'host') {
       room.gameState.notes.hostByCell[String(cellNumber)] = note;
+    } else if (scope === 'host_player') {
+      if (!targetPlayerId) {
+        throw new Error('TARGET_PLAYER_REQUIRED');
+      }
+      ensurePlayerInRoom(room, targetPlayerId);
+      room.gameState.notes.hostByPlayerId[targetPlayerId] = note;
     } else {
       room.gameState.notes.playerByUserId[userId] ??= {};
       room.gameState.notes.playerByUserId[userId][String(cellNumber)] = note;
@@ -702,11 +713,17 @@ export const recordRoomNote = async ({
       throw new Error('ROOM_NOT_FOUND');
     }
     const player = ensurePlayerInRoom(room, userId);
-    if (scope === 'host' && player.role !== 'host') {
+    if ((scope === 'host' || scope === 'host_player') && player.role !== 'host') {
       throw new Error('FORBIDDEN');
     }
     if (scope === 'host') {
       room.gameState.notes.hostByCell[String(cellNumber)] = note;
+    } else if (scope === 'host_player') {
+      if (!targetPlayerId) {
+        throw new Error('TARGET_PLAYER_REQUIRED');
+      }
+      ensurePlayerInRoom(room, targetPlayerId);
+      room.gameState.notes.hostByPlayerId[targetPlayerId] = note;
     } else {
       room.gameState.notes.playerByUserId[userId] ??= {};
       room.gameState.notes.playerByUserId[userId][String(cellNumber)] = note;
