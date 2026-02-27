@@ -28,7 +28,12 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
   const [selectedFlow, setSelectedFlow] = useState<'host' | 'player'>(defaultFlow);
   const canHost = Boolean(user?.canHostCurrentChat || user?.isSuperAdmin);
   const backendUnavailable = status === 'authenticated' && !token;
-  const amCurrentRoomHost = Boolean(currentRoom && user && currentRoom.room.hostUserId === user.id);
+  const amCurrentRoomHost = Boolean(
+    currentRoom
+      && user
+      && currentRoom.room.hostUserId === user.id
+      && currentRoom.room.status !== 'finished',
+  );
   const flowOptions = useMemo(
     () => [
       { id: 'player' as const, label: 'Я гравець', caption: 'Приєднатися до вже створеної кімнати та кидати власний кубик.' },

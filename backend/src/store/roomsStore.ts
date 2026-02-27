@@ -356,12 +356,6 @@ const createHostRoomInMemory = ({
     joinedAt: now,
     connectionStatus: 'online',
   };
-  const hostState: RoomPlayerState = {
-    userId: hostUserId,
-    currentCell: 1,
-    status: 'in_progress',
-    notesCount: 0,
-  };
   const room: GameRoom = {
     id: roomId,
     code: roomCode,
@@ -373,8 +367,9 @@ const createHostRoomInMemory = ({
     players: [hostPlayer],
     gameState: {
       roomId,
-      currentTurnPlayerId: hostUserId,
-      perPlayerState: { [hostUserId]: hostState },
+      // Host does not participate as a player token.
+      currentTurnPlayerId: null,
+      perPlayerState: {},
       moveHistory: [],
       activeCard: null,
       notes: {
@@ -421,15 +416,9 @@ export const createHostRoom = async ({
     const hostDisplay = resolveDisplayName(hostUserId, hostDisplayName);
     const gameState: RoomGameState = {
       roomId,
-      currentTurnPlayerId: hostUserId,
-      perPlayerState: {
-        [hostUserId]: {
-          userId: hostUserId,
-          currentCell: 1,
-          status: 'in_progress',
-          notesCount: 0,
-        },
-      },
+      // Host does not participate as a player token.
+      currentTurnPlayerId: null,
+      perPlayerState: {},
       moveHistory: [],
       activeCard: null,
       notes: {
@@ -464,7 +453,7 @@ export const createHostRoom = async ({
        VALUES ($1, $2, $3::jsonb, $4::jsonb, $5::jsonb, $6::jsonb, $7::jsonb, $8::timestamptz)`,
       [
         roomId,
-        hostUserId,
+        null,
         JSON.stringify(gameState.perPlayerState),
         JSON.stringify([]),
         JSON.stringify(null),

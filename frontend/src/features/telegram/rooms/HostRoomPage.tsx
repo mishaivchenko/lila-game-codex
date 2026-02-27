@@ -42,6 +42,7 @@ export const HostRoomPage = () => {
     closeActiveCard,
     saveRoomNote,
     updatePlayerTokenColor,
+    clearCurrentRoom,
     isMyTurn,
     connectionState,
     lastDiceRoll,
@@ -49,6 +50,7 @@ export const HostRoomPage = () => {
   const [inviteCopied, setInviteCopied] = useState(false);
   const [finishRequested, setFinishRequested] = useState(false);
   const [showAppearanceModal, setShowAppearanceModal] = useState(false);
+  const [previewCellNumber, setPreviewCellNumber] = useState<number | undefined>(undefined);
   const [selectedHostNotesPlayerId, setSelectedHostNotesPlayerId] = useState<string | undefined>(undefined);
   const [hostPrivateNote, setHostPrivateNote] = useState('');
   const isCurrentUserHost = currentRoom?.room.hostUserId === user?.id;
@@ -136,19 +138,21 @@ export const HostRoomPage = () => {
 
   const board = BOARD_DEFINITIONS[currentRoom.room.boardType];
   const selfPlayer = currentRoom.players.find((player) => player.userId === user?.id);
-  const selfState = user ? currentRoom.gameState.perPlayerState[user.id] : undefined;
+  const playerEntries = currentRoom.players.filter((player) => player.role === 'player');
   const currentTurnPlayer = currentRoom.players.find((entry) => entry.userId === currentRoom.gameState.currentTurnPlayerId);
   const activeCard = currentRoom.gameState.activeCard;
+  const displayedCellNumber = activeCard?.cellNumber ?? previewCellNumber;
+  const displayedPlayerUserId = activeCard?.playerUserId ?? (isCurrentUserHost ? currentTurnPlayer?.userId : user?.id);
   const canSeeActiveCard = Boolean(
-    activeCard
+    displayedCellNumber
       && user
-      && (isCurrentUserHost || activeCard.playerUserId === user.id),
+      && (isCurrentUserHost || displayedPlayerUserId === user.id),
   );
-  const activePlayer = activeCard
-    ? currentRoom.players.find((player) => player.userId === activeCard.playerUserId)
+  const activePlayer = displayedPlayerUserId
+    ? currentRoom.players.find((player) => player.userId === displayedPlayerUserId)
     : undefined;
-  const currentCellContent = activeCard ? board.cells[activeCard.cellNumber - 1] : undefined;
-  const activeCellNumber = activeCard?.cellNumber;
+  const currentCellContent = displayedCellNumber ? board.cells[displayedCellNumber - 1] : undefined;
+  const activeCellNumber = displayedCellNumber;
   const noteScope = isCurrentUserHost ? 'host' : 'player';
   const initialModalText = (() => {
     if (!activeCellNumber || !user) {
@@ -162,8 +166,14 @@ export const HostRoomPage = () => {
   const botInviteUrl = buildRoomInviteUrl(currentRoom.room.code);
   const joinLink = botInviteUrl;
   const hostNotesPlayers = currentRoom.players.filter((player) => player.role === 'player');
-  const boardOtherTokens = currentRoom.players
-    .filter((player) => player.userId !== user?.id)
+  const primaryTokenPlayer = isCurrentUserHost
+    ? (currentTurnPlayer?.role === 'player' ? currentTurnPlayer : playerEntries[0])
+    : selfPlayer;
+  const primaryTokenCell = primaryTokenPlayer
+    ? (currentRoom.gameState.perPlayerState[primaryTokenPlayer.userId]?.currentCell ?? 1)
+    : 1;
+  const boardOtherTokens = playerEntries
+    .filter((player) => player.userId !== primaryTokenPlayer?.userId)
     .map((player) => ({
       id: player.userId,
       cell: currentRoom.gameState.perPlayerState[player.userId]?.currentCell ?? 1,
@@ -201,10 +211,18 @@ export const HostRoomPage = () => {
       note: text,
       scope: noteScope,
     });
+    if (!activeCard) {
+      setPreviewCellNumber(undefined);
+      return;
+    }
     await closeActiveCard();
   };
 
   const handleCardSkip = async () => {
+    if (!activeCard) {
+      setPreviewCellNumber(undefined);
+      return;
+    }
     await closeActiveCard();
   };
 
@@ -230,6 +248,7 @@ export const HostRoomPage = () => {
               </div>
               <Link
                 to="/"
+                onClick={clearCurrentRoom}
                 className="rounded-xl border border-[var(--lila-border-soft)] px-3 py-2 text-sm text-[var(--lila-text-primary)]"
               >
                 Вийти
@@ -462,10 +481,15 @@ export const HostRoomPage = () => {
 
             <LilaBoard
               board={board}
-              currentCell={selfState?.currentCell ?? 1}
+              currentCell={primaryTokenCell}
               otherTokens={boardOtherTokens}
-              tokenColor={selfPlayer?.tokenColor}
-              disableCellSelect
+              tokenColor={primaryTokenPlayer?.tokenColor}
+              onCellSelect={(cellNumber) => {
+                if (activeCard) {
+                  return;
+                }
+                setPreviewCellNumber(cellNumber);
+              }}
             />
           </section>
 
@@ -505,7 +529,10 @@ export const HostRoomPage = () => {
               </p>
               <button
                 type="button"
-                onClick={() => navigate('/')}
+                onClick={() => {
+                  clearCurrentRoom();
+                  navigate('/');
+                }}
                 className="mt-3 rounded-xl border border-emerald-400/60 bg-white px-4 py-2 text-sm text-emerald-900"
               >
                 Повернутися на головну
@@ -531,7 +558,9 @@ export const HostRoomPage = () => {
                           {isCurrent ? ' · Хід зараз' : ''}
                         </p>
                         <p className="text-xs text-[var(--lila-text-muted)]">
-                          {player.role === 'host' ? 'Ведучий' : 'Гравець'} · Клітина {playerState?.currentCell ?? 1} · {player.connectionStatus}
+                          {player.role === 'host'
+                            ? `Ведучий · Без фішки · ${player.connectionStatus}`
+                            : `Гравець · Клітина ${playerState?.currentCell ?? 1} · ${player.connectionStatus}`}
                         </p>
                       </div>
                       <span
@@ -581,7 +610,11 @@ export const HostRoomPage = () => {
               void handleCardSkip();
             }}
             onClose={() => {
-              void closeActiveCard();
+              if (activeCard) {
+                void closeActiveCard();
+                return;
+              }
+              setPreviewCellNumber(undefined);
             }}
             moveContext={{
               fromCell: currentRoom.gameState.moveHistory.at(-1)?.fromCell ?? activeCard.cellNumber,

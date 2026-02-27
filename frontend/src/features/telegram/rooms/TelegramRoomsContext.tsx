@@ -48,6 +48,7 @@ interface TelegramRoomsContextValue {
   closeActiveCard: () => Promise<void>;
   saveRoomNote: (payload: { cellNumber: number; note: string; scope: RoomNoteScope; targetPlayerId?: string }) => Promise<void>;
   updatePlayerTokenColor: (tokenColor: string) => Promise<void>;
+  clearCurrentRoom: () => void;
 }
 
 const TelegramRoomsContext = createContext<TelegramRoomsContextValue>({
@@ -68,6 +69,7 @@ const TelegramRoomsContext = createContext<TelegramRoomsContextValue>({
   closeActiveCard: async () => {},
   saveRoomNote: async () => {},
   updatePlayerTokenColor: async () => {},
+  clearCurrentRoom: () => {},
 });
 
 interface TelegramRoomsProviderProps {
@@ -210,6 +212,11 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     try {
       return await withAuth(async () => {
         const snapshot = await getRoomByIdApi(authToken!, roomId);
+        if (snapshot.room.status === 'finished') {
+          setCurrentRoom(snapshot);
+          await refreshMyRooms();
+          return snapshot;
+        }
         const joined = await joinRoomApi(authToken!, snapshot.room.id);
         setCurrentRoom(joined);
         await refreshMyRooms();
@@ -278,7 +285,13 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     if (!authToken || !currentRoom) {
       return;
     }
-    await runHostAction(() => hostFinishRoomApi(authToken, currentRoom.room.id), 'finish');
+    const roomId = currentRoom.room.id;
+    await runHostAction(() => hostFinishRoomApi(authToken, roomId), 'finish');
+    roomIdRef.current = undefined;
+    setCurrentRoom(undefined);
+    setLastDiceRoll(undefined);
+    setLastTokenMove(undefined);
+    socketRef.current?.emit('hostCommand', { roomId, action: 'finish' });
     await refreshMyRooms();
   };
 
@@ -360,6 +373,14 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     }
   };
 
+  const clearCurrentRoom = () => {
+    roomIdRef.current = undefined;
+    setCurrentRoom(undefined);
+    setError(undefined);
+    setLastDiceRoll(undefined);
+    setLastTokenMove(undefined);
+  };
+
   const isMyTurn = Boolean(
     currentRoom
       && authUserId
@@ -391,6 +412,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       closeActiveCard,
       saveRoomNote,
       updatePlayerTokenColor,
+      clearCurrentRoom,
     }),
     [connectionState, currentRoom, currentUserRole, error, isLoading, isMyTurn, lastDiceRoll, lastTokenMove, myRooms],
   );
