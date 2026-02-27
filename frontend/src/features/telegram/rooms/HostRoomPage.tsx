@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { BOARD_DEFINITIONS } from '../../../content/boards';
@@ -7,7 +7,7 @@ import { CellCoachModal } from '../../../components/CellCoachModal';
 import { LilaBoard } from '../../../components/lila/LilaBoard';
 import { useTelegramAuth } from '../auth/TelegramAuthContext';
 import { getTelegramWebApp } from '../telegramWebApp';
-import { BOT_USERNAME, CHANNEL_URL, buildRoomInviteUrl } from '../telegramLinks';
+import { BOT_USERNAME, CHANNEL_URL, buildRoomInviteByIdUrl, buildRoomInviteUrl } from '../telegramLinks';
 import { ROOM_TOKEN_COLOR_PALETTE } from './roomsApi';
 import { useTelegramRooms } from './TelegramRoomsContext';
 
@@ -42,7 +42,6 @@ export const HostRoomPage = () => {
     closeActiveCard,
     saveRoomNote,
     updatePlayerTokenColor,
-    currentUserRole,
     isMyTurn,
     connectionState,
     lastDiceRoll,
@@ -52,6 +51,7 @@ export const HostRoomPage = () => {
   const [showAppearanceModal, setShowAppearanceModal] = useState(false);
   const [selectedHostNotesPlayerId, setSelectedHostNotesPlayerId] = useState<string | undefined>(undefined);
   const [hostPrivateNote, setHostPrivateNote] = useState('');
+  const isCurrentUserHost = currentRoom?.room.hostUserId === user?.id;
 
   useEffect(() => {
     if (!isTelegramMode) {
@@ -74,6 +74,25 @@ export const HostRoomPage = () => {
     return () => window.clearTimeout(timer);
   }, [inviteCopied]);
 
+  useEffect(() => {
+    if (!currentRoom || !isCurrentUserHost) {
+      setSelectedHostNotesPlayerId(undefined);
+      setHostPrivateNote('');
+      return;
+    }
+    const hostNotesPlayers = currentRoom.players.filter((player) => player.role === 'player');
+    if (!hostNotesPlayers.length) {
+      setSelectedHostNotesPlayerId(undefined);
+      setHostPrivateNote('');
+      return;
+    }
+    const fallbackPlayerId = selectedHostNotesPlayerId && hostNotesPlayers.some((player) => player.userId === selectedHostNotesPlayerId)
+      ? selectedHostNotesPlayerId
+      : hostNotesPlayers[0].userId;
+    setSelectedHostNotesPlayerId(fallbackPlayerId);
+    setHostPrivateNote(currentRoom.gameState.notes.hostByPlayerId?.[fallbackPlayerId] ?? '');
+  }, [currentRoom, isCurrentUserHost, selectedHostNotesPlayerId]);
+
   if (!roomId) {
     return (
       <main className="mx-auto min-h-screen max-w-2xl px-4 py-6">
@@ -84,7 +103,7 @@ export const HostRoomPage = () => {
   }
 
   if (!isTelegramMode) {
-    const telegramLink = buildRoomInviteUrl(roomId);
+    const telegramLink = buildRoomInviteByIdUrl(roomId);
     return (
       <main className="mx-auto min-h-screen max-w-2xl px-4 py-8">
         <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-6 shadow-[0_18px_48px_rgba(42,36,31,0.12)]">
@@ -123,19 +142,19 @@ export const HostRoomPage = () => {
   const canSeeActiveCard = Boolean(
     activeCard
       && user
-      && (currentUserRole === 'host' || activeCard.playerUserId === user.id),
+      && (isCurrentUserHost || activeCard.playerUserId === user.id),
   );
   const activePlayer = activeCard
     ? currentRoom.players.find((player) => player.userId === activeCard.playerUserId)
     : undefined;
   const currentCellContent = activeCard ? board.cells[activeCard.cellNumber - 1] : undefined;
   const activeCellNumber = activeCard?.cellNumber;
-  const noteScope = currentUserRole === 'host' ? 'host' : 'player';
+  const noteScope = isCurrentUserHost ? 'host' : 'player';
   const initialModalText = (() => {
     if (!activeCellNumber || !user) {
       return '';
     }
-    if (currentUserRole === 'host') {
+    if (isCurrentUserHost) {
       return currentRoom.gameState.notes.hostByCell[String(activeCellNumber)] ?? '';
     }
     return currentRoom.gameState.notes.playerByUserId[user.id]?.[String(activeCellNumber)] ?? '';
@@ -151,13 +170,9 @@ export const HostRoomPage = () => {
       color: player.tokenColor,
     }));
 
-  const hostMoveSummary = useMemo(() => {
-    if (!lastDiceRoll) {
-      return 'Ще немає кидків у цій сесії.';
-    }
-    const movedPlayer = currentRoom.players.find((player) => player.userId === lastDiceRoll.playerId);
-    return `${movedPlayer?.displayName ?? 'Гравець'} кинув ${lastDiceRoll.diceValues.join(' + ')} = ${lastDiceRoll.dice}`;
-  }, [currentRoom.players, lastDiceRoll]);
+  const hostMoveSummary = !lastDiceRoll
+    ? 'Ще немає кидків у цій сесії.'
+    : `${currentRoom.players.find((player) => player.userId === lastDiceRoll.playerId)?.displayName ?? 'Гравець'} кинув ${lastDiceRoll.diceValues.join(' + ')} = ${lastDiceRoll.dice}`;
 
   const copyInviteLink = async () => {
     try {
@@ -176,19 +191,6 @@ export const HostRoomPage = () => {
     const webApp = getTelegramWebApp();
     webApp?.openTelegramLink?.(deepLink);
   };
-
-  useEffect(() => {
-    if (!hostNotesPlayers.length) {
-      setSelectedHostNotesPlayerId(undefined);
-      setHostPrivateNote('');
-      return;
-    }
-    const fallbackPlayerId = selectedHostNotesPlayerId && hostNotesPlayers.some((player) => player.userId === selectedHostNotesPlayerId)
-      ? selectedHostNotesPlayerId
-      : hostNotesPlayers[0].userId;
-    setSelectedHostNotesPlayerId(fallbackPlayerId);
-    setHostPrivateNote(currentRoom.gameState.notes.hostByPlayerId?.[fallbackPlayerId] ?? '');
-  }, [currentRoom.gameState.notes.hostByPlayerId, hostNotesPlayers, selectedHostNotesPlayerId]);
 
   const handleCardSave = async (text: string) => {
     if (!activeCellNumber) {
@@ -210,9 +212,9 @@ export const HostRoomPage = () => {
 
   return (
     <>
-      <main className="mx-auto min-h-screen max-w-[1460px] bg-[var(--lila-bg-main)] px-3 py-4 sm:px-4 lg:px-5">
-      <div className="grid gap-4 xl:grid-cols-[320px,minmax(0,1fr),320px]">
-        <aside className="space-y-4">
+      <main className="mx-auto min-h-screen max-w-[1460px] bg-[var(--lila-bg-main)] px-3 py-4 sm:px-4 lg:px-5 xl:h-[calc(100dvh-20px)] xl:overflow-hidden">
+      <div className="grid gap-4 xl:h-full xl:grid-cols-[320px,minmax(0,1fr),320px]">
+        <aside className="space-y-4 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
           <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 p-4 shadow-[0_18px_48px_rgba(42,36,31,0.12)]">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -281,7 +283,7 @@ export const HostRoomPage = () => {
             </dl>
           </section>
 
-          {currentUserRole === 'host' && (
+          {isCurrentUserHost && (
             <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 p-4 shadow-[0_18px_48px_rgba(42,36,31,0.12)]">
               <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--lila-text-muted)]">Адмінка ведучого</p>
               <h2 className="mt-1 text-lg font-semibold text-[var(--lila-text-primary)]">Керуйте сесією</h2>
@@ -431,7 +433,7 @@ export const HostRoomPage = () => {
             </section>
           )}
 
-          {currentUserRole !== 'host' && (
+          {!isCurrentUserHost && (
             <AppearanceCustomizationPanel
               defaultExpanded={false}
               title="Мої локальні налаштування"
@@ -439,13 +441,13 @@ export const HostRoomPage = () => {
           )}
         </aside>
 
-        <section className="space-y-4">
+        <section className="space-y-4 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
           <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 p-3 shadow-[0_18px_48px_rgba(42,36,31,0.12)]">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--lila-text-muted)]">Shared Board</p>
                 <h2 className="text-lg font-semibold text-[var(--lila-text-primary)]">
-                  {currentUserRole === 'host' ? 'Поле ведучого' : 'Спільна дошка'}
+                  {isCurrentUserHost ? 'Поле ведучого' : 'Спільна дошка'}
                 </h2>
               </div>
               <div className="rounded-full bg-[var(--lila-surface-muted)] px-3 py-1.5 text-xs text-[var(--lila-text-primary)]">
@@ -470,7 +472,7 @@ export const HostRoomPage = () => {
                   {isMyTurn ? 'Ваш хід' : `Хід: ${currentTurnPlayer?.displayName ?? '—'}`}
                 </h3>
               </div>
-              {currentUserRole === 'player' ? (
+              {!isCurrentUserHost ? (
                 <button
                   type="button"
                   onClick={() => void rollDice()}
@@ -507,7 +509,7 @@ export const HostRoomPage = () => {
           )}
         </section>
 
-        <aside className="space-y-4">
+        <aside className="space-y-4 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
           <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 p-4 shadow-[0_18px_48px_rgba(42,36,31,0.12)]">
             <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--lila-text-muted)]">Players</p>
             <h2 className="mt-1 text-lg font-semibold text-[var(--lila-text-primary)]">Учасники сесії</h2>
@@ -595,7 +597,7 @@ export const HostRoomPage = () => {
         )}
       </AnimatePresence>
 
-      {currentUserRole === 'host' && activeCard && activePlayer && (
+      {isCurrentUserHost && activeCard && activePlayer && (
         <div className="pointer-events-none fixed bottom-4 right-4 z-40 hidden rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 px-4 py-3 shadow-lg lg:block">
           <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--lila-text-muted)]">Відкрита картка</p>
           <p className="text-sm font-semibold text-[var(--lila-text-primary)]">

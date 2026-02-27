@@ -223,6 +223,8 @@ const ensurePlayerInRoom = (room: GameRoom, userId: string): RoomPlayer => {
   return player;
 };
 
+const isRoomHost = (room: GameRoom, userId: string): boolean => room.hostUserId === userId;
+
 const getTurnQueuePlayers = (room: GameRoom): RoomPlayer[] =>
   room.players.filter((player) => player.role === 'player' && room.gameState.perPlayerState[player.userId]?.status !== 'finished');
 
@@ -747,8 +749,8 @@ export const recordRoomNote = async ({
 }): Promise<RoomSnapshot> => {
   if (!isPostgresEnabled()) {
     const room = ensureRoom(roomId);
-    const player = ensurePlayerInRoom(room, userId);
-    if ((scope === 'host' || scope === 'host_player') && player.role !== 'host') {
+    ensurePlayerInRoom(room, userId);
+    if ((scope === 'host' || scope === 'host_player') && !isRoomHost(room, userId)) {
       throw new Error('FORBIDDEN');
     }
     if (scope === 'host') {
@@ -775,8 +777,8 @@ export const recordRoomNote = async ({
     if (!room) {
       throw new Error('ROOM_NOT_FOUND');
     }
-    const player = ensurePlayerInRoom(room, userId);
-    if ((scope === 'host' || scope === 'host_player') && player.role !== 'host') {
+    ensurePlayerInRoom(room, userId);
+    if ((scope === 'host' || scope === 'host_player') && !isRoomHost(room, userId)) {
       throw new Error('FORBIDDEN');
     }
     if (scope === 'host') {
@@ -812,11 +814,11 @@ export const closeRoomCard = async ({
   userId: string;
 }): Promise<RoomSnapshot> => {
   const closeInRoom = (room: GameRoom): RoomSnapshot => {
-    const player = ensurePlayerInRoom(room, userId);
+    ensurePlayerInRoom(room, userId);
     if (!room.gameState.activeCard) {
       return toSnapshot(room);
     }
-    if (player.role !== 'host' && room.gameState.activeCard.playerUserId !== userId) {
+    if (!isRoomHost(room, userId) && room.gameState.activeCard.playerUserId !== userId) {
       throw new Error('FORBIDDEN');
     }
     room.gameState.activeCard = null;

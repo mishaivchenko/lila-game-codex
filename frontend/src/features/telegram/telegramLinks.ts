@@ -8,3 +8,8 @@ export const buildRoomInviteStartParam = (roomCode: string): string => `room_${r
 
 export const buildRoomInviteUrl = (roomCode: string): string =>
   buildBotStartAppUrl(buildRoomInviteStartParam(roomCode));
+
+export const buildRoomInviteByIdStartParam = (roomId: string): string => `roomid_${roomId}`;
+
+export const buildRoomInviteByIdUrl = (roomId: string): string =>
+  buildBotStartAppUrl(buildRoomInviteByIdStartParam(roomId));

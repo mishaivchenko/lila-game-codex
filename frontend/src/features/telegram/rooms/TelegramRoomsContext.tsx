@@ -229,6 +229,9 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     if (!currentRoom || !authUserId) {
       return undefined;
     }
+    if (currentRoom.room.hostUserId === authUserId) {
+      return 'host';
+    }
     return currentRoom.players.find((player) => player.userId === authUserId)?.role;
   }, [currentRoom, authUserId]);
 
@@ -237,7 +240,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     socketAction: 'start' | 'pause' | 'resume' | 'finish' | 'updateSettings',
     payload?: Partial<RoomSettings>,
   ) => {
-    if (!currentRoom || currentUserRole !== 'host') {
+    const isHostByRoom = currentRoom?.room.hostUserId === authUserId;
+    if (!currentRoom || !isHostByRoom) {
       return;
     }
     try {
@@ -279,7 +283,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
   };
 
   const hostUpdateSettings = async (patch: Partial<RoomSettings>) => {
-    if (!authToken || !currentRoom || currentUserRole !== 'host') {
+    const isHostByRoom = currentRoom?.room.hostUserId === authUserId;
+    if (!authToken || !currentRoom || !isHostByRoom) {
       return;
     }
     try {
@@ -295,7 +300,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     if (!currentRoom || !authUserId || !socketRef.current) {
       return;
     }
-    if (currentUserRole === 'host') {
+    if (currentRoom.room.hostUserId === authUserId) {
       setError('Ведучий не кидає кубики. Кидок доступний лише активному гравцю.');
       return;
     }

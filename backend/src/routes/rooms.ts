@@ -88,23 +88,16 @@ roomsRouter.post('/', requireAuth, (req: AuthenticatedRequest, res) => {
         boardType: parsed.data.boardType,
       });
       return res.status(201).json({ ok: true, ...snapshot, joinUrl: `/host-room/${snapshot.room.id}` });
-    } catch {
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          scope: 'create_room',
+          message: error instanceof Error ? error.message : String(error),
+          userId: req.authUser?.id,
+        }),
+      );
       return res.status(500).json({ ok: false, error: 'Failed to create room' });
     }
-  })();
-});
-
-roomsRouter.get('/:roomId', requireAuth, (req: AuthenticatedRequest, res) => {
-  void (async () => {
-    if (!req.authUser) {
-      return res.status(401).json({ ok: false, error: 'Unauthorized' });
-    }
-    const roomId = Array.isArray(req.params.roomId) ? req.params.roomId[0] : req.params.roomId;
-    const snapshot = await getRoomById(roomId);
-    if (!snapshot) {
-      return res.status(404).json({ ok: false, error: 'Room not found' });
-    }
-    return res.status(200).json({ ok: true, ...snapshot });
   })();
 });
 
@@ -115,6 +108,20 @@ roomsRouter.get('/code/:code', requireAuth, (req: AuthenticatedRequest, res) => 
     }
     const code = Array.isArray(req.params.code) ? req.params.code[0] : req.params.code;
     const snapshot = await getRoomByCode(code);
+    if (!snapshot) {
+      return res.status(404).json({ ok: false, error: 'Room not found' });
+    }
+    return res.status(200).json({ ok: true, ...snapshot });
+  })();
+});
+
+roomsRouter.get('/:roomId', requireAuth, (req: AuthenticatedRequest, res) => {
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const roomId = Array.isArray(req.params.roomId) ? req.params.roomId[0] : req.params.roomId;
+    const snapshot = await getRoomById(roomId);
     if (!snapshot) {
       return res.status(404).json({ ok: false, error: 'Room not found' });
     }

@@ -6,18 +6,29 @@ import { useTelegramRooms } from './TelegramRoomsContext';
 interface TelegramRoomsPanelProps {
   defaultFlow?: 'host' | 'player';
   initialRoomCode?: string;
+  initialRoomId?: string;
 }
 
-export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode }: TelegramRoomsPanelProps) => {
+export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, initialRoomId }: TelegramRoomsPanelProps) => {
   const navigate = useNavigate();
   const { status, isTelegramMode, user, token } = useTelegramAuth();
-  const { currentRoom, currentUserRole, isLoading, error, createRoom, joinRoomByCode, connectionState, myRooms, refreshMyRooms } = useTelegramRooms();
+  const {
+    currentRoom,
+    isLoading,
+    error,
+    createRoom,
+    joinRoomByCode,
+    loadRoomById,
+    connectionState,
+    myRooms,
+    refreshMyRooms,
+  } = useTelegramRooms();
   const [roomCodeInput, setRoomCodeInput] = useState('');
   const [autoJoinHandled, setAutoJoinHandled] = useState(false);
   const [selectedFlow, setSelectedFlow] = useState<'host' | 'player'>(defaultFlow);
   const canHost = Boolean(user?.canHostCurrentChat || user?.isSuperAdmin);
   const backendUnavailable = status === 'authenticated' && !token;
-  const amCurrentRoomHost = currentUserRole === 'host';
+  const amCurrentRoomHost = Boolean(currentRoom && user && currentRoom.room.hostUserId === user.id);
   const flowOptions = useMemo(
     () => [
       { id: 'player' as const, label: 'Я гравець', caption: 'Приєднатися до вже створеної кімнати та кидати власний кубик.' },
@@ -43,6 +54,19 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode }: 
       }
     });
   }, [autoJoinHandled, backendUnavailable, initialRoomCode, joinRoomByCode, navigate, token]);
+
+  useEffect(() => {
+    if (!initialRoomId || autoJoinHandled || !token || backendUnavailable) {
+      return;
+    }
+    setSelectedFlow('player');
+    setAutoJoinHandled(true);
+    void loadRoomById(initialRoomId).then((snapshot) => {
+      if (snapshot?.room.id) {
+        navigate(`/host-room/${snapshot.room.id}`);
+      }
+    });
+  }, [autoJoinHandled, backendUnavailable, initialRoomId, loadRoomById, navigate, token]);
 
   useEffect(() => {
     if (!token || backendUnavailable) {

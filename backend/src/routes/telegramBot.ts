@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { getRoomByCode, listRoomsForUser, setRoomStatus } from '../store/roomsStore.js';
 import { getUserByTelegramId } from '../store/usersStore.js';
 import { sendBotMessage } from '../lib/telegramBotApi.js';
@@ -39,13 +39,27 @@ const buildRoomHelpText = (roomCode: string): string => [
 
 export const telegramBotRouter = Router();
 
-telegramBotRouter.post('/webhook/:secret', (req, res) => {
+const validateWebhookSecret = (pathSecret: string | undefined, headerSecret: string | undefined): boolean => {
+  const expectedSecret = process.env.TELEGRAM_BOT_WEBHOOK_SECRET?.trim();
+  if (!expectedSecret) {
+    return true;
+  }
+  if (pathSecret && pathSecret === expectedSecret) {
+    return true;
+  }
+  if (headerSecret && headerSecret === expectedSecret) {
+    return true;
+  }
+  return false;
+};
+
+const processWebhook = (req: Request, res: Response) => {
   void (async () => {
-    const expectedSecret = process.env.TELEGRAM_BOT_WEBHOOK_SECRET;
-    if (!expectedSecret) {
-      return res.status(503).json({ ok: false, error: 'Bot webhook is not configured' });
-    }
-    if (req.params.secret !== expectedSecret) {
+    const pathSecret = typeof req.params.secret === 'string' ? req.params.secret : undefined;
+    const headerSecret = typeof req.headers['x-telegram-bot-api-secret-token'] === 'string'
+      ? req.headers['x-telegram-bot-api-secret-token']
+      : undefined;
+    if (!validateWebhookSecret(pathSecret, headerSecret)) {
       return res.status(401).json({ ok: false, error: 'Invalid bot webhook secret' });
     }
 
@@ -174,5 +188,7 @@ telegramBotRouter.post('/webhook/:secret', (req, res) => {
       return res.status(500).json({ ok: false });
     }
   })();
-});
+};
 
+telegramBotRouter.post('/webhook/:secret', processWebhook);
+telegramBotRouter.post('/webhook', processWebhook);

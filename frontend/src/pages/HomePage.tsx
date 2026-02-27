@@ -13,6 +13,7 @@ export const HomePage = () => {
   const [showSetup, setShowSetup] = useState(false);
   const [primaryMode, setPrimaryMode] = useState<'single' | 'host' | null>(null);
   const [incomingRoomCode, setIncomingRoomCode] = useState<string | undefined>(undefined);
+  const [incomingRoomId, setIncomingRoomId] = useState<string | undefined>(undefined);
   const { isTelegramMode, status, user, token } = useTelegramAuth();
   const [journeys, setJourneys] = useState<RemoteUserGameSession[]>([]);
   const [journeysLoading, setJourneysLoading] = useState(false);
@@ -73,16 +74,30 @@ export const HomePage = () => {
       return;
     }
     const startParam = getTelegramStartParam();
-    if (!startParam || !startParam.startsWith('room_')) {
+    if (!startParam) {
       return;
     }
-    const roomCode = startParam.replace(/^room_/, '').trim().toUpperCase();
-    if (!roomCode) {
+    if (startParam.startsWith('room_')) {
+      const roomCode = startParam.replace(/^room_/, '').trim().toUpperCase();
+      if (!roomCode) {
+        return;
+      }
+      setIncomingRoomCode(roomCode);
+      setIncomingRoomId(undefined);
+      setPrimaryMode('host');
+      setShowSetup(false);
       return;
     }
-    setIncomingRoomCode(roomCode);
-    setPrimaryMode('host');
-    setShowSetup(false);
+    if (startParam.startsWith('roomid_')) {
+      const roomId = startParam.replace(/^roomid_/, '').trim();
+      if (!roomId) {
+        return;
+      }
+      setIncomingRoomId(roomId);
+      setIncomingRoomCode(undefined);
+      setPrimaryMode('host');
+      setShowSetup(false);
+    }
   }, [isTelegramMode]);
 
   return (
@@ -243,7 +258,7 @@ export const HomePage = () => {
 
       {primaryMode === 'host' && (
         <div className="mt-5">
-          <TelegramRoomsPanel defaultFlow="host" initialRoomCode={incomingRoomCode} />
+          <TelegramRoomsPanel defaultFlow="host" initialRoomCode={incomingRoomCode} initialRoomId={incomingRoomId} />
         </div>
       )}
     </main>
