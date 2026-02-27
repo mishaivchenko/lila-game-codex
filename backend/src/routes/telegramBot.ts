@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { getRoomByCode, listRoomsForUser, setRoomStatus } from '../store/roomsStore.js';
+import { createHostRoom, getRoomByCode, listRoomsForUser, setRoomStatus } from '../store/roomsStore.js';
 import { getUserByTelegramId } from '../store/usersStore.js';
 import { sendBotMessage } from '../lib/telegramBotApi.js';
 
@@ -92,6 +92,8 @@ const processWebhook = (req: Request, res: Response) => {
               'Ласкаво просимо до Lila Mini App.',
               'Команди:',
               '/myrooms — мої кімнати',
+              '/newroom [full|short] — створити кімнату (для ведучого)',
+              '/join CODE — кнопка входу в кімнату',
               '/room CODE — статус кімнати',
               '/pause CODE / /resume CODE / /finish CODE — для ведучого',
             ].join('\n'),
@@ -100,6 +102,59 @@ const processWebhook = (req: Request, res: Response) => {
             },
           });
         }
+        return res.status(200).json({ ok: true });
+      }
+
+      if (command === 'newroom') {
+        if (!appUser) {
+          await sendBotMessage({ chatId: message.chat.id, text: 'Спочатку увійдіть у Mini App, щоб привʼязати акаунт.' });
+          return res.status(200).json({ ok: true });
+        }
+        if (!appUser.isAdmin && !appUser.isSuperAdmin) {
+          await sendBotMessage({ chatId: message.chat.id, text: 'Створювати кімнати може лише ведучий (admin).' });
+          return res.status(200).json({ ok: true });
+        }
+        const boardType = (args[0] ?? '').toLowerCase() === 'short' ? 'short' : 'full';
+        const snapshot = await createHostRoom({
+          hostUserId: appUser.id,
+          hostDisplayName: appUser.username ? `@${appUser.username}` : appUser.displayName,
+          boardType,
+        });
+        await sendBotMessage({
+          chatId: message.chat.id,
+          text: [
+            `Створено кімнату <b>#${snapshot.room.code}</b>`,
+            `Дошка: ${snapshot.room.boardType === 'short' ? 'коротка' : 'повна'}`,
+          ].join('\n'),
+          replyMarkup: {
+            inline_keyboard: [[{ text: 'Відкрити кімнату', url: buildMiniAppUrl(`room_${snapshot.room.code}`) }]],
+          },
+        });
+        return res.status(200).json({ ok: true });
+      }
+
+      if (command === 'join') {
+        const roomCode = (args[0] ?? '').trim().toUpperCase();
+        if (!roomCode) {
+          await sendBotMessage({ chatId: message.chat.id, text: 'Вкажіть код: /join ABC123' });
+          return res.status(200).json({ ok: true });
+        }
+        const room = await getRoomByCode(roomCode);
+        if (!room) {
+          await sendBotMessage({ chatId: message.chat.id, text: 'Кімнату не знайдено.' });
+          return res.status(200).json({ ok: true });
+        }
+        if (room.room.status === 'finished') {
+          await sendBotMessage({ chatId: message.chat.id, text: `Кімната #${room.room.code} вже завершена.` });
+          return res.status(200).json({ ok: true });
+        }
+        await sendBotMessage({
+          chatId: message.chat.id,
+          text: buildRoomHelpText(room.room.code),
+          replyMarkup: {
+            inline_keyboard: [[{ text: 'Приєднатися до кімнати', url: buildMiniAppUrl(`room_${room.room.code}`) }]],
+          },
+        });
         return res.status(200).json({ ok: true });
       }
 

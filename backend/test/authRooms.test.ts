@@ -384,6 +384,37 @@ describe('Telegram auth + rooms', () => {
     expect(rollResponse.body.gameState.activeCard).toBeNull();
   });
 
+  it('joins a room by code using /api/rooms/by-code/join', async () => {
+    const hostAuth = await request(app)
+      .post('/api/auth/telegram/webapp')
+      .send({ initData: buildTelegramInitData(BOT_TOKEN, 67001, 'soulvio') });
+    const playerAuth = await request(app)
+      .post('/api/auth/telegram/webapp')
+      .send({ initData: buildTelegramInitData(BOT_TOKEN, 67002, 'code_player') });
+
+    const hostToken = hostAuth.body.token as string;
+    const playerToken = playerAuth.body.token as string;
+
+    const createRoomResponse = await request(app)
+      .post('/api/rooms')
+      .set('Authorization', `Bearer ${hostToken}`)
+      .send({ boardType: 'full' });
+
+    expect(createRoomResponse.status).toBe(201);
+    const roomCode = createRoomResponse.body.room.code as string;
+
+    const joinByCodeResponse = await request(app)
+      .post('/api/rooms/by-code/join')
+      .set('Authorization', `Bearer ${playerToken}`)
+      .send({ roomCode });
+
+    expect(joinByCodeResponse.status).toBe(200);
+    expect(joinByCodeResponse.body.room.code).toBe(roomCode);
+    expect(
+      joinByCodeResponse.body.players.some((player: { userId: string; role: string }) => player.userId === playerAuth.body.user.id && player.role === 'player'),
+    ).toBe(true);
+  });
+
   it('allows only host to update room settings', async () => {
     const hostAuth = await request(app)
       .post('/api/auth/telegram/webapp')

@@ -12,8 +12,8 @@ import {
   closeRoomCardApi,
   createRoomApi,
   createHostRoomSocket,
-  getRoomByCodeApi,
   getRoomByIdApi,
+  joinRoomByCodeApi,
   listMyRoomsApi,
   hostFinishRoomApi,
   hostPauseRoomApi,
@@ -191,8 +191,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     setIsLoading(true);
     try {
       return await withAuth(async () => {
-        const byCode = await getRoomByCodeApi(authToken!, code);
-        const snapshot = await joinRoomApi(authToken!, byCode.room.id);
+        const snapshot = await joinRoomByCodeApi(authToken!, code);
         setCurrentRoom(snapshot);
         await refreshMyRooms();
         joinRealtimeRoom(snapshot.room.id);
@@ -242,6 +241,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
   ) => {
     const isHostByRoom = currentRoom?.room.hostUserId === authUserId;
     if (!currentRoom || !isHostByRoom) {
+      setError('Дія доступна лише ведучому поточної кімнати.');
       return;
     }
     try {

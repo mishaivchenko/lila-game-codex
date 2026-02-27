@@ -136,6 +136,9 @@ export const listMyRoomsApi = async (token: string): Promise<RoomSnapshot[]> => 
 export const joinRoomApi = async (token: string, roomId: string): Promise<RoomSnapshot> =>
   parseRoomRequest(`/api/rooms/${encodeURIComponent(roomId)}/join`, { method: 'POST' }, token);
 
+export const joinRoomByCodeApi = async (token: string, roomCode: string): Promise<RoomSnapshot> =>
+  parseRoomRequest('/api/rooms/by-code/join', { method: 'POST', body: JSON.stringify({ roomCode }) }, token);
+
 export const hostStartRoomApi = async (token: string, roomId: string): Promise<RoomSnapshot> =>
   parseRoomRequest(`/api/rooms/${encodeURIComponent(roomId)}/start`, { method: 'POST' }, token);
 
