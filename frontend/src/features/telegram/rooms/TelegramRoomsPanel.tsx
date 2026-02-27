@@ -5,13 +5,15 @@ import { useTelegramRooms } from './TelegramRoomsContext';
 
 interface TelegramRoomsPanelProps {
   defaultFlow?: 'host' | 'player';
+  initialRoomCode?: string;
 }
 
-export const TelegramRoomsPanel = ({ defaultFlow = 'player' }: TelegramRoomsPanelProps) => {
+export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode }: TelegramRoomsPanelProps) => {
   const navigate = useNavigate();
   const { status, isTelegramMode, user, token } = useTelegramAuth();
   const { currentRoom, currentUserRole, isLoading, error, createRoom, joinRoomByCode, connectionState, myRooms, refreshMyRooms } = useTelegramRooms();
   const [roomCodeInput, setRoomCodeInput] = useState('');
+  const [autoJoinHandled, setAutoJoinHandled] = useState(false);
   const [selectedFlow, setSelectedFlow] = useState<'host' | 'player'>(defaultFlow);
   const canHost = Boolean(user?.canHostCurrentChat || user?.isSuperAdmin);
   const backendUnavailable = status === 'authenticated' && !token;
@@ -31,6 +33,20 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player' }: TelegramRoomsPane
   useEffect(() => {
     setSelectedFlow(defaultFlow);
   }, [defaultFlow]);
+
+  useEffect(() => {
+    if (!initialRoomCode || autoJoinHandled || !token || backendUnavailable) {
+      return;
+    }
+    setRoomCodeInput(initialRoomCode);
+    setSelectedFlow('player');
+    setAutoJoinHandled(true);
+    void joinRoomByCode(initialRoomCode).then((snapshot) => {
+      if (snapshot?.room.id) {
+        navigate(`/host-room/${snapshot.room.id}`);
+      }
+    });
+  }, [autoJoinHandled, backendUnavailable, initialRoomCode, joinRoomByCode, navigate, token]);
 
   useEffect(() => {
     if (!token || backendUnavailable) {
