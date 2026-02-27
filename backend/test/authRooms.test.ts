@@ -115,6 +115,9 @@ describe('Telegram auth + rooms', () => {
       .send({});
     expect(joinResponse.status).toBe(200);
     expect(joinResponse.body.ok).toBe(true);
+    const hostPlayers = joinResponse.body.players.filter((player: { userId: string }) => player.userId === authResponse.body.user.id);
+    expect(hostPlayers).toHaveLength(1);
+    expect(hostPlayers[0].role).toBe('host');
   });
 
   it('returns current user via /api/auth/me for valid token', async () => {

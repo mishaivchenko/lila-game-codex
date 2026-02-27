@@ -4,12 +4,16 @@ import { useTelegramAuth } from '../auth/TelegramAuthContext';
 import { useTelegramRooms } from './TelegramRoomsContext';
 import { upgradeToAdmin } from '../auth/telegramAuthApi';
 
-export const TelegramRoomsPanel = () => {
+interface TelegramRoomsPanelProps {
+  defaultFlow?: 'host' | 'player';
+}
+
+export const TelegramRoomsPanel = ({ defaultFlow = 'player' }: TelegramRoomsPanelProps) => {
   const navigate = useNavigate();
   const { status, isTelegramMode, user, token } = useTelegramAuth();
   const { currentRoom, isLoading, error, createRoom, joinRoomByCode, connectionState } = useTelegramRooms();
   const [roomCodeInput, setRoomCodeInput] = useState('');
-  const [selectedFlow, setSelectedFlow] = useState<'host' | 'player'>('player');
+  const [selectedFlow, setSelectedFlow] = useState<'host' | 'player'>(defaultFlow);
   const [adminUnlocked, setAdminUnlocked] = useState(Boolean(user?.canHostCurrentChat));
   const canHost = adminUnlocked || user?.canHostCurrentChat || user?.isSuperAdmin;
   const backendUnavailable = status === 'authenticated' && !token;
@@ -28,6 +32,10 @@ export const TelegramRoomsPanel = () => {
   useEffect(() => {
     setAdminUnlocked(Boolean(user?.canHostCurrentChat));
   }, [user?.canHostCurrentChat]);
+
+  useEffect(() => {
+    setSelectedFlow(defaultFlow);
+  }, [defaultFlow]);
 
   const submitJoin = (event: FormEvent) => {
     event.preventDefault();

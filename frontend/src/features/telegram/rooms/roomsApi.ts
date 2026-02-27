@@ -91,7 +91,18 @@ export const ROOM_TOKEN_COLOR_PALETTE = ['#1f2937', '#c57b5d', '#2cbfaf', '#8b5c
 
 const parseSnapshotResponse = async (response: Response): Promise<RoomSnapshot> => {
   if (!response.ok) {
-    throw new Error('Room request failed');
+    const payloadText = await response.text().catch(() => '');
+    if (payloadText) {
+      let parsedError: string | undefined;
+      try {
+        const payload = JSON.parse(payloadText) as { error?: string };
+        parsedError = payload.error;
+      } catch {
+        // non-json payload, fall back to raw text below
+      }
+      throw new Error(parsedError ?? payloadText);
+    }
+    throw new Error(`Room request failed (${response.status})`);
   }
   const payload = (await response.json()) as ({ ok: boolean } & RoomSnapshot);
   return {

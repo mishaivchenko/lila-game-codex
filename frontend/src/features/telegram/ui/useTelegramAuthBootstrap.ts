@@ -44,6 +44,7 @@ interface UseTelegramAuthBootstrapParams {
 const createLocalDevAuthState = (): TelegramAuthContextValue => ({
   isTelegramMode: true,
   status: 'authenticated',
+  appStatus: 'ready',
   token: 'local-dev-token',
   user: {
     id: 'local-dev-user',
@@ -94,6 +95,7 @@ const createTelegramRuntimeFallbackState = (): TelegramAuthContextValue | undefi
   return {
     isTelegramMode: true,
     status: 'authenticated',
+    appStatus: 'offline',
     token: undefined,
     user: {
       id: `fallback-${userPayload.id}`,
@@ -121,7 +123,7 @@ export const useTelegramAuthBootstrap = ({
     }
 
     let cancelled = false;
-    setAuthState((prev) => ({ ...prev, isTelegramMode: true, status: 'loading', error: undefined }));
+    setAuthState((prev) => ({ ...prev, isTelegramMode: true, status: 'loading', appStatus: 'booting', error: undefined }));
 
     const allowLocalBypass = shouldBypassTelegramAuthForLocalDev();
     const allowLocalFallback = isLocalDevHost();
@@ -147,6 +149,7 @@ export const useTelegramAuthBootstrap = ({
         setAuthState({
           isTelegramMode: true,
           status: 'error',
+          appStatus: 'authError',
           error: 'Не вдалося отримати Telegram initData. Відкрийте застосунок через бота.',
         });
         return;
@@ -168,6 +171,7 @@ export const useTelegramAuthBootstrap = ({
         setAuthState({
           isTelegramMode: true,
           status: 'authenticated',
+          appStatus: 'ready',
           token: result.token,
           user: currentUser,
         });
@@ -192,6 +196,7 @@ export const useTelegramAuthBootstrap = ({
             setAuthState({
               isTelegramMode: true,
               status: 'authenticated',
+              appStatus: 'ready',
               token: persistedToken,
               user: currentUser,
             });
@@ -212,6 +217,7 @@ export const useTelegramAuthBootstrap = ({
         setAuthState({
           isTelegramMode: true,
           status: 'error',
+          appStatus: isBackendUnavailableError(error) ? 'networkError' : 'authError',
           error:
             error instanceof Error && error.message
               ? error.message

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { BOARD_DEFINITIONS } from '../../../content/boards';
 import { AppearanceCustomizationPanel } from '../../../components/AppearanceCustomizationPanel';
 import { CellCoachModal } from '../../../components/CellCoachModal';
 import { LilaBoard } from '../../../components/lila/LilaBoard';
 import { useTelegramAuth } from '../auth/TelegramAuthContext';
+import { getTelegramWebApp } from '../telegramWebApp';
 import { ROOM_TOKEN_COLOR_PALETTE } from './roomsApi';
 import { useTelegramRooms } from './TelegramRoomsContext';
 
@@ -23,8 +24,9 @@ const diceModeLabel: Record<'classic' | 'fast' | 'triple', string> = {
 };
 
 export const HostRoomPage = () => {
+  const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
-  const { user } = useTelegramAuth();
+  const { user, isTelegramMode } = useTelegramAuth();
   const {
     currentRoom,
     isLoading,
@@ -45,8 +47,12 @@ export const HostRoomPage = () => {
     lastDiceRoll,
   } = useTelegramRooms();
   const [inviteCopied, setInviteCopied] = useState(false);
+  const [finishRequested, setFinishRequested] = useState(false);
 
   useEffect(() => {
+    if (!isTelegramMode) {
+      return;
+    }
     if (!roomId) {
       return;
     }
@@ -54,7 +60,7 @@ export const HostRoomPage = () => {
       return;
     }
     void loadRoomById(roomId);
-  }, [currentRoom?.room.id, loadRoomById, roomId]);
+  }, [currentRoom?.room.id, isTelegramMode, loadRoomById, roomId]);
 
   useEffect(() => {
     if (!inviteCopied) {
@@ -69,6 +75,37 @@ export const HostRoomPage = () => {
       <main className="mx-auto min-h-screen max-w-2xl px-4 py-6">
         <p className="text-sm text-[var(--lila-text-muted)]">Room id is missing.</p>
         <Link to="/" className="text-sm underline">Back home</Link>
+      </main>
+    );
+  }
+
+  if (!isTelegramMode) {
+    const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME;
+    const startParam = `room_${roomId}`;
+    const telegramLink = botUsername ? `https://t.me/${botUsername}?startapp=${encodeURIComponent(startParam)}` : undefined;
+    return (
+      <main className="mx-auto min-h-screen max-w-2xl px-4 py-8">
+        <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-6 shadow-[0_18px_48px_rgba(42,36,31,0.12)]">
+          <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lila-text-muted)]">Host Room</p>
+          <h1 className="mt-2 text-2xl font-semibold text-[var(--lila-text-primary)]">Відкрити кімнату в Telegram</h1>
+          <p className="mt-3 text-sm text-[var(--lila-text-muted)]">
+            Посилання на кімнату працює тільки в Telegram Mini App. Відкрийте бота в Telegram та перейдіть у кімнату звідти.
+          </p>
+          {telegramLink ? (
+            <a
+              href={telegramLink}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex rounded-2xl bg-[var(--lila-accent)] px-4 py-2 text-sm font-medium text-white"
+            >
+              Відкрити в Telegram
+            </a>
+          ) : (
+            <p className="mt-4 text-xs text-[var(--lila-text-muted)]">
+              Додайте `VITE_TELEGRAM_BOT_USERNAME` щоб отримати кнопку швидкого відкриття.
+            </p>
+          )}
+        </section>
       </main>
     );
   }
@@ -131,6 +168,16 @@ export const HostRoomPage = () => {
     } catch {
       setInviteCopied(false);
     }
+  };
+
+  const openInviteInTelegram = () => {
+    const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME;
+    if (!botUsername || !currentRoom) {
+      return;
+    }
+    const deepLink = `https://t.me/${botUsername}?startapp=${encodeURIComponent(`room_${currentRoom.room.id}`)}`;
+    const webApp = getTelegramWebApp();
+    webApp?.openTelegramLink?.(deepLink);
   };
 
   const handleCardSave = async (text: string) => {
@@ -196,6 +243,13 @@ export const HostRoomPage = () => {
                 >
                   {inviteCopied ? 'Посилання скопійовано' : 'Скопіювати посилання'}
                 </button>
+                <button
+                  type="button"
+                  onClick={openInviteInTelegram}
+                  className="mt-2 w-full rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] px-3 py-2 text-sm text-[var(--lila-text-primary)]"
+                >
+                  Відкрити invite в Telegram
+                </button>
               </div>
             </dl>
           </section>
@@ -231,10 +285,19 @@ export const HostRoomPage = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => void hostFinishGame()}
+                  onClick={() => {
+                    if (finishRequested) {
+                      return;
+                    }
+                    setFinishRequested(true);
+                    void hostFinishGame().then(() => {
+                      setFinishRequested(false);
+                    });
+                  }}
+                  disabled={finishRequested || currentRoom.room.status === 'finished'}
                   className="rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700"
                 >
-                  Завершити кімнату
+                  {finishRequested ? 'Завершуємо...' : 'Завершити кімнату'}
                 </button>
               </div>
 
@@ -334,6 +397,22 @@ export const HostRoomPage = () => {
               Гравці самі кидають кубики. Ведучий утримує простір і може ставити кімнату на паузу без втрати стану.
             </p>
           </section>
+
+          {currentRoom.room.status === 'finished' && (
+            <section className="rounded-3xl border border-emerald-300/60 bg-emerald-50/70 p-4">
+              <h3 className="text-lg font-semibold text-emerald-900">Кімнату завершено</h3>
+              <p className="mt-1 text-sm text-emerald-900/80">
+                Сесію закрито. Нові гравці більше не можуть приєднатися.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="mt-3 rounded-xl border border-emerald-400/60 bg-white px-4 py-2 text-sm text-emerald-900"
+              >
+                Повернутися на головну
+              </button>
+            </section>
+          )}
         </section>
 
         <aside className="space-y-4">

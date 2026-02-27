@@ -93,6 +93,25 @@ const mapPlayerRow = (row: RoomPlayerRow): RoomPlayer => ({
   connectionStatus: row.connection_status,
 });
 
+const dedupePlayers = (players: RoomPlayer[]): RoomPlayer[] => {
+  const byUserId = new Map<string, RoomPlayer>();
+  for (const player of players) {
+    const existing = byUserId.get(player.userId);
+    if (!existing) {
+      byUserId.set(player.userId, player);
+      continue;
+    }
+    if (existing.role !== 'host' && player.role === 'host') {
+      byUserId.set(player.userId, player);
+      continue;
+    }
+    if (existing.role === player.role && player.joinedAt < existing.joinedAt) {
+      byUserId.set(player.userId, player);
+    }
+  }
+  return Array.from(byUserId.values()).sort((left, right) => left.joinedAt.localeCompare(right.joinedAt));
+};
+
 const mapRoom = (roomRow: HostRoomRow, playerRows: RoomPlayerRow[], stateRow: RoomGameStateRow): GameRoom => ({
   id: roomRow.id,
   code: roomRow.room_code,
@@ -101,7 +120,7 @@ const mapRoom = (roomRow: HostRoomRow, playerRows: RoomPlayerRow[], stateRow: Ro
   createdAt: roomRow.created_at,
   updatedAt: roomRow.updated_at,
   status: roomRow.status,
-  players: playerRows.map(mapPlayerRow),
+  players: dedupePlayers(playerRows.map(mapPlayerRow)),
   gameState: {
     roomId: stateRow.room_id,
     currentTurnPlayerId: stateRow.current_turn_player_id,
@@ -460,6 +479,14 @@ export const getRoomByCode = async (code: string): Promise<RoomSnapshot | undefi
 export const joinRoom = async ({ roomId, userId, displayName }: { roomId: string; userId: string; displayName?: string }): Promise<RoomSnapshot> => {
   if (!isPostgresEnabled()) {
     const room = ensureRoom(roomId);
+    if (room.hostUserId === userId) {
+      const existingHost = room.players.find((player) => player.userId === userId && player.role === 'host');
+      if (existingHost) {
+        existingHost.connectionStatus = 'online';
+      }
+      touchRoom(room);
+      return toSnapshot(room);
+    }
     const existing = room.players.find((player) => player.userId === userId);
     if (existing) {
       existing.connectionStatus = 'online';
@@ -497,6 +524,17 @@ export const joinRoom = async ({ roomId, userId, displayName }: { roomId: string
     const room = await queryRoomByIdDb(client, roomId, true);
     if (!room) {
       throw new Error('ROOM_NOT_FOUND');
+    }
+    if (room.hostUserId === userId) {
+      await client.query(
+        'UPDATE room_players SET connection_status = $3 WHERE room_id = $1 AND user_id = $2 AND role = $4',
+        [roomId, userId, 'online', 'host'],
+      );
+      const updated = await queryRoomByIdDb(client, roomId);
+      if (!updated) {
+        throw new Error('ROOM_NOT_FOUND');
+      }
+      return storeInMemory(updated);
     }
     const existing = room.players.find((player) => player.userId === userId);
     if (existing) {
