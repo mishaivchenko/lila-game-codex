@@ -6,6 +6,7 @@ import type { AppUser, TelegramAuthResult } from '../types/auth.js';
 const usersByTelegramId = new Map<string, AppUser>();
 const usersById = new Map<string, AppUser>();
 const adminBindingsByUserId = new Map<string, Set<string>>();
+let dbFallbackLogged = false;
 
 const SUPER_ADMIN_USERNAMES = new Set(['soulvio', 'writemebeforemidnight']);
 const SUPER_ADMIN_TELEGRAM_IDS = new Set<string>(
@@ -80,6 +81,20 @@ const storeAdminBindingInMemory = (userId: string, chatInstance: string): void =
   const existing = adminBindingsByUserId.get(userId) ?? new Set<string>();
   existing.add(chatInstance);
   adminBindingsByUserId.set(userId, existing);
+};
+
+const logDbFallback = (scope: string, error: unknown): void => {
+  if (dbFallbackLogged) {
+    return;
+  }
+  dbFallbackLogged = true;
+  console.error(
+    JSON.stringify({
+      scope,
+      message: 'Postgres is unavailable. Falling back to in-memory auth/user store.',
+      error: error instanceof Error ? error.message : String(error),
+    }),
+  );
 };
 
 const upsertUserInMemory = (telegram: TelegramAuthResult): AppUser => {
@@ -197,38 +212,48 @@ export const upsertUserFromTelegram = async (telegram: TelegramAuthResult): Prom
   if (!isPostgresEnabled()) {
     return upsertUserInMemory(telegram);
   }
-  const user = await upsertUserInDb(telegram);
-  return storeInMemory(user);
+  try {
+    const user = await upsertUserInDb(telegram);
+    return storeInMemory(user);
+  } catch (error) {
+    logDbFallback('upsert_user_from_telegram', error);
+    return upsertUserInMemory(telegram);
+  }
 };
 
 export const getUserById = async (id: string): Promise<AppUser | undefined> => {
   if (!isPostgresEnabled()) {
     return readUserByIdInMemory(id);
   }
-  const rows = await queryDb<UserRow>(
-    `SELECT
-      id,
-      telegram_user_id,
-      telegram_username,
-      first_name,
-      last_name,
-      language_code,
-      COALESCE(first_name || ' ' || last_name, first_name, telegram_username) AS display_name,
-      role,
-      is_admin,
-      is_super_admin,
-      created_at,
-      last_active_at
-    FROM users
-    WHERE id = $1
-    LIMIT 1`,
-    [id],
-  );
-  const user = rows[0] ? mapUserRow(rows[0]) : undefined;
-  if (user) {
-    storeInMemory(user);
+  try {
+    const rows = await queryDb<UserRow>(
+      `SELECT
+        id,
+        telegram_user_id,
+        telegram_username,
+        first_name,
+        last_name,
+        language_code,
+        COALESCE(first_name || ' ' || last_name, first_name, telegram_username) AS display_name,
+        role,
+        is_admin,
+        is_super_admin,
+        created_at,
+        last_active_at
+      FROM users
+      WHERE id = $1
+      LIMIT 1`,
+      [id],
+    );
+    const user = rows[0] ? mapUserRow(rows[0]) : undefined;
+    if (user) {
+      storeInMemory(user);
+    }
+    return user;
+  } catch (error) {
+    logDbFallback('get_user_by_id', error);
+    return readUserByIdInMemory(id);
   }
-  return user;
 };
 
 export const hasAdminBindingForChat = async (userId: string, chatInstance?: string): Promise<boolean> => {
@@ -238,18 +263,23 @@ export const hasAdminBindingForChat = async (userId: string, chatInstance?: stri
   if (!isPostgresEnabled()) {
     return adminBindingsByUserId.get(userId)?.has(chatInstance) ?? false;
   }
-  const rows = await queryDb<AdminChatBindingRow>(
-    `SELECT user_id, chat_instance
-     FROM admin_chat_bindings
-     WHERE user_id = $1 AND chat_instance = $2
-     LIMIT 1`,
-    [userId, chatInstance],
-  );
-  if (rows[0]) {
-    storeAdminBindingInMemory(userId, chatInstance);
-    return true;
+  try {
+    const rows = await queryDb<AdminChatBindingRow>(
+      `SELECT user_id, chat_instance
+       FROM admin_chat_bindings
+       WHERE user_id = $1 AND chat_instance = $2
+       LIMIT 1`,
+      [userId, chatInstance],
+    );
+    if (rows[0]) {
+      storeAdminBindingInMemory(userId, chatInstance);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    logDbFallback('has_admin_binding_for_chat', error);
+    return adminBindingsByUserId.get(userId)?.has(chatInstance) ?? false;
   }
-  return false;
 };
 
 export const grantAdminChatBinding = async ({
@@ -270,16 +300,20 @@ export const grantAdminChatBinding = async ({
     storeAdminBindingInMemory(userId, chatInstance);
     return;
   }
-  await queryDb(
-    `INSERT INTO admin_chat_bindings (id, user_id, chat_instance, chat_type, granted_by_user_id, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-     ON CONFLICT (user_id, chat_instance)
-     DO UPDATE SET
-       chat_type = COALESCE(EXCLUDED.chat_type, admin_chat_bindings.chat_type),
-       granted_by_user_id = COALESCE(EXCLUDED.granted_by_user_id, admin_chat_bindings.granted_by_user_id),
-       updated_at = NOW()`,
-    [randomUUID(), userId, chatInstance, chatType ?? null, grantedByUserId ?? null],
-  );
+  try {
+    await queryDb(
+      `INSERT INTO admin_chat_bindings (id, user_id, chat_instance, chat_type, granted_by_user_id, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+       ON CONFLICT (user_id, chat_instance)
+       DO UPDATE SET
+         chat_type = COALESCE(EXCLUDED.chat_type, admin_chat_bindings.chat_type),
+         granted_by_user_id = COALESCE(EXCLUDED.granted_by_user_id, admin_chat_bindings.granted_by_user_id),
+         updated_at = NOW()`,
+      [randomUUID(), userId, chatInstance, chatType ?? null, grantedByUserId ?? null],
+    );
+  } catch (error) {
+    logDbFallback('grant_admin_chat_binding', error);
+  }
   storeAdminBindingInMemory(userId, chatInstance);
 };
 
@@ -301,33 +335,51 @@ export const upgradeUserToAdmin = async (id: string): Promise<AppUser | undefine
     });
   }
 
-  const rows = await queryDb<UserRow>(
-    `UPDATE users
-      SET role = CASE WHEN is_super_admin THEN 'SUPER_ADMIN' ELSE 'ADMIN' END,
-          is_admin = TRUE,
-          admin_granted_at = COALESCE(admin_granted_at, NOW()),
-          last_active_at = NOW()
-      WHERE id = $1
-      RETURNING
-        id,
-        telegram_user_id,
-        telegram_username,
-        first_name,
-        last_name,
-        language_code,
-        COALESCE(first_name || ' ' || last_name, first_name, telegram_username) AS display_name,
-        role,
-        is_admin,
-        is_super_admin,
-        created_at,
-        last_active_at`,
-    [id],
-  );
-  const user = rows[0] ? mapUserRow(rows[0]) : undefined;
-  if (user) {
-    storeInMemory(user);
+  try {
+    const rows = await queryDb<UserRow>(
+      `UPDATE users
+        SET role = CASE WHEN is_super_admin THEN 'SUPER_ADMIN' ELSE 'ADMIN' END,
+            is_admin = TRUE,
+            admin_granted_at = COALESCE(admin_granted_at, NOW()),
+            last_active_at = NOW()
+        WHERE id = $1
+        RETURNING
+          id,
+          telegram_user_id,
+          telegram_username,
+          first_name,
+          last_name,
+          language_code,
+          COALESCE(first_name || ' ' || last_name, first_name, telegram_username) AS display_name,
+          role,
+          is_admin,
+          is_super_admin,
+          created_at,
+          last_active_at`,
+      [id],
+    );
+    const user = rows[0] ? mapUserRow(rows[0]) : undefined;
+    if (user) {
+      storeInMemory(user);
+    }
+    return user;
+  } catch (error) {
+    logDbFallback('upgrade_user_to_admin', error);
+    const user = usersById.get(id);
+    if (!user) {
+      return undefined;
+    }
+    if (user.isSuperAdmin) {
+      return user;
+    }
+    return storeInMemory({
+      ...user,
+      role: 'ADMIN',
+      isAdmin: true,
+      isSuperAdmin: false,
+      lastActiveAt: new Date().toISOString(),
+    });
   }
-  return user;
 };
 
 export const clearUsersStore = async (): Promise<void> => {

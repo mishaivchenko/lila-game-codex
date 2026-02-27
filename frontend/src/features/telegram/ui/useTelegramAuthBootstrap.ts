@@ -71,6 +71,8 @@ const isBackendUnavailableError = (error: unknown): boolean => {
   );
 };
 
+const SUPER_ADMIN_USERNAMES = new Set(['soulvio', 'writemebeforemidnight']);
+
 const createTelegramRuntimeFallbackState = (): TelegramAuthContextValue | undefined => {
   const webApp = getTelegramWebApp();
   const unsafe = webApp?.initDataUnsafe;
@@ -87,6 +89,8 @@ const createTelegramRuntimeFallbackState = (): TelegramAuthContextValue | undefi
   const displayName = [userPayload.first_name, userPayload.last_name].filter(Boolean).join(' ').trim()
     || userPayload.username
     || `telegram-${userPayload.id}`;
+  const username = userPayload.username?.toLowerCase();
+  const isSuperAdmin = Boolean(username && SUPER_ADMIN_USERNAMES.has(username));
   return {
     isTelegramMode: true,
     status: 'authenticated',
@@ -99,10 +103,10 @@ const createTelegramRuntimeFallbackState = (): TelegramAuthContextValue | undefi
       firstName: userPayload.first_name,
       lastName: userPayload.last_name,
       locale: userPayload.language_code,
-      role: 'USER',
-      isAdmin: false,
-      isSuperAdmin: false,
-      canHostCurrentChat: false,
+      role: isSuperAdmin ? 'SUPER_ADMIN' : 'USER',
+      isAdmin: isSuperAdmin,
+      isSuperAdmin,
+      canHostCurrentChat: isSuperAdmin,
     },
   };
 };
