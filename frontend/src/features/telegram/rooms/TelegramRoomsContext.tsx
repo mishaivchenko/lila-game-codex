@@ -43,7 +43,7 @@ interface TelegramRoomsContextValue {
   hostUpdateSettings: (patch: Partial<RoomSettings>) => Promise<void>;
   rollDice: () => Promise<void>;
   closeActiveCard: () => Promise<void>;
-  saveRoomNote: (payload: { cellNumber: number; note: string; scope: RoomNoteScope }) => Promise<void>;
+  saveRoomNote: (payload: { cellNumber: number; note: string; scope: RoomNoteScope; targetPlayerId?: string }) => Promise<void>;
   updatePlayerTokenColor: (tokenColor: string) => Promise<void>;
 }
 
@@ -289,18 +289,20 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     cellNumber,
     note,
     scope,
+    targetPlayerId,
   }: {
     cellNumber: number;
     note: string;
     scope: RoomNoteScope;
+    targetPlayerId?: string;
   }) => {
     if (!authToken || !currentRoom) {
       return;
     }
     try {
-      const snapshot = await saveRoomNoteApi(authToken, currentRoom.room.id, { cellNumber, note, scope });
+      const snapshot = await saveRoomNoteApi(authToken, currentRoom.room.id, { cellNumber, note, scope, targetPlayerId });
       setCurrentRoom(snapshot);
-      socketRef.current?.emit('updateNote', { roomId: currentRoom.room.id, cell: cellNumber, note, scope });
+      socketRef.current?.emit('updateNote', { roomId: currentRoom.room.id, cell: cellNumber, note, scope, targetPlayerId });
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося зберегти нотатку.');
     }

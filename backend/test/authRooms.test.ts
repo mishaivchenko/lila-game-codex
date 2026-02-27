@@ -429,6 +429,48 @@ describe('Telegram auth + rooms', () => {
     expect(hostUpdate.body.gameState.settings.hostCanPause).toBe(false);
   });
 
+  it('stores host private notes per player and keeps them hidden from player scope', async () => {
+    const hostAuth = await request(app)
+      .post('/api/auth/telegram/webapp')
+      .send({ initData: buildTelegramInitData(BOT_TOKEN, 62101, 'soulvio') });
+    const playerAuth = await request(app)
+      .post('/api/auth/telegram/webapp')
+      .send({ initData: buildTelegramInitData(BOT_TOKEN, 62102, 'player_note_target') });
+
+    const hostToken = hostAuth.body.token as string;
+    const playerToken = playerAuth.body.token as string;
+    const playerUserId = playerAuth.body.user.id as string;
+
+    await request(app)
+      .post('/api/auth/upgrade-admin')
+      .set('Authorization', `Bearer ${hostToken}`)
+      .send({ starsPaid: 100 });
+
+    const created = await request(app)
+      .post('/api/rooms')
+      .set('Authorization', `Bearer ${hostToken}`)
+      .send({ boardType: 'full' });
+    const roomId = created.body.room.id as string;
+
+    await request(app)
+      .post(`/api/rooms/${roomId}/join`)
+      .set('Authorization', `Bearer ${playerToken}`)
+      .send({});
+
+    const hostNoteSave = await request(app)
+      .post(`/api/rooms/${roomId}/notes`)
+      .set('Authorization', `Bearer ${hostToken}`)
+      .send({ scope: 'host_player', targetPlayerId: playerUserId, cellNumber: 1, note: 'Player opened up after cell 12.' });
+    expect(hostNoteSave.status).toBe(200);
+    expect(hostNoteSave.body.gameState.notes.hostByPlayerId[playerUserId]).toBe('Player opened up after cell 12.');
+
+    const playerAttempt = await request(app)
+      .post(`/api/rooms/${roomId}/notes`)
+      .set('Authorization', `Bearer ${playerToken}`)
+      .send({ scope: 'host_player', targetPlayerId: playerUserId, cellNumber: 1, note: 'should fail' });
+    expect(playerAttempt.status).toBe(403);
+  });
+
   it('binds admin access to the current Telegram chat scope', async () => {
     const initDataChatA = buildTelegramInitData(BOT_TOKEN, 63001, 'scoped_admin', {
       chatInstance: 'chat-A',

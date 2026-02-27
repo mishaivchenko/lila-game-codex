@@ -59,6 +59,11 @@ It should:
 ![Short Board](frontend/public/assets/board/web/short/board-short-1024.webp)
 
 ## Main Flows
+### 0. Entry Choice (Player vs Host)
+After bootstrap, the app starts with a clear first decision:
+- **Грати як гравець** for solo/local journey flow
+- **Грати як ведучий** for online room facilitation
+
 ### 1. Solo Journey
 You start a game, roll dice, move through the board, open cards, write notes, and pretend you are "just testing the UI" while actually being called out by the symbolism.
 
@@ -73,6 +78,12 @@ The app runs inside Telegram with:
 ### 3. Host Room
 A host creates a shared room, players join, and everyone sees the same board state in real time.
 Each player rolls their **own** dice. As it should be. Fate is outsourced to no one.
+
+Host-specific rules:
+- host identity is unique in a room (host is not duplicated as a regular player)
+- host can pause/resume/finish room lifecycle
+- host has private facilitator notes per player (not visible to players)
+- invites are bot-first and compatible with Telegram deep-links
 
 ## Stack
 ### Frontend
@@ -218,6 +229,7 @@ More setup details:
 - per-player turns
 - realtime shared board state
 - pause/resume lifecycle
+- host-only private notes and bot-driven invitation hooks
 
 ## Engineering Notes
 A few things are intentionally true here:

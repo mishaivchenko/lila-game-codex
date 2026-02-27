@@ -104,7 +104,19 @@ export const attachHostRoomSocket = (server: HttpServer): Server => {
       })();
     });
 
-    socket.on('updateNote', ({ roomId, cell, note, scope }: { roomId: string; cell: number; note: string; scope: 'host' | 'player' }) => {
+    socket.on('updateNote', ({
+      roomId,
+      cell,
+      note,
+      scope,
+      targetPlayerId,
+    }: {
+      roomId: string;
+      cell: number;
+      note: string;
+      scope: 'host' | 'player' | 'host_player';
+      targetPlayerId?: string;
+    }) => {
       void (async () => {
         try {
           const snapshot = await recordRoomNote({
@@ -113,6 +125,7 @@ export const attachHostRoomSocket = (server: HttpServer): Server => {
             cellNumber: cell,
             note,
             scope,
+            targetPlayerId,
           });
           namespace.to(`room:${roomId}`).emit('roomStateUpdated', snapshot);
         } catch {

@@ -30,6 +30,7 @@ export interface RoomCardState {
 
 export interface RoomNotesState {
   hostByCell: Record<string, string>;
+  hostByPlayerId: Record<string, string>;
   playerByUserId: Record<string, Record<string, string>>;
 }
 

@@ -11,12 +11,13 @@ interface TelegramRoomsPanelProps {
 export const TelegramRoomsPanel = ({ defaultFlow = 'player' }: TelegramRoomsPanelProps) => {
   const navigate = useNavigate();
   const { status, isTelegramMode, user, token } = useTelegramAuth();
-  const { currentRoom, isLoading, error, createRoom, joinRoomByCode, connectionState } = useTelegramRooms();
+  const { currentRoom, currentUserRole, isLoading, error, createRoom, joinRoomByCode, connectionState } = useTelegramRooms();
   const [roomCodeInput, setRoomCodeInput] = useState('');
   const [selectedFlow, setSelectedFlow] = useState<'host' | 'player'>(defaultFlow);
   const [adminUnlocked, setAdminUnlocked] = useState(Boolean(user?.canHostCurrentChat));
   const canHost = adminUnlocked || user?.canHostCurrentChat || user?.isSuperAdmin;
   const backendUnavailable = status === 'authenticated' && !token;
+  const amCurrentRoomHost = currentUserRole === 'host';
   const flowOptions = useMemo(
     () => [
       { id: 'player' as const, label: 'Я гравець', caption: 'Приєднатися до вже створеної кімнати та кидати власний кубик.' },
@@ -77,19 +78,28 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player' }: TelegramRoomsPane
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         {flowOptions.map((option) => {
           const active = selectedFlow === option.id;
+          const disabled = amCurrentRoomHost && option.id === 'player';
           return (
             <button
               key={option.id}
               type="button"
-              onClick={() => setSelectedFlow(option.id)}
+              onClick={() => {
+                if (disabled) {
+                  return;
+                }
+                setSelectedFlow(option.id);
+              }}
+              disabled={disabled}
               className={`rounded-2xl border px-4 py-3 text-left transition ${
                 active
                   ? 'border-[var(--lila-accent)] bg-[var(--lila-accent-soft)]'
                   : 'border-[var(--lila-border-soft)] bg-[var(--lila-surface)]'
-              }`}
+              } disabled:cursor-not-allowed disabled:opacity-60`}
             >
               <p className="text-sm font-semibold text-[var(--lila-text-primary)]">{option.label}</p>
-              <p className="mt-1 text-xs text-[var(--lila-text-muted)]">{option.caption}</p>
+              <p className="mt-1 text-xs text-[var(--lila-text-muted)]">
+                {disabled ? 'Ви вже ведучий у поточній кімнаті.' : option.caption}
+              </p>
             </button>
           );
         })}
@@ -150,6 +160,9 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player' }: TelegramRoomsPane
 
       {currentRoom && (
         <div className="mt-3 rounded-xl bg-[var(--lila-accent-soft)] px-3 py-2 text-sm text-[var(--lila-text-primary)]">
+          {amCurrentRoomHost && (
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lila-text-muted)]">Ви ведучий цієї кімнати</p>
+          )}
           <p>
             Кімната: <span className="font-semibold tracking-wider">{currentRoom.room.code}</span>
           </p>
