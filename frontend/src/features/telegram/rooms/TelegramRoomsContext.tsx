@@ -19,6 +19,7 @@ import {
   hostPauseRoomApi,
   hostResumeRoomApi,
   hostStartRoomApi,
+  rollRoomDiceApi,
   joinRoomApi,
   saveRoomNoteApi,
   updateRoomPreferencesApi,
@@ -145,6 +146,22 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     }
     void refreshMyRooms();
   }, [authToken]);
+
+  useEffect(() => {
+    if (!authToken || !currentRoom?.room.id) {
+      return undefined;
+    }
+    const interval = window.setInterval(() => {
+      void getRoomByIdApi(authToken, currentRoom.room.id)
+        .then((snapshot) => {
+          setCurrentRoom(snapshot);
+        })
+        .catch(() => {
+          // keep current snapshot while temporary network glitches happen
+        });
+    }, 2500);
+    return () => window.clearInterval(interval);
+  }, [authToken, currentRoom?.room.id]);
 
   const joinRealtimeRoom = (roomId: string) => {
     roomIdRef.current = roomId;
@@ -285,13 +302,11 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     if (!authToken || !currentRoom) {
       return;
     }
-    const roomId = currentRoom.room.id;
-    await runHostAction(() => hostFinishRoomApi(authToken, roomId), 'finish');
+    await runHostAction(() => hostFinishRoomApi(authToken, currentRoom.room.id), 'finish');
     roomIdRef.current = undefined;
     setCurrentRoom(undefined);
     setLastDiceRoll(undefined);
     setLastTokenMove(undefined);
-    socketRef.current?.emit('hostCommand', { roomId, action: 'finish' });
     await refreshMyRooms();
   };
 
@@ -310,7 +325,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
   };
 
   const rollDice = async () => {
-    if (!currentRoom || !authUserId || !socketRef.current) {
+    if (!currentRoom || !authUserId || !authToken) {
       return;
     }
     if (currentRoom.room.hostUserId === authUserId) {
@@ -321,7 +336,13 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       setError('Зараз не ваш хід.');
       return;
     }
-    socketRef.current.emit('rollDice', { roomId: currentRoom.room.id });
+    try {
+      const snapshot = await rollRoomDiceApi(authToken, currentRoom.room.id);
+      setCurrentRoom(snapshot);
+      socketRef.current?.emit('rollDice', { roomId: currentRoom.room.id });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не вдалося кинути кубики.');
+    }
   };
 
   const closeActiveCard = async () => {

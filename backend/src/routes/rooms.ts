@@ -15,6 +15,7 @@ import {
   startRoom,
   updateRoomPlayerTokenColor,
   updateRoomSettings,
+  rollDiceForCurrentPlayer,
 } from '../store/roomsStore.js';
 import { upsertGameSessionForUser } from '../store/gamesStore.js';
 
@@ -345,6 +346,37 @@ roomsRouter.post('/:roomId/start', requireAuth, (req: AuthenticatedRequest, res)
       }
       if (code === 'NO_PLAYERS') {
         return res.status(409).json({ ok: false, error: 'Add at least one player before starting the room' });
+      }
+      return res.status(404).json({ ok: false, error: 'Room not found' });
+    }
+  })();
+});
+
+roomsRouter.post('/:roomId/roll', requireAuth, (req: AuthenticatedRequest, res) => {
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const roomId = Array.isArray(req.params.roomId) ? req.params.roomId[0] : req.params.roomId;
+    try {
+      const result = await rollDiceForCurrentPlayer({
+        roomId,
+        userId: req.authUser.id,
+      });
+      return res.status(200).json({ ok: true, ...result.snapshot, move: result.move });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : '';
+      if (code === 'HOST_CANNOT_ROLL') {
+        return res.status(403).json({ ok: false, error: 'Host cannot roll dice' });
+      }
+      if (code === 'NOT_YOUR_TURN') {
+        return res.status(409).json({ ok: false, error: 'It is not your turn' });
+      }
+      if (code === 'ROOM_NOT_IN_PROGRESS') {
+        return res.status(409).json({ ok: false, error: 'Room is not in progress' });
+      }
+      if (code === 'PLAYER_ALREADY_FINISHED') {
+        return res.status(409).json({ ok: false, error: 'Player has already finished' });
       }
       return res.status(404).json({ ok: false, error: 'Room not found' });
     }
