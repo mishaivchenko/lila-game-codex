@@ -90,6 +90,32 @@ export const ensureDbReady = async (): Promise<void> => {
   await migrationsPromise;
 };
 
+export interface DbHealthStatus {
+  enabled: boolean;
+  ok: boolean;
+  error?: string;
+}
+
+export const getDbHealthStatus = async (): Promise<DbHealthStatus> => {
+  if (!isPostgresEnabled()) {
+    return { enabled: false, ok: true };
+  }
+  const activePool = getPool();
+  if (!activePool) {
+    return { enabled: true, ok: false, error: 'Pool is not initialized' };
+  }
+  try {
+    await activePool.query('SELECT 1');
+    return { enabled: true, ok: true };
+  } catch (error) {
+    return {
+      enabled: true,
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+};
+
 export const queryDb = async <T extends QueryResultRow>(text: string, params: unknown[] = []): Promise<T[]> => {
   const activePool = getPool();
   if (!activePool) {

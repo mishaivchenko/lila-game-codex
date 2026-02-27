@@ -113,7 +113,11 @@ export const HomePage = () => {
             <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--lila-text-muted)]">Мої подорожі</h2>
             {journeysLoading && <span className="text-xs text-[var(--lila-text-muted)]">Оновлюємо...</span>}
           </div>
-          {formattedJourneys.length === 0 ? (
+          {!token ? (
+            <p className="mt-3 text-sm text-amber-700">
+              Синхронізація з сервером тимчасово недоступна, тому список подорожей не завантажено.
+            </p>
+          ) : formattedJourneys.length === 0 ? (
             <p className="mt-3 text-sm text-[var(--lila-text-muted)]">
               Тут зʼявляться останні подорожі. Почніть нову гру або продовжіть незавершену.
             </p>

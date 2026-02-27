@@ -12,6 +12,7 @@ export const TelegramRoomsPanel = () => {
   const [selectedFlow, setSelectedFlow] = useState<'host' | 'player'>('player');
   const [adminUnlocked, setAdminUnlocked] = useState(Boolean(user?.canHostCurrentChat));
   const canHost = adminUnlocked || user?.canHostCurrentChat || user?.isSuperAdmin;
+  const backendUnavailable = status === 'authenticated' && !token;
   const flowOptions = useMemo(
     () => [
       { id: 'player' as const, label: 'Я гравець', caption: 'Приєднатися до вже створеної кімнати та кидати власний кубик.' },
@@ -59,6 +60,11 @@ export const TelegramRoomsPanel = () => {
       <p className="mt-1 text-xs text-[var(--lila-text-muted)]">
         Хост керує простором, але кожен гравець кидає власний кубик.
       </p>
+      {backendUnavailable && (
+        <p className="mt-2 rounded-xl border border-amber-300/70 bg-amber-50/90 px-3 py-2 text-xs text-amber-900">
+          Host Room потребує backend-синхронізації. Зараз сервер недоступний.
+        </p>
+      )}
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         {flowOptions.map((option) => {
@@ -93,7 +99,7 @@ export const TelegramRoomsPanel = () => {
                   }
                 });
               }}
-              disabled={status !== 'authenticated' || isLoading}
+              disabled={status !== 'authenticated' || isLoading || backendUnavailable}
               className="w-full rounded-xl bg-[var(--lila-accent)] px-4 py-3 text-sm font-medium text-white transition hover:bg-[var(--lila-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Створити Host Room
@@ -107,7 +113,7 @@ export const TelegramRoomsPanel = () => {
               <button
                 type="button"
                 onClick={() => void unlockAdminAccess()}
-                disabled={!token}
+                disabled={!token || backendUnavailable}
                 className="mt-3 w-full rounded-xl bg-[var(--lila-accent)] px-4 py-3 text-sm font-medium text-white disabled:opacity-50"
               >
                 Відкрити доступ за 100 coins
@@ -126,7 +132,7 @@ export const TelegramRoomsPanel = () => {
           />
           <button
             type="submit"
-            disabled={status !== 'authenticated' || isLoading}
+            disabled={status !== 'authenticated' || isLoading || backendUnavailable}
             className="rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-3 py-2 text-sm text-[var(--lila-text-primary)] disabled:opacity-50"
           >
             Join

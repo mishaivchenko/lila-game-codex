@@ -8,7 +8,7 @@ import { eventsRouter } from './routes/events.js';
 import { authRouter } from './routes/auth.js';
 import { roomsRouter } from './routes/rooms.js';
 import { gamesRouter } from './routes/games.js';
-import { ensureDbReady } from './lib/db.js';
+import { ensureDbReady, getDbHealthStatus } from './lib/db.js';
 import { requireAuth, type AuthenticatedRequest } from './lib/authMiddleware.js';
 import { attachHostRoomSocket } from './socket/hostRoomSocket.js';
 
@@ -22,7 +22,19 @@ export const createApp = (): express.Express => {
   app.use(express.json());
 
   app.get('/health', (_req, res) => {
-    res.json({ ok: true });
+    void (async () => {
+      const db = await getDbHealthStatus();
+      const telegramConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN);
+      const healthOk = db.ok && telegramConfigured;
+      res.status(healthOk ? 200 : 503).json({
+        ok: healthOk,
+        service: 'lila-backend',
+        db,
+        telegram: {
+          configured: telegramConfigured,
+        },
+      });
+    })();
   });
 
   app.use('/api/events', eventsRouter);

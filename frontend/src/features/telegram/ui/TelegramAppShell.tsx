@@ -78,6 +78,13 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
             )}
           </AnimatePresence>
 
+          {authState.isTelegramMode && authState.status === 'authenticated' && !authState.token && (
+            <div className="mb-3 rounded-2xl border border-amber-300/70 bg-amber-50/90 px-3 py-2 text-xs text-amber-900">
+              Сервер тимчасово недоступний. Працюємо в локальному режимі Telegram runtime: історія, кімнати та синхронізація між
+              пристроями можуть бути недоступні до відновлення backend.
+            </div>
+          )}
+
           {authState.isTelegramMode && authState.status === 'error' ? (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
               <h2 className="text-sm font-semibold">Помилка авторизації</h2>
