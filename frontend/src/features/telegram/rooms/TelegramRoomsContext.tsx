@@ -152,8 +152,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
         joinRealtimeRoom(snapshot.room.id);
         return snapshot;
       });
-    } catch {
-      setError('Не вдалося створити кімнату.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не вдалося створити кімнату.');
       return undefined;
     } finally {
       setIsLoading(false);
@@ -170,8 +170,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
         joinRealtimeRoom(snapshot.room.id);
         return snapshot;
       });
-    } catch {
-      setError('Кімнату не знайдено. Перевірте код.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Кімнату не знайдено. Перевірте код.');
       return undefined;
     } finally {
       setIsLoading(false);
@@ -188,8 +188,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
         joinRealtimeRoom(snapshot.room.id);
         return joined;
       });
-    } catch {
-      setError('Не вдалося відкрити кімнату.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не вдалося відкрити кімнату.');
       return undefined;
     } finally {
       setIsLoading(false);
@@ -215,8 +215,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       const snapshot = await action();
       setCurrentRoom(snapshot);
       socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: socketAction, payload });
-    } catch {
-      setError('Не вдалося виконати дію ведучого.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не вдалося виконати дію ведучого.');
     }
   };
 
@@ -256,8 +256,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       const snapshot = await updateRoomSettingsApi(authToken, currentRoom.room.id, patch);
       setCurrentRoom(snapshot);
       socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: 'updateSettings', payload: patch });
-    } catch {
-      setError('Не вдалося оновити параметри кімнати.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не вдалося оновити параметри кімнати.');
     }
   };
 
@@ -280,8 +280,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       const snapshot = await closeRoomCardApi(authToken, currentRoom.room.id);
       setCurrentRoom(snapshot);
       socketRef.current?.emit('closeCard', { roomId: currentRoom.room.id });
-    } catch {
-      setError('Не вдалося закрити картку.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не вдалося закрити картку.');
     }
   };
 
@@ -301,8 +301,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       const snapshot = await saveRoomNoteApi(authToken, currentRoom.room.id, { cellNumber, note, scope });
       setCurrentRoom(snapshot);
       socketRef.current?.emit('updateNote', { roomId: currentRoom.room.id, cell: cellNumber, note, scope });
-    } catch {
-      setError('Не вдалося зберегти нотатку.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не вдалося зберегти нотатку.');
     }
   };
 
@@ -314,8 +314,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       const snapshot = await updateRoomPreferencesApi(authToken, currentRoom.room.id, { tokenColor });
       setCurrentRoom(snapshot);
       socketRef.current?.emit('updatePlayerPreferences', { roomId: currentRoom.room.id, tokenColor });
-    } catch {
-      setError('Не вдалося оновити колір фішки.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не вдалося оновити колір фішки.');
     }
   };
 

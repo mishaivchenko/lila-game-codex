@@ -16,6 +16,7 @@ interface TelegramAppShellProps {
 const createInitialState = (isTelegramMode: boolean): TelegramAuthContextValue => ({
   isTelegramMode,
   status: isTelegramMode ? 'loading' : 'idle',
+  appStatus: isTelegramMode ? 'booting' : 'ready',
 });
 
 export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
@@ -31,6 +32,9 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
       ...prev,
       isTelegramMode: telegramMode,
       status: telegramMode ? (prev.status === 'authenticated' ? 'authenticated' : 'loading') : 'idle',
+      appStatus: telegramMode
+        ? (prev.status === 'authenticated' ? prev.appStatus : 'booting')
+        : 'ready',
     }));
   }, [telegramMode]);
 
@@ -42,7 +46,7 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
   useTelegramAuthBootstrap({ telegramMode, setAuthState });
 
   const shellClassName = telegramMode
-    ? 'tma-shell mx-auto min-h-[100dvh] w-full max-w-[560px] bg-gradient-to-b from-[var(--lila-bg-start)] to-[var(--lila-bg-end)] px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+12px)] sm:px-4'
+    ? 'tma-shell mx-auto min-h-[100dvh] w-full max-w-[1240px] bg-gradient-to-b from-[var(--lila-bg-start)] to-[var(--lila-bg-end)] px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+12px)] sm:px-4'
     : '';
 
   return (
@@ -82,6 +86,12 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
             <div className="mb-3 rounded-2xl border border-amber-300/70 bg-amber-50/90 px-3 py-2 text-xs text-amber-900">
               Сервер тимчасово недоступний. Працюємо в локальному режимі Telegram runtime: історія, кімнати та синхронізація між
               пристроями можуть бути недоступні до відновлення backend.
+            </div>
+          )}
+
+          {authState.isTelegramMode && authState.appStatus === 'networkError' && (
+            <div className="mb-3 rounded-2xl border border-amber-300/70 bg-amber-50/90 px-3 py-2 text-xs text-amber-900">
+              Проблема з мережею або API. Ви можете продовжити локальну гру, але online-кімнати тимчасово вимкнені.
             </div>
           )}
 

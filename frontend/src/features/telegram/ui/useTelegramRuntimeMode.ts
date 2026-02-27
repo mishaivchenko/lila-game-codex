@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { isTelegramWebApp, shouldBypassTelegramAuthForLocalDev } from '../telegramWebApp';
+import { isTelegramMiniAppRuntime, shouldBypassTelegramAuthForLocalDev } from '../telegramWebApp';
 
 export const useTelegramRuntimeMode = (pathname: string): boolean => {
   const routeForcesTelegram = pathname === '/telegram';
@@ -9,6 +9,6 @@ export const useTelegramRuntimeMode = (pathname: string): boolean => {
       return false;
     }
 
-    return routeForcesTelegram || isTelegramWebApp();
+    return routeForcesTelegram || isTelegramMiniAppRuntime();
   }, [routeForcesTelegram]);
 };

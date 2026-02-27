@@ -2,10 +2,12 @@ import { createContext, useContext } from 'react';
 import type { TelegramAppUser } from './telegramAuthApi';
 
 export type TelegramAuthStatus = 'idle' | 'loading' | 'authenticated' | 'error';
+export type TelegramAppStatus = 'booting' | 'ready' | 'offline' | 'authError' | 'networkError';
 
 export interface TelegramAuthContextValue {
   isTelegramMode: boolean;
   status: TelegramAuthStatus;
+  appStatus: TelegramAppStatus;
   user?: TelegramAppUser;
   token?: string;
   error?: string;
@@ -14,6 +16,7 @@ export interface TelegramAuthContextValue {
 const TelegramAuthContext = createContext<TelegramAuthContextValue>({
   isTelegramMode: false,
   status: 'idle',
+  appStatus: 'ready',
 });
 
 interface TelegramAuthProviderProps {

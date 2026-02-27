@@ -27,6 +27,7 @@ vi.mock('../features/telegram', () => ({
   useTelegramAuth: () => ({
     isTelegramMode: true,
     status: 'authenticated',
+    appStatus: 'ready',
     token: 'token',
     user: { displayName: 'Tester' },
   }),

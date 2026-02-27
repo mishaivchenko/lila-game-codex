@@ -19,7 +19,7 @@ const renderWithProviders = (authValue: TelegramAuthContextValue) => {
 
 describe('TelegramRoomsPanel', () => {
   it('does not render in non-telegram mode', () => {
-    const { container } = renderWithProviders({ isTelegramMode: false, status: 'idle' });
+    const { container } = renderWithProviders({ isTelegramMode: false, status: 'idle', appStatus: 'ready' });
     expect(container.textContent).toBe('');
   });
 
@@ -27,6 +27,7 @@ describe('TelegramRoomsPanel', () => {
     renderWithProviders({
       isTelegramMode: true,
       status: 'authenticated',
+      appStatus: 'ready',
       token: 'test-token',
       user: {
         id: 'u1',

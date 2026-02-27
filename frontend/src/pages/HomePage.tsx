@@ -10,6 +10,7 @@ export const HomePage = () => {
   const { resumeLastSession, loadSession } = useGameContext();
   const navigate = useNavigate();
   const [showSetup, setShowSetup] = useState(false);
+  const [primaryMode, setPrimaryMode] = useState<'single' | 'host'>('single');
   const { isTelegramMode, status, user, token } = useTelegramAuth();
   const [journeys, setJourneys] = useState<RemoteUserGameSession[]>([]);
   const [journeysLoading, setJourneysLoading] = useState(false);
@@ -77,6 +78,36 @@ export const HomePage = () => {
         <p className="mt-2 text-sm text-[var(--lila-text-muted)]">
           Це простір мʼякого самодослідження. Рухайся у власному темпі.
         </p>
+
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => {
+              setPrimaryMode('single');
+              setShowSetup(true);
+            }}
+            className={`rounded-2xl border px-4 py-3 text-left transition ${
+              primaryMode === 'single'
+                ? 'border-[var(--lila-accent)] bg-[var(--lila-accent-soft)]'
+                : 'border-[var(--lila-border-soft)] bg-[var(--lila-surface)]'
+            }`}
+          >
+            <p className="text-sm font-semibold text-[var(--lila-text-primary)]">Почати власну подорож</p>
+            <p className="mt-1 text-xs text-[var(--lila-text-muted)]">Одиночний режим з локальним збереженням.</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPrimaryMode('host')}
+            className={`rounded-2xl border px-4 py-3 text-left transition ${
+              primaryMode === 'host'
+                ? 'border-[var(--lila-accent)] bg-[var(--lila-accent-soft)]'
+                : 'border-[var(--lila-border-soft)] bg-[var(--lila-surface)]'
+            }`}
+          >
+            <p className="text-sm font-semibold text-[var(--lila-text-primary)]">Стати ведучим та запросити інших</p>
+            <p className="mt-1 text-xs text-[var(--lila-text-muted)]">Online кімнати з ходами гравців у реальному часі.</p>
+          </button>
+        </div>
 
         <div className="mt-5 grid gap-2 sm:grid-cols-2">
           <button
@@ -183,7 +214,7 @@ export const HomePage = () => {
       {showSetup && <JourneySetupHub />}
 
       <div className="mt-5">
-        <TelegramRoomsPanel />
+        <TelegramRoomsPanel defaultFlow={primaryMode === 'host' ? 'host' : 'player'} />
       </div>
     </main>
   );

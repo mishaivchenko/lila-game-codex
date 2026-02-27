@@ -70,6 +70,16 @@ export interface TelegramThemeSnapshot {
 
 const hasTelegramObject = (): boolean => Boolean(window.Telegram?.WebApp);
 
+export const isTelegramMiniAppRuntime = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  if (import.meta.env.VITE_FORCE_TELEGRAM_MODE === 'true') {
+    return true;
+  }
+  return hasTelegramObject();
+};
+
 export const isTelegramWebApp = (): boolean => {
   if (typeof window === 'undefined') {
     return false;
@@ -79,7 +89,7 @@ export const isTelegramWebApp = (): boolean => {
     return true;
   }
 
-  if (hasTelegramObject()) {
+  if (isTelegramMiniAppRuntime()) {
     return true;
   }
 
