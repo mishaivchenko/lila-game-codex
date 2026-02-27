@@ -341,6 +341,18 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       setCurrentRoom(snapshot);
       socketRef.current?.emit('rollDice', { roomId: currentRoom.room.id });
     } catch (error) {
+      // Backward-compat fallback for deployments where REST roll endpoint is not yet available.
+      if (socketRef.current) {
+        socketRef.current.emit('rollDice', { roomId: currentRoom.room.id });
+        window.setTimeout(() => {
+          void getRoomByIdApi(authToken, currentRoom.room.id)
+            .then((snapshot) => setCurrentRoom(snapshot))
+            .catch(() => {
+              // no-op, socket state update may still arrive
+            });
+        }, 500);
+        return;
+      }
       setError(error instanceof Error ? error.message : 'Не вдалося кинути кубики.');
     }
   };
