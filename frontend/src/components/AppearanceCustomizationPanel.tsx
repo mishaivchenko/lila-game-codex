@@ -93,7 +93,7 @@ export const AppearanceCustomizationPanel = ({
       </button>
 
       {expanded && (
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-4 grid max-h-[68vh] gap-4 overflow-y-auto pr-1 sm:grid-cols-2 lg:max-h-[520px]">
           <div className="sm:col-span-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--lila-text-muted)]">Формат кидка</p>
             <div className="mt-2 grid gap-2 sm:grid-cols-3">
@@ -104,13 +104,13 @@ export const AppearanceCustomizationPanel = ({
                   onClick={() => {
                     void applyDiceMode(option.id);
                   }}
-                  className={`rounded-2xl border px-3 py-3 text-left transition ${
+                  className={`min-h-[108px] rounded-2xl border px-3 py-3 text-left transition ${
                     defaultDiceMode === option.id
                       ? 'border-[var(--lila-accent)] bg-[var(--lila-chip-active-bg)] shadow-[0_8px_24px_rgba(197,123,93,0.18)]'
                       : 'border-[var(--lila-chip-border)] bg-[var(--lila-chip-bg)] hover:border-[var(--lila-border-soft)] hover:bg-[var(--lila-surface-muted)]'
                   }`}
                 >
-                  <p className={`text-sm font-semibold ${defaultDiceMode === option.id ? 'text-[var(--lila-chip-active-text)]' : 'text-[var(--lila-text-primary)]'}`}>
+                  <p className={`text-sm font-semibold leading-tight sm:text-[13px] lg:text-sm ${defaultDiceMode === option.id ? 'text-[var(--lila-chip-active-text)]' : 'text-[var(--lila-text-primary)]'}`}>
                     {option.title}
                   </p>
                   <p className="mt-1 text-lg leading-none">{option.emoji}</p>
