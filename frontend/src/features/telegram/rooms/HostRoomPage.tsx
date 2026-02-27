@@ -141,8 +141,11 @@ export const HostRoomPage = () => {
   const playerEntries = currentRoom.players.filter((player) => player.role === 'player');
   const currentTurnPlayer = currentRoom.players.find((entry) => entry.userId === currentRoom.gameState.currentTurnPlayerId);
   const activeCard = currentRoom.gameState.activeCard;
-  const displayedCellNumber = activeCard?.cellNumber ?? previewCellNumber;
-  const displayedPlayerUserId = activeCard?.playerUserId ?? (isCurrentUserHost ? currentTurnPlayer?.userId : user?.id);
+  const isPreviewCardOpen = previewCellNumber !== undefined;
+  const displayedCellNumber = previewCellNumber ?? activeCard?.cellNumber;
+  const displayedPlayerUserId = isPreviewCardOpen
+    ? (isCurrentUserHost ? currentTurnPlayer?.userId : user?.id)
+    : activeCard?.playerUserId;
   const canSeeActiveCard = Boolean(
     displayedCellNumber
       && user
@@ -211,7 +214,7 @@ export const HostRoomPage = () => {
       note: text,
       scope: noteScope,
     });
-    if (!activeCard) {
+    if (isPreviewCardOpen) {
       setPreviewCellNumber(undefined);
       return;
     }
@@ -219,7 +222,7 @@ export const HostRoomPage = () => {
   };
 
   const handleCardSkip = async () => {
-    if (!activeCard) {
+    if (isPreviewCardOpen) {
       setPreviewCellNumber(undefined);
       return;
     }
@@ -485,9 +488,6 @@ export const HostRoomPage = () => {
               otherTokens={boardOtherTokens}
               tokenColor={primaryTokenPlayer?.tokenColor}
               onCellSelect={(cellNumber) => {
-                if (activeCard) {
-                  return;
-                }
                 setPreviewCellNumber(cellNumber);
               }}
             />
@@ -505,7 +505,7 @@ export const HostRoomPage = () => {
                 <button
                   type="button"
                   onClick={() => void rollDice()}
-                  disabled={!isMyTurn || currentRoom.room.status !== 'in_progress'}
+                  disabled={currentRoom.room.status !== 'in_progress'}
                   className="rounded-2xl bg-[var(--lila-accent)] px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Кинути кубики
@@ -610,7 +610,7 @@ export const HostRoomPage = () => {
               void handleCardSkip();
             }}
             onClose={() => {
-              if (activeCard) {
+              if (!isPreviewCardOpen && activeCard) {
                 void closeActiveCard();
                 return;
               }

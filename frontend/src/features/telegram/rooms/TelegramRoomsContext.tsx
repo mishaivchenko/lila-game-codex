@@ -328,12 +328,12 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     if (!currentRoom || !authUserId || !authToken) {
       return;
     }
-    if (currentRoom.room.hostUserId === authUserId) {
-      setError('Ведучий не кидає кубики. Кидок доступний лише активному гравцю.');
+    if (currentRoom.room.status !== 'in_progress') {
+      setError('Гру ще не розпочато або вона на паузі.');
       return;
     }
-    if (currentRoom.gameState.currentTurnPlayerId !== authUserId) {
-      setError('Зараз не ваш хід.');
+    if (currentRoom.room.hostUserId === authUserId) {
+      setError('Ведучий не кидає кубики. Кидок доступний лише активному гравцю.');
       return;
     }
     try {
