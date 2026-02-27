@@ -256,6 +256,45 @@ export const getUserById = async (id: string): Promise<AppUser | undefined> => {
   }
 };
 
+export const getUserByTelegramId = async (telegramId: string): Promise<AppUser | undefined> => {
+  const cached = usersByTelegramId.get(telegramId);
+  if (cached) {
+    return cached;
+  }
+  if (!isPostgresEnabled()) {
+    return cached;
+  }
+  try {
+    const rows = await queryDb<UserRow>(
+      `SELECT
+        id,
+        telegram_user_id,
+        telegram_username,
+        first_name,
+        last_name,
+        language_code,
+        COALESCE(first_name || ' ' || last_name, first_name, telegram_username) AS display_name,
+        role,
+        is_admin,
+        is_super_admin,
+        created_at,
+        last_active_at
+      FROM users
+      WHERE telegram_user_id = $1
+      LIMIT 1`,
+      [telegramId],
+    );
+    const user = rows[0] ? mapUserRow(rows[0]) : undefined;
+    if (user) {
+      storeInMemory(user);
+    }
+    return user;
+  } catch (error) {
+    logDbFallback('get_user_by_telegram_id', error);
+    return usersByTelegramId.get(telegramId);
+  }
+};
+
 export const hasAdminBindingForChat = async (userId: string, chatInstance?: string): Promise<boolean> => {
   if (!chatInstance) {
     return false;

@@ -85,6 +85,18 @@ Host-specific rules:
 - host has private facilitator notes per player (not visible to players)
 - invites are bot-first and compatible with Telegram deep-links
 
+### 4. Bot-assisted Multiplayer
+Room invites and management now run through Telegram bot deep links:
+- invite payload uses `room_<ROOM_CODE>` (stable for users, no UUID leakage)
+- Mini App auto-detects `start_param` and jumps into room join flow
+- plain browser open is treated as fallback, Telegram is the primary entry
+
+Optional bot webhook commands (for admin/operator flows):
+- `/start room_<CODE>` open room entry
+- `/myrooms` list recent rooms for linked account
+- `/room CODE` room status snapshot
+- `/pause CODE`, `/resume CODE`, `/finish CODE` host controls
+
 ## Stack
 ### Frontend
 - React 19
