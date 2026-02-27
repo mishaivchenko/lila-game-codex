@@ -63,6 +63,28 @@ const serializeUser = (user: {
   lastActiveAt: user.lastActiveAt,
 });
 
+const canHostInScope = async ({
+  isSuperAdmin,
+  isAdmin,
+  userId,
+  chatInstance,
+  chatType,
+}: {
+  isSuperAdmin: boolean;
+  isAdmin: boolean;
+  userId: string;
+  chatInstance?: string;
+  chatType?: string;
+}): Promise<boolean> => {
+  if (isSuperAdmin) {
+    return true;
+  }
+  if (isAdmin && chatType === 'private') {
+    return true;
+  }
+  return hasAdminBindingForChat(userId, chatInstance);
+};
+
 const handleTelegramAuth = async (req: Request, res: Response) => {
   const parsed = telegramWebAppSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -77,7 +99,13 @@ const handleTelegramAuth = async (req: Request, res: Response) => {
   try {
     const telegramProfile = verifyTelegramWebAppInitData(parsed.data.initData, botToken);
     const user = await upsertUserFromTelegram(telegramProfile);
-    const canHostCurrentChat = user.isSuperAdmin || await hasAdminBindingForChat(user.id, telegramProfile.chatInstance);
+    const canHostCurrentChat = await canHostInScope({
+      isSuperAdmin: user.isSuperAdmin,
+      isAdmin: user.isAdmin,
+      userId: user.id,
+      chatInstance: telegramProfile.chatInstance,
+      chatType: telegramProfile.chatType,
+    });
     const token = createAppToken(user.id, 60 * 60 * 12, {
       chatInstance: telegramProfile.chatInstance,
       chatType: telegramProfile.chatType,
@@ -116,9 +144,13 @@ authRouter.get('/me', requireAuth, (req: AuthenticatedRequest, res) => {
     if (!req.authUser) {
       return res.status(401).json({ ok: false, error: 'Unauthorized' });
     }
-    const canHostCurrentChat =
-      req.authUser.isSuperAdmin
-      || await hasAdminBindingForChat(req.authUser.id, req.authScope?.chatInstance);
+    const canHostCurrentChat = await canHostInScope({
+      isSuperAdmin: req.authUser.isSuperAdmin,
+      isAdmin: req.authUser.isAdmin,
+      userId: req.authUser.id,
+      chatInstance: req.authScope?.chatInstance,
+      chatType: req.authScope?.chatType,
+    });
     return res.status(200).json({
       ok: true,
       user: serializeUser(req.authUser, canHostCurrentChat),

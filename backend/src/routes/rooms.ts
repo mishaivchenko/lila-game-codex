@@ -42,6 +42,19 @@ const roomPlayerPreferencesSchema = z.object({
 const resolveParticipantLabel = (user: NonNullable<AuthenticatedRequest['authUser']>): string =>
   user.username ? `@${user.username}` : user.displayName;
 
+const canHostInScope = async (req: AuthenticatedRequest): Promise<boolean> => {
+  if (!req.authUser) {
+    return false;
+  }
+  if (req.authUser.isSuperAdmin) {
+    return true;
+  }
+  if (req.authUser.isAdmin && req.authScope?.chatType === 'private') {
+    return true;
+  }
+  return hasAdminBindingForChat(req.authUser.id, req.authScope?.chatInstance);
+};
+
 export const roomsRouter = Router();
 
 roomsRouter.get('/', requireAuth, (req: AuthenticatedRequest, res) => {
@@ -59,9 +72,7 @@ roomsRouter.post('/', requireAuth, (req: AuthenticatedRequest, res) => {
     if (!req.authUser) {
       return res.status(401).json({ ok: false, error: 'Unauthorized' });
     }
-    const canHostCurrentChat =
-      req.authUser.isSuperAdmin
-      || await hasAdminBindingForChat(req.authUser.id, req.authScope?.chatInstance);
+    const canHostCurrentChat = await canHostInScope(req);
     if (!canHostCurrentChat) {
       return res.status(403).json({ ok: false, error: 'Admin access for this Telegram chat is required to host room' });
     }
