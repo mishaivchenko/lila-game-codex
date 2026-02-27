@@ -173,6 +173,17 @@ const touchRoom = (room: GameRoom): void => {
   room.updatedAt = new Date().toISOString();
 };
 
+const toUnixMs = (value: string | Date | undefined): number => {
+  if (!value) {
+    return 0;
+  }
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
 const resolveDisplayName = (fallbackUserId: string, displayName?: string): string => {
   if (displayName?.trim()) {
     return displayName.trim();
@@ -496,7 +507,7 @@ export const listRoomsForUser = async (userId: string, limit = 20): Promise<Room
   if (!isPostgresEnabled()) {
     return Array.from(roomsById.values())
       .filter((room) => room.players.some((player) => player.userId === userId))
-      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+      .sort((left, right) => toUnixMs(right.updatedAt) - toUnixMs(left.updatedAt))
       .slice(0, limit)
       .map((room) => toSnapshot(room));
   }
@@ -516,7 +527,7 @@ export const listRoomsForUser = async (userId: string, limit = 20): Promise<Room
   }));
   return snapshots
     .filter((entry): entry is RoomSnapshot => Boolean(entry))
-    .sort((left, right) => right.room.updatedAt.localeCompare(left.room.updatedAt));
+    .sort((left, right) => toUnixMs(right.room.updatedAt as string | Date) - toUnixMs(left.room.updatedAt as string | Date));
 };
 
 export const joinRoom = async ({ roomId, userId, displayName }: { roomId: string; userId: string; displayName?: string }): Promise<RoomSnapshot> => {
