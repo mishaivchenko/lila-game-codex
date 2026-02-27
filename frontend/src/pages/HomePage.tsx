@@ -5,12 +5,14 @@ import { JourneySetupHub } from '../components/journey/JourneySetupHub';
 import { TelegramRoomsPanel, useTelegramAuth } from '../features/telegram';
 import { AppearanceCustomizationPanel } from '../components/AppearanceCustomizationPanel';
 import { fetchUserGameHistory, type RemoteUserGameSession } from '../features/telegram/history/gamesApi';
+import { getTelegramStartParam } from '../features/telegram/telegramWebApp';
 
 export const HomePage = () => {
   const { resumeLastSession, loadSession } = useGameContext();
   const navigate = useNavigate();
   const [showSetup, setShowSetup] = useState(false);
   const [primaryMode, setPrimaryMode] = useState<'single' | 'host' | null>(null);
+  const [incomingRoomCode, setIncomingRoomCode] = useState<string | undefined>(undefined);
   const { isTelegramMode, status, user, token } = useTelegramAuth();
   const [journeys, setJourneys] = useState<RemoteUserGameSession[]>([]);
   const [journeysLoading, setJourneysLoading] = useState(false);
@@ -65,6 +67,23 @@ export const HomePage = () => {
       })),
     [journeys],
   );
+
+  useEffect(() => {
+    if (!isTelegramMode) {
+      return;
+    }
+    const startParam = getTelegramStartParam();
+    if (!startParam || !startParam.startsWith('room_')) {
+      return;
+    }
+    const roomCode = startParam.replace(/^room_/, '').trim().toUpperCase();
+    if (!roomCode) {
+      return;
+    }
+    setIncomingRoomCode(roomCode);
+    setPrimaryMode('host');
+    setShowSetup(false);
+  }, [isTelegramMode]);
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl bg-gradient-to-b from-[var(--lila-bg-start)] to-[var(--lila-bg-end)] px-4 py-6 sm:px-6">
@@ -224,7 +243,7 @@ export const HomePage = () => {
 
       {primaryMode === 'host' && (
         <div className="mt-5">
-          <TelegramRoomsPanel defaultFlow="host" />
+          <TelegramRoomsPanel defaultFlow="host" initialRoomCode={incomingRoomCode} />
         </div>
       )}
     </main>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getTelegramInitData, isTelegramMiniAppRuntime } from './telegramWebApp';
+import { getTelegramInitData, getTelegramStartParam, isTelegramMiniAppRuntime } from './telegramWebApp';
 
 describe('telegram web app runtime detection', () => {
   it('detects mini app runtime only when Telegram WebApp object exists', () => {
@@ -30,6 +30,23 @@ describe('telegram web app runtime detection', () => {
       },
     };
     expect(getTelegramInitData()).toBe('');
+    window.Telegram = originalTelegram;
+  });
+
+  it('reads start param from Telegram unsafe payload', () => {
+    const originalTelegram = window.Telegram;
+    window.Telegram = {
+      WebApp: {
+        initData: '',
+        initDataUnsafe: {
+          start_param: 'room_ABC123',
+        },
+        ready: () => {},
+        expand: () => {},
+        close: () => {},
+      },
+    };
+    expect(getTelegramStartParam()).toBe('room_ABC123');
     window.Telegram = originalTelegram;
   });
 });

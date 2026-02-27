@@ -140,7 +140,7 @@ export const HostRoomPage = () => {
     }
     return currentRoom.gameState.notes.playerByUserId[user.id]?.[String(activeCellNumber)] ?? '';
   })();
-  const botInviteUrl = buildRoomInviteUrl(currentRoom.room.id);
+  const botInviteUrl = buildRoomInviteUrl(currentRoom.room.code);
   const joinLink = botInviteUrl;
   const hostNotesPlayers = currentRoom.players.filter((player) => player.role === 'player');
   const boardOtherTokens = currentRoom.players
@@ -172,7 +172,7 @@ export const HostRoomPage = () => {
     if (!currentRoom) {
       return;
     }
-    const deepLink = buildRoomInviteUrl(currentRoom.room.id);
+    const deepLink = buildRoomInviteUrl(currentRoom.room.code);
     const webApp = getTelegramWebApp();
     webApp?.openTelegramLink?.(deepLink);
   };

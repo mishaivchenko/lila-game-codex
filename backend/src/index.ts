@@ -8,6 +8,7 @@ import { eventsRouter } from './routes/events.js';
 import { authRouter } from './routes/auth.js';
 import { roomsRouter } from './routes/rooms.js';
 import { gamesRouter } from './routes/games.js';
+import { telegramBotRouter } from './routes/telegramBot.js';
 import { ensureDbReady, getDbHealthStatus } from './lib/db.js';
 import { requireAuth, type AuthenticatedRequest } from './lib/authMiddleware.js';
 import { attachHostRoomSocket } from './socket/hostRoomSocket.js';
@@ -47,6 +48,7 @@ export const createApp = (): express.Express => {
   });
   app.use('/api/rooms', roomsRouter);
   app.use('/api/games', gamesRouter);
+  app.use('/api/telegram/bot', telegramBotRouter);
 
   if (process.env.NODE_ENV === 'production') {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));

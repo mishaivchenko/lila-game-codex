@@ -159,6 +159,23 @@ export const getTelegramInitData = (): string => {
   return decodedFallback.includes('hash=') ? decodedFallback : '';
 };
 
+export const getTelegramStartParam = (): string | undefined => {
+  const webApp = getTelegramWebApp();
+  const unsafeParam = (webApp?.initDataUnsafe as { start_param?: unknown } | undefined)?.start_param;
+  if (typeof unsafeParam === 'string' && unsafeParam.trim()) {
+    return unsafeParam.trim();
+  }
+
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+  const searchParams = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash);
+  return searchParams.get('tgWebAppStartParam')
+    ?? hashParams.get('tgWebAppStartParam')
+    ?? undefined;
+};
+
 export const applyTelegramThemeToRoot = (
   theme?: TelegramThemeParams,
   colorScheme?: 'light' | 'dark',
