@@ -5,7 +5,7 @@ import { JourneySetupHub } from '../components/journey/JourneySetupHub';
 import { TelegramRoomsPanel, useTelegramAuth } from '../features/telegram';
 import { AppearanceCustomizationPanel } from '../components/AppearanceCustomizationPanel';
 import { fetchUserGameHistory, type RemoteUserGameSession } from '../features/telegram/history/gamesApi';
-import { getTelegramStartParam } from '../features/telegram/telegramWebApp';
+import { consumeTelegramStartParam } from '../features/telegram/telegramWebApp';
 
 export const HomePage = () => {
   const { resumeLastSession, loadSession } = useGameContext();
@@ -73,7 +73,7 @@ export const HomePage = () => {
     if (!isTelegramMode) {
       return;
     }
-    const startParam = getTelegramStartParam();
+    const startParam = consumeTelegramStartParam();
     if (!startParam) {
       return;
     }

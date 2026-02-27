@@ -129,6 +129,39 @@ roomsRouter.get('/:roomId', requireAuth, (req: AuthenticatedRequest, res) => {
   })();
 });
 
+roomsRouter.post('/by-code/join', requireAuth, (req: AuthenticatedRequest, res) => {
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const parsed = joinRoomSchema.safeParse(req.body ?? {});
+    if (!parsed.success || !parsed.data.roomCode) {
+      return res.status(400).json({ ok: false, error: 'Room code is required' });
+    }
+    try {
+      const byCode = await getRoomByCode(parsed.data.roomCode);
+      if (!byCode) {
+        return res.status(404).json({ ok: false, error: 'Room not found' });
+      }
+      const snapshot = await joinRoom({
+        roomId: byCode.room.id,
+        userId: req.authUser.id,
+        displayName: resolveParticipantLabel(req.authUser),
+      });
+      return res.status(200).json({ ok: true, ...snapshot });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : '';
+      if (code === 'ROOM_FULL') {
+        return res.status(409).json({ ok: false, error: 'Room is full' });
+      }
+      if (code === 'ROOM_FINISHED') {
+        return res.status(409).json({ ok: false, error: 'Room is finished' });
+      }
+      return res.status(404).json({ ok: false, error: 'Room not found' });
+    }
+  })();
+});
+
 roomsRouter.post('/:roomId/join', requireAuth, (req: AuthenticatedRequest, res) => {
   void (async () => {
     if (!req.authUser) {

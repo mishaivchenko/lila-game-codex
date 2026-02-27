@@ -415,6 +415,21 @@ describe('Telegram auth + rooms', () => {
     ).toBe(true);
   });
 
+  it('returns 400 when /api/rooms/by-code/join has no roomCode', async () => {
+    const playerAuth = await request(app)
+      .post('/api/auth/telegram/webapp')
+      .send({ initData: buildTelegramInitData(BOT_TOKEN, 67003, 'code_player_empty') });
+    const playerToken = playerAuth.body.token as string;
+
+    const response = await request(app)
+      .post('/api/rooms/by-code/join')
+      .set('Authorization', `Bearer ${playerToken}`)
+      .send({});
+
+    expect(response.status).toBe(400);
+    expect(response.body.ok).toBe(false);
+  });
+
   it('allows only host to update room settings', async () => {
     const hostAuth = await request(app)
       .post('/api/auth/telegram/webapp')

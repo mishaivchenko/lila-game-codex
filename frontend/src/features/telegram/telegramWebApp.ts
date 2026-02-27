@@ -176,6 +176,28 @@ export const getTelegramStartParam = (): string | undefined => {
     ?? undefined;
 };
 
+const START_PARAM_CONSUMED_KEY = 'lila:telegram-start-param:consumed';
+
+export const consumeTelegramStartParam = (): string | undefined => {
+  const startParam = getTelegramStartParam();
+  if (!startParam || typeof window === 'undefined') {
+    return undefined;
+  }
+  const consumed = window.sessionStorage.getItem(START_PARAM_CONSUMED_KEY);
+  if (consumed === startParam) {
+    return undefined;
+  }
+  window.sessionStorage.setItem(START_PARAM_CONSUMED_KEY, startParam);
+  return startParam;
+};
+
+export const resetConsumedTelegramStartParam = (): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.sessionStorage.removeItem(START_PARAM_CONSUMED_KEY);
+};
+
 export const applyTelegramThemeToRoot = (
   theme?: TelegramThemeParams,
   colorScheme?: 'light' | 'dark',

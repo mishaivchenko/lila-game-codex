@@ -213,6 +213,11 @@ export const HostRoomPage = () => {
   return (
     <>
       <main className="mx-auto min-h-screen max-w-[1460px] bg-[var(--lila-bg-main)] px-3 py-4 sm:px-4 lg:px-5 xl:h-[calc(100dvh-20px)] xl:overflow-hidden">
+      {error && (
+        <p className="mb-3 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {error}
+        </p>
+      )}
       <div className="grid gap-4 xl:h-full xl:grid-cols-[320px,minmax(0,1fr),320px]">
         <aside className="space-y-4 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
           <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 p-4 shadow-[0_18px_48px_rgba(42,36,31,0.12)]">
@@ -561,12 +566,6 @@ export const HostRoomPage = () => {
           </section>
         </aside>
       </div>
-
-      {error && (
-        <p className="mt-4 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {error}
-        </p>
-      )}
 
       <AnimatePresence>
         {canSeeActiveCard && currentCellContent && activeCard && (
