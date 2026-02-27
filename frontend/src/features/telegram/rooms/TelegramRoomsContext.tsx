@@ -8,6 +8,7 @@ import type {
   RoomSnapshot,
   RoomTokenMovedPayload,
 } from './roomsApi';
+import { playDiceRoll } from '../telegramHaptics';
 import {
   closeRoomCardApi,
   createRoomApi,
@@ -336,6 +337,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       setError('Ведучий не кидає кубики. Кидок доступний лише активному гравцю.');
       return;
     }
+    playDiceRoll();
     try {
       const snapshot = await rollRoomDiceApi(authToken, currentRoom.room.id);
       setCurrentRoom(snapshot);

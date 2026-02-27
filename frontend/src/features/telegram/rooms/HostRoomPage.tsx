@@ -15,6 +15,8 @@ import { buildStepwiseCellPath, resolveTransitionEntryCell } from '../../../lib/
 import { getBoardTransitionPath } from '../../../lib/lila/boardProfiles';
 import { formatMovePathWithEntry, resolveMoveType } from '../../../lib/lila/historyFormat';
 import { playCardOpen, playDiceRoll, playLadderMove, playSnakeMove } from '../telegramHaptics';
+import { DEFAULT_ANIMATION_TIMINGS } from '../../../lib/animations/animationTimingSettings';
+import { DEFAULT_MOVEMENT_SETTINGS, normalizeMovementSettings } from '../../../engine/movement/MovementEngine';
 
 const roomStatusLabel: Record<'open' | 'in_progress' | 'paused' | 'finished', string> = {
   open: 'Відкрита',
@@ -69,6 +71,10 @@ export const HostRoomPage = () => {
   const cardVisibleRef = useRef(false);
   const lastTransitionEntryCellRef = useRef<number | undefined>(undefined);
   const isCurrentUserHost = currentRoom?.room.hostUserId === user?.id;
+  const movementSettings = useMemo(
+    () => normalizeMovementSettings(DEFAULT_MOVEMENT_SETTINGS),
+    [],
+  );
 
   useEffect(() => {
     if (!isTelegramMode) {
@@ -154,10 +160,7 @@ export const HostRoomPage = () => {
     if (moveType === 'arrow') {
       playLadderMove();
     }
-    const tokenPathCells = moveType && entryCell
-      ? buildStepwiseCellPath(lastMove.fromCell, lastMove.dice, board.maxCell).filter((cell, index, list) =>
-        index === 0 || index === list.length - 1 || cell <= (entryCell ?? cell))
-      : undefined;
+    const tokenPathCells = buildStepwiseCellPath(lastMove.fromCell, lastMove.dice, board.maxCell);
 
     setAnimatedPlayerId(lastMove.userId);
     setAnimationMove({
@@ -622,6 +625,8 @@ export const HostRoomPage = () => {
               otherTokens={boardOtherTokens}
               tokenColor={primaryTokenPlayer?.tokenColor}
               animationMove={animationMove}
+              animationTimings={DEFAULT_ANIMATION_TIMINGS}
+              movementSettings={movementSettings}
               onMoveAnimationComplete={() => {
                 setAnimationMove(undefined);
                 setAnimatedPlayerId(undefined);
