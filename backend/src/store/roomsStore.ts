@@ -62,7 +62,7 @@ interface RoomPlayerRow {
 
 interface RoomGameStateRow {
   room_id: string;
-  current_turn_player_id: string;
+  current_turn_player_id: string | null;
   per_player_state_json: Record<string, RoomPlayerState>;
   move_history_json: RoomGameState['moveHistory'];
   active_card_json?: RoomGameState['activeCard'];
@@ -116,7 +116,7 @@ const mapRoom = (roomRow: HostRoomRow, playerRows: RoomPlayerRow[], stateRow: Ro
   const players = dedupePlayers(playerRows.map(mapPlayerRow));
   const gameState: GameRoom['gameState'] = {
     roomId: stateRow.room_id,
-    currentTurnPlayerId: stateRow.current_turn_player_id,
+    currentTurnPlayerId: stateRow.current_turn_player_id ?? null,
     perPlayerState: stateRow.per_player_state_json,
     moveHistory: stateRow.move_history_json,
     activeCard: stateRow.active_card_json ?? null,
@@ -134,7 +134,7 @@ const mapRoom = (roomRow: HostRoomRow, playerRows: RoomPlayerRow[], stateRow: Ro
   const hostUserId = roomRow.host_user_id;
   const currentTurnPlayer = players.find((player) => player.userId === gameState.currentTurnPlayerId);
   if (!currentTurnPlayer || currentTurnPlayer.role === 'host') {
-    gameState.currentTurnPlayerId = '';
+    gameState.currentTurnPlayerId = null;
   }
   return {
     id: roomRow.id,
@@ -228,14 +228,14 @@ const isRoomHost = (room: GameRoom, userId: string): boolean => room.hostUserId 
 const getTurnQueuePlayers = (room: GameRoom): RoomPlayer[] =>
   room.players.filter((player) => player.role === 'player' && room.gameState.perPlayerState[player.userId]?.status !== 'finished');
 
-const findNextTurnPlayerId = (room: GameRoom, currentPlayerId: string): string => {
+const findNextTurnPlayerId = (room: GameRoom, currentPlayerId: string): string | null => {
   const turnQueue = getTurnQueuePlayers(room);
   const currentIndex = turnQueue.findIndex((player) => player.userId === currentPlayerId);
   if (currentIndex < 0) {
-    return turnQueue[0]?.userId ?? '';
+    return turnQueue[0]?.userId ?? null;
   }
   const nextIndex = (currentIndex + 1) % turnQueue.length;
-  return turnQueue[nextIndex]?.userId ?? '';
+  return turnQueue[nextIndex]?.userId ?? null;
 };
 
 const nextMoveFromDice = (
@@ -705,7 +705,7 @@ export const setRoomStatus = async (roomId: string, hostUserId: string, status: 
     room.status = status;
     if (status === 'finished') {
       room.gameState.activeCard = null;
-      room.gameState.currentTurnPlayerId = '';
+      room.gameState.currentTurnPlayerId = null;
     }
     touchRoom(room);
     return toSnapshot(room);
@@ -721,7 +721,7 @@ export const setRoomStatus = async (roomId: string, hostUserId: string, status: 
     room.status = status;
     if (status === 'finished') {
       room.gameState.activeCard = null;
-      room.gameState.currentTurnPlayerId = '';
+      room.gameState.currentTurnPlayerId = null;
     }
     await persistRoomGameStateDb(client, room);
     const updated = await queryRoomByIdDb(client, roomId);
@@ -926,7 +926,7 @@ export const rollDiceForCurrentPlayer = async ({
   userId: string;
 }): Promise<{
   snapshot: RoomSnapshot;
-  move: { userId: string; fromCell: number; toCell: number; dice: number; diceValues: number[]; snakeOrArrow: 'snake' | 'arrow' | null; nextTurnPlayerId: string };
+  move: { userId: string; fromCell: number; toCell: number; dice: number; diceValues: number[]; snakeOrArrow: 'snake' | 'arrow' | null; nextTurnPlayerId: string | null };
 }> => {
   const executeMove = (room: GameRoom) => {
     if (room.status !== 'in_progress') {

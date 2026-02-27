@@ -42,7 +42,7 @@ export interface RoomSettings {
 
 export interface RoomGameState {
   roomId: string;
-  currentTurnPlayerId: string;
+  currentTurnPlayerId: string | null;
   perPlayerState: Record<string, RoomPlayerState>;
   moveHistory: Array<{
     userId: string;
