@@ -112,16 +112,9 @@ const dedupePlayers = (players: RoomPlayer[]): RoomPlayer[] => {
   return Array.from(byUserId.values()).sort((left, right) => left.joinedAt.localeCompare(right.joinedAt));
 };
 
-const mapRoom = (roomRow: HostRoomRow, playerRows: RoomPlayerRow[], stateRow: RoomGameStateRow): GameRoom => ({
-  id: roomRow.id,
-  code: roomRow.room_code,
-  hostUserId: roomRow.host_user_id,
-  boardType: roomRow.board_type,
-  createdAt: roomRow.created_at,
-  updatedAt: roomRow.updated_at,
-  status: roomRow.status,
-  players: dedupePlayers(playerRows.map(mapPlayerRow)),
-  gameState: {
+const mapRoom = (roomRow: HostRoomRow, playerRows: RoomPlayerRow[], stateRow: RoomGameStateRow): GameRoom => {
+  const players = dedupePlayers(playerRows.map(mapPlayerRow));
+  const gameState: GameRoom['gameState'] = {
     roomId: stateRow.room_id,
     currentTurnPlayerId: stateRow.current_turn_player_id,
     perPlayerState: stateRow.per_player_state_json,
@@ -137,8 +130,24 @@ const mapRoom = (roomRow: HostRoomRow, playerRows: RoomPlayerRow[], stateRow: Ro
       allowHostCloseAnyCard: true,
       hostCanPause: true,
     },
-  },
-});
+  };
+  const hostUserId = roomRow.host_user_id;
+  const currentTurnPlayer = players.find((player) => player.userId === gameState.currentTurnPlayerId);
+  if (!currentTurnPlayer || currentTurnPlayer.role === 'host') {
+    gameState.currentTurnPlayerId = '';
+  }
+  return {
+    id: roomRow.id,
+    code: roomRow.room_code,
+    hostUserId,
+    boardType: roomRow.board_type,
+    createdAt: roomRow.created_at,
+    updatedAt: roomRow.updated_at,
+    status: roomRow.status,
+    players,
+    gameState,
+  };
+};
 
 const toSnapshot = (room: GameRoom): RoomSnapshot => ({
   room: {
@@ -203,13 +212,17 @@ const ensurePlayerInRoom = (room: GameRoom, userId: string): RoomPlayer => {
   return player;
 };
 
+const getTurnQueuePlayers = (room: GameRoom): RoomPlayer[] =>
+  room.players.filter((player) => player.role === 'player' && room.gameState.perPlayerState[player.userId]?.status !== 'finished');
+
 const findNextTurnPlayerId = (room: GameRoom, currentPlayerId: string): string => {
-  const currentIndex = room.players.findIndex((player) => player.userId === currentPlayerId);
+  const turnQueue = getTurnQueuePlayers(room);
+  const currentIndex = turnQueue.findIndex((player) => player.userId === currentPlayerId);
   if (currentIndex < 0) {
-    return room.players[0]?.userId ?? currentPlayerId;
+    return turnQueue[0]?.userId ?? '';
   }
-  const nextIndex = (currentIndex + 1) % room.players.length;
-  return room.players[nextIndex]?.userId ?? currentPlayerId;
+  const nextIndex = (currentIndex + 1) % turnQueue.length;
+  return turnQueue[nextIndex]?.userId ?? '';
 };
 
 const nextMoveFromDice = (
@@ -347,7 +360,7 @@ const createHostRoomInMemory = ({
     players: [hostPlayer],
     gameState: {
       roomId,
-      currentTurnPlayerId: hostUserId,
+      currentTurnPlayerId: '',
       perPlayerState: { [hostUserId]: hostState },
       moveHistory: [],
       activeCard: null,
@@ -395,7 +408,7 @@ export const createHostRoom = async ({
     const hostDisplay = resolveDisplayName(hostUserId, hostDisplayName);
     const gameState: RoomGameState = {
       roomId,
-      currentTurnPlayerId: hostUserId,
+      currentTurnPlayerId: '',
       perPlayerState: {
         [hostUserId]: {
           userId: hostUserId,
@@ -438,7 +451,7 @@ export const createHostRoom = async ({
        VALUES ($1, $2, $3::jsonb, $4::jsonb, $5::jsonb, $6::jsonb, $7::jsonb, $8::timestamptz)`,
       [
         roomId,
-        hostUserId,
+        '',
         JSON.stringify(gameState.perPlayerState),
         JSON.stringify([]),
         JSON.stringify(null),
@@ -479,6 +492,33 @@ export const getRoomByCode = async (code: string): Promise<RoomSnapshot | undefi
   return room ? storeInMemory(room) : undefined;
 };
 
+export const listRoomsForUser = async (userId: string, limit = 20): Promise<RoomSnapshot[]> => {
+  if (!isPostgresEnabled()) {
+    return Array.from(roomsById.values())
+      .filter((room) => room.players.some((player) => player.userId === userId))
+      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+      .slice(0, limit)
+      .map((room) => toSnapshot(room));
+  }
+  const rows = await queryDb<{ room_id: string }>(
+    `SELECT rp.room_id
+       FROM room_players rp
+       JOIN host_rooms hr ON hr.id = rp.room_id
+      WHERE rp.user_id = $1
+      GROUP BY rp.room_id, hr.updated_at
+      ORDER BY hr.updated_at DESC
+      LIMIT $2`,
+    [userId, limit],
+  );
+  const snapshots = await Promise.all(rows.map(async (row) => {
+    const room = await getDbRoomById(row.room_id);
+    return room ? storeInMemory(room) : undefined;
+  }));
+  return snapshots
+    .filter((entry): entry is RoomSnapshot => Boolean(entry))
+    .sort((left, right) => right.room.updatedAt.localeCompare(left.room.updatedAt));
+};
+
 export const joinRoom = async ({ roomId, userId, displayName }: { roomId: string; userId: string; displayName?: string }): Promise<RoomSnapshot> => {
   if (!isPostgresEnabled()) {
     const room = ensureRoom(roomId);
@@ -516,7 +556,7 @@ export const joinRoom = async ({ roomId, userId, displayName }: { roomId: string
     room.players.push(player);
     room.gameState.perPlayerState[userId] = { userId, currentCell: 1, status: 'in_progress', notesCount: 0 };
     room.gameState.notes.playerByUserId[userId] ??= {};
-    if (!room.gameState.currentTurnPlayerId) {
+    if (!room.gameState.currentTurnPlayerId && room.status === 'in_progress') {
       room.gameState.currentTurnPlayerId = userId;
     }
     touchRoom(room);
@@ -570,7 +610,7 @@ export const joinRoom = async ({ roomId, userId, displayName }: { roomId: string
     );
     room.gameState.perPlayerState[userId] = { userId, currentCell: 1, status: 'in_progress', notesCount: 0 };
     room.gameState.notes.playerByUserId[userId] ??= {};
-    if (!room.gameState.currentTurnPlayerId) {
+    if (!room.gameState.currentTurnPlayerId && room.status === 'in_progress') {
       room.gameState.currentTurnPlayerId = userId;
     }
     await persistRoomGameStateDb(client, room);
@@ -611,10 +651,12 @@ export const startRoom = async (roomId: string, hostUserId: string): Promise<Roo
     if (room.hostUserId !== hostUserId) {
       throw new Error('FORBIDDEN');
     }
-    room.status = 'in_progress';
-    if (!room.gameState.currentTurnPlayerId && room.players[0]) {
-      room.gameState.currentTurnPlayerId = room.players[0].userId;
+    const turnQueue = getTurnQueuePlayers(room);
+    if (turnQueue.length === 0) {
+      throw new Error('NO_PLAYERS');
     }
+    room.status = 'in_progress';
+    room.gameState.currentTurnPlayerId = turnQueue[0].userId;
     touchRoom(room);
     return toSnapshot(room);
   }
@@ -626,10 +668,12 @@ export const startRoom = async (roomId: string, hostUserId: string): Promise<Roo
     if (room.hostUserId !== hostUserId) {
       throw new Error('FORBIDDEN');
     }
-    room.status = 'in_progress';
-    if (!room.gameState.currentTurnPlayerId && room.players[0]) {
-      room.gameState.currentTurnPlayerId = room.players[0].userId;
+    const turnQueue = getTurnQueuePlayers(room);
+    if (turnQueue.length === 0) {
+      throw new Error('NO_PLAYERS');
     }
+    room.status = 'in_progress';
+    room.gameState.currentTurnPlayerId = turnQueue[0].userId;
     await persistRoomGameStateDb(client, room);
     const updated = await queryRoomByIdDb(client, roomId);
     if (!updated) {
@@ -646,6 +690,10 @@ export const setRoomStatus = async (roomId: string, hostUserId: string, status: 
       throw new Error('FORBIDDEN');
     }
     room.status = status;
+    if (status === 'finished') {
+      room.gameState.activeCard = null;
+      room.gameState.currentTurnPlayerId = '';
+    }
     touchRoom(room);
     return toSnapshot(room);
   }
@@ -658,6 +706,10 @@ export const setRoomStatus = async (roomId: string, hostUserId: string, status: 
       throw new Error('FORBIDDEN');
     }
     room.status = status;
+    if (status === 'finished') {
+      room.gameState.activeCard = null;
+      room.gameState.currentTurnPlayerId = '';
+    }
     await persistRoomGameStateDb(client, room);
     const updated = await queryRoomByIdDb(client, roomId);
     if (!updated) {
@@ -867,10 +919,13 @@ export const rollDiceForCurrentPlayer = async ({
     if (room.status !== 'in_progress') {
       throw new Error('ROOM_NOT_IN_PROGRESS');
     }
+    const actor = ensurePlayerInRoom(room, userId);
+    if (actor.role !== 'player') {
+      throw new Error('HOST_CANNOT_ROLL');
+    }
     if (room.gameState.currentTurnPlayerId !== userId) {
       throw new Error('NOT_YOUR_TURN');
     }
-    ensurePlayerInRoom(room, userId);
     const playerState = room.gameState.perPlayerState[userId];
     if (!playerState || playerState.status === 'finished') {
       throw new Error('PLAYER_ALREADY_FINISHED');

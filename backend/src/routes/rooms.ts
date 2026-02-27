@@ -8,6 +8,7 @@ import {
   getRoomByCode,
   getRoomById,
   joinRoom,
+  listRoomsForUser,
   recordRoomNote,
   setRoomStatus,
   startRoom,
@@ -42,6 +43,16 @@ const resolveParticipantLabel = (user: NonNullable<AuthenticatedRequest['authUse
   user.username ? `@${user.username}` : user.displayName;
 
 export const roomsRouter = Router();
+
+roomsRouter.get('/', requireAuth, (req: AuthenticatedRequest, res) => {
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const snapshots = await listRoomsForUser(req.authUser.id, 12);
+    return res.status(200).json({ ok: true, rooms: snapshots });
+  })();
+});
 
 roomsRouter.post('/', requireAuth, (req: AuthenticatedRequest, res) => {
   void (async () => {
@@ -255,6 +266,9 @@ roomsRouter.post('/:roomId/start', requireAuth, (req: AuthenticatedRequest, res)
       const code = error instanceof Error ? error.message : '';
       if (code === 'FORBIDDEN') {
         return res.status(403).json({ ok: false, error: 'Only host can start the game' });
+      }
+      if (code === 'NO_PLAYERS') {
+        return res.status(409).json({ ok: false, error: 'Add at least one player before starting the room' });
       }
       return res.status(404).json({ ok: false, error: 'Room not found' });
     }

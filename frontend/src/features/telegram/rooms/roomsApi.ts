@@ -124,6 +124,15 @@ export const getRoomByCodeApi = async (token: string, code: string): Promise<Roo
 export const getRoomByIdApi = async (token: string, roomId: string): Promise<RoomSnapshot> =>
   parseRoomRequest(`/api/rooms/${encodeURIComponent(roomId)}`, {}, token);
 
+export const listMyRoomsApi = async (token: string): Promise<RoomSnapshot[]> => {
+  const response = await apiFetch('/api/rooms', {}, token);
+  if (!response.ok) {
+    throw new Error(`Failed to load rooms (${response.status})`);
+  }
+  const payload = await response.json() as { ok: boolean; rooms: RoomSnapshot[] };
+  return payload.rooms ?? [];
+};
+
 export const joinRoomApi = async (token: string, roomId: string): Promise<RoomSnapshot> =>
   parseRoomRequest(`/api/rooms/${encodeURIComponent(roomId)}/join`, { method: 'POST' }, token);
 
