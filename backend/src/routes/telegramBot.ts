@@ -37,6 +37,11 @@ const buildRoomHelpText = (roomCode: string): string => [
   'Щоб приєднатися до сесії, відкрийте Mini App кнопкою нижче.',
 ].join('\n');
 
+const UUID_V4_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const isValidUuid = (value: string | undefined): boolean => Boolean(value && UUID_V4_PATTERN.test(value));
+
 export const telegramBotRouter = Router();
 
 const validateWebhookSecret = (pathSecret: string | undefined, headerSecret: string | undefined): boolean => {
@@ -163,6 +168,13 @@ const processWebhook = (req: Request, res: Response) => {
           await sendBotMessage({ chatId: message.chat.id, text: 'Спочатку увійдіть у Mini App, щоб привʼязати акаунт.' });
           return res.status(200).json({ ok: true });
         }
+        if (!isValidUuid(appUser.id)) {
+          await sendBotMessage({
+            chatId: message.chat.id,
+            text: 'Профіль Telegram ще не синхронізований. Відкрийте Mini App і спробуйте знову.',
+          });
+          return res.status(200).json({ ok: true });
+        }
         const rooms = await listRoomsForUser(appUser.id, 8);
         if (!rooms.length) {
           await sendBotMessage({ chatId: message.chat.id, text: 'Активних або архівних кімнат не знайдено.' });
@@ -211,6 +223,13 @@ const processWebhook = (req: Request, res: Response) => {
           await sendBotMessage({ chatId: message.chat.id, text: 'Команда доступна після входу у Mini App.' });
           return res.status(200).json({ ok: true });
         }
+        if (!isValidUuid(appUser.id)) {
+          await sendBotMessage({
+            chatId: message.chat.id,
+            text: 'Профіль Telegram пошкоджено (невірний id). Відкрийте Mini App, щоб перевʼязати акаунт.',
+          });
+          return res.status(200).json({ ok: true });
+        }
         const roomCode = (args[0] ?? '').trim().toUpperCase();
         if (!roomCode) {
           await sendBotMessage({ chatId: message.chat.id, text: `Вкажіть код: /${command} ABC123` });
@@ -219,6 +238,13 @@ const processWebhook = (req: Request, res: Response) => {
         const room = await getRoomByCode(roomCode);
         if (!room) {
           await sendBotMessage({ chatId: message.chat.id, text: 'Кімнату не знайдено.' });
+          return res.status(200).json({ ok: true });
+        }
+        if (!isValidUuid(room.room.id)) {
+          await sendBotMessage({
+            chatId: message.chat.id,
+            text: `Кімната #${room.room.code} має невалідний ID. Створіть нову кімнату.`,
+          });
           return res.status(200).json({ ok: true });
         }
         if (room.room.hostUserId !== appUser.id && !appUser.isSuperAdmin) {

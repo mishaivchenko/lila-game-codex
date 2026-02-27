@@ -151,6 +151,14 @@ roomsRouter.post('/by-code/join', requireAuth, (req: AuthenticatedRequest, res) 
       return res.status(200).json({ ok: true, ...snapshot });
     } catch (error) {
       const code = error instanceof Error ? error.message : '';
+      console.error(
+        JSON.stringify({
+          scope: 'join_room_by_code',
+          roomCode: parsed.data.roomCode,
+          userId: req.authUser?.id,
+          code,
+        }),
+      );
       if (code === 'ROOM_FULL') {
         return res.status(409).json({ ok: false, error: 'Room is full' });
       }
@@ -187,6 +195,14 @@ roomsRouter.post('/:roomId/join', requireAuth, (req: AuthenticatedRequest, res) 
       return res.status(200).json({ ok: true, ...snapshot });
     } catch (error) {
       const code = error instanceof Error ? error.message : '';
+      console.error(
+        JSON.stringify({
+          scope: 'join_room_by_code',
+          roomCode: parsed.data.roomCode,
+          userId: req.authUser?.id,
+          code,
+        }),
+      );
       if (code === 'ROOM_FULL') {
         return res.status(409).json({ ok: false, error: 'Room is full' });
       }
@@ -392,6 +408,14 @@ roomsRouter.post('/:roomId/finish', requireAuth, (req: AuthenticatedRequest, res
       return res.status(200).json({ ok: true, ...snapshot });
     } catch (error) {
       const code = error instanceof Error ? error.message : '';
+      console.error(
+        JSON.stringify({
+          scope: 'finish_room',
+          roomId,
+          userId: req.authUser?.id,
+          code,
+        }),
+      );
       if (code === 'FORBIDDEN') {
         return res.status(403).json({ ok: false, error: 'Only host can finish the game' });
       }
