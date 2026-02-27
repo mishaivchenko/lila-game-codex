@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { authenticateTelegramWebApp, fetchCurrentUser } from '../auth/telegramAuthApi';
 import type { TelegramAuthContextValue } from '../auth/TelegramAuthContext';
-import { getTelegramInitData, isLocalDevHost, shouldBypassTelegramAuthForLocalDev } from '../telegramWebApp';
+import { getTelegramInitData, getTelegramWebApp, isLocalDevHost, shouldBypassTelegramAuthForLocalDev } from '../telegramWebApp';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const AUTH_TOKEN_STORAGE_KEY = 'lila:tma-auth-token';
@@ -56,6 +56,50 @@ const createLocalDevAuthState = (): TelegramAuthContextValue => ({
     isSuperAdmin: true,
   },
 });
+
+const isBackendUnavailableError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  const message = error.message.toLowerCase();
+  return message.includes('502') || message.includes('503') || message.includes('gateway');
+};
+
+const createTelegramRuntimeFallbackState = (): TelegramAuthContextValue | undefined => {
+  const webApp = getTelegramWebApp();
+  const unsafe = webApp?.initDataUnsafe;
+  const userPayload = unsafe?.user as {
+    id?: number;
+    username?: string;
+    first_name?: string;
+    last_name?: string;
+    language_code?: string;
+  } | undefined;
+  if (!userPayload?.id) {
+    return undefined;
+  }
+  const displayName = [userPayload.first_name, userPayload.last_name].filter(Boolean).join(' ').trim()
+    || userPayload.username
+    || `telegram-${userPayload.id}`;
+  return {
+    isTelegramMode: true,
+    status: 'authenticated',
+    token: undefined,
+    user: {
+      id: `fallback-${userPayload.id}`,
+      telegramId: String(userPayload.id),
+      displayName,
+      username: userPayload.username,
+      firstName: userPayload.first_name,
+      lastName: userPayload.last_name,
+      locale: userPayload.language_code,
+      role: 'USER',
+      isAdmin: false,
+      isSuperAdmin: false,
+      canHostCurrentChat: false,
+    },
+  };
+};
 
 export const useTelegramAuthBootstrap = ({
   telegramMode,
@@ -144,6 +188,14 @@ export const useTelegramAuthBootstrap = ({
             return;
           } catch {
             persistAuthToken(undefined);
+          }
+        }
+
+        if (isBackendUnavailableError(error)) {
+          const runtimeFallbackState = createTelegramRuntimeFallbackState();
+          if (runtimeFallbackState) {
+            setAuthState(runtimeFallbackState);
+            return;
           }
         }
 

@@ -1,7 +1,7 @@
 {
   "summary": {
     "overall_score": 89,
-    "last_updated": "2026-02-27T10:31:00Z",
+    "last_updated": "2026-02-27T10:52:00Z",
     "generated_by": "Codex"
   },
   "thresholds": {
@@ -13,10 +13,10 @@
   "metrics": {
     "files_total": 172,
     "source_files_total": 172,
-    "lines_total": 16900,
+    "lines_total": 16952,
     "frontend": {
       "files": 155,
-      "lines": 14017
+      "lines": 14069
     },
     "backend": {
       "files": 17,
