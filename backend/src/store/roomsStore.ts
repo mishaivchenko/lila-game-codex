@@ -56,7 +56,7 @@ interface RoomPlayerRow {
   display_name: string;
   role: RoomPlayer['role'];
   token_color: string;
-  joined_at: string;
+  joined_at: string | Date;
   connection_status: RoomConnectionStatus;
 }
 
@@ -89,7 +89,7 @@ const mapPlayerRow = (row: RoomPlayerRow): RoomPlayer => ({
   displayName: row.display_name,
   role: row.role,
   tokenColor: row.token_color,
-  joinedAt: row.joined_at,
+  joinedAt: row.joined_at instanceof Date ? row.joined_at.toISOString() : row.joined_at,
   connectionStatus: row.connection_status,
 });
 
@@ -109,7 +109,7 @@ const dedupePlayers = (players: RoomPlayer[]): RoomPlayer[] => {
       byUserId.set(player.userId, player);
     }
   }
-  return Array.from(byUserId.values()).sort((left, right) => left.joinedAt.localeCompare(right.joinedAt));
+  return Array.from(byUserId.values()).sort((left, right) => toUnixMs(left.joinedAt) - toUnixMs(right.joinedAt));
 };
 
 const mapRoom = (roomRow: HostRoomRow, playerRows: RoomPlayerRow[], stateRow: RoomGameStateRow): GameRoom => {

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth, type AuthenticatedRequest } from '../lib/authMiddleware.js';
@@ -41,6 +42,14 @@ const roomPlayerPreferencesSchema = z.object({
 
 const resolveParticipantLabel = (user: NonNullable<AuthenticatedRequest['authUser']>): string =>
   user.username ? `@${user.username}` : user.displayName;
+
+const stableUuidFromRoomAndUser = (roomId: string, userId: string): string => {
+  const hex = createHash('sha1').update(`${roomId}:${userId}`).digest('hex').slice(0, 32).split('');
+  hex[12] = '5';
+  const variant = Number.parseInt(hex[16], 16);
+  hex[16] = ((variant & 0x3) | 0x8).toString(16);
+  return `${hex.slice(0, 8).join('')}-${hex.slice(8, 12).join('')}-${hex.slice(12, 16).join('')}-${hex.slice(16, 20).join('')}-${hex.slice(20, 32).join('')}`;
+};
 
 const canHostInScope = async (req: AuthenticatedRequest): Promise<boolean> => {
   if (!req.authUser) {
@@ -392,7 +401,7 @@ roomsRouter.post('/:roomId/finish', requireAuth, (req: AuthenticatedRequest, res
       await Promise.all(snapshot.players.map(async (player) => {
         const playerState = snapshot.gameState.perPlayerState[player.userId];
         return upsertGameSessionForUser(player.userId, {
-          id: `room-${snapshot.room.id}-${player.userId}`,
+          id: stableUuidFromRoomAndUser(snapshot.room.id, player.userId),
           boardType: snapshot.room.boardType,
           currentCell: playerState?.currentCell ?? 1,
           settings: { diceMode: 'classic', depth: 'standard' },
