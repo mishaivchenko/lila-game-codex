@@ -22,18 +22,45 @@ export interface TelegramAuthResponse {
   user: TelegramAppUser;
 }
 
-export const authenticateTelegramWebApp = async (initData: string): Promise<TelegramAuthResponse> => {
-  const response = await apiFetch('/api/auth/telegram/webapp', {
-    method: 'POST',
-    body: JSON.stringify({ initData }),
-  });
+const parseAuthError = async (response: Response): Promise<string> => {
+  const textPayload = await response.text().catch(() => '');
+  if (textPayload.trim()) {
+    try {
+      const jsonPayload = JSON.parse(textPayload) as { error?: string };
+      if (jsonPayload.error) {
+        return jsonPayload.error;
+      }
+    } catch {
+      return textPayload.trim();
+    }
+  }
+  return `Telegram auth failed (${response.status})`;
+};
 
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null) as { error?: string } | null;
-    throw new Error(payload?.error ?? 'Telegram auth failed');
+export const authenticateTelegramWebApp = async (initData: string): Promise<TelegramAuthResponse> => {
+  const candidateRoutes = ['/api/auth/telegram/webapp', '/api/auth/telegram'];
+  const errors: string[] = [];
+
+  for (const route of candidateRoutes) {
+    const response = await apiFetch(route, {
+      method: 'POST',
+      body: JSON.stringify({ initData }),
+    });
+    if (response.ok) {
+      return response.json() as Promise<TelegramAuthResponse>;
+    }
+
+    const errorMessage = await parseAuthError(response);
+    errors.push(`${route}: ${errorMessage}`);
+
+    // If backend reached auth route and returned validation/auth error,
+    // do not hide it behind fallback noise.
+    if (response.status === 400 || response.status === 401) {
+      break;
+    }
   }
 
-  return response.json() as Promise<TelegramAuthResponse>;
+  throw new Error(errors[errors.length - 1] ?? 'Telegram auth failed');
 };
 
 export const fetchCurrentUser = async (authToken: string): Promise<TelegramAppUser> => {
