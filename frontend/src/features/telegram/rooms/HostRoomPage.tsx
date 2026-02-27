@@ -13,6 +13,8 @@ import { ROOM_TOKEN_COLOR_PALETTE } from './roomsApi';
 import { useTelegramRooms } from './TelegramRoomsContext';
 import { buildStepwiseCellPath, resolveTransitionEntryCell } from '../../../lib/lila/moveVisualization';
 import { getBoardTransitionPath } from '../../../lib/lila/boardProfiles';
+import { formatMovePathWithEntry, resolveMoveType } from '../../../lib/lila/historyFormat';
+import { playCardOpen, playDiceRoll, playLadderMove, playSnakeMove } from '../telegramHaptics';
 
 const roomStatusLabel: Record<'open' | 'in_progress' | 'paused' | 'finished', string> = {
   open: 'Відкрита',
@@ -61,7 +63,11 @@ export const HostRoomPage = () => {
   const [pendingDiceValues, setPendingDiceValues] = useState<number[] | undefined>(undefined);
   const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>(undefined);
   const [animatedPlayerId, setAnimatedPlayerId] = useState<string | undefined>(undefined);
+  const [isFlowCardReady, setIsFlowCardReady] = useState(true);
   const processedMoveKeyRef = useRef<string | undefined>(undefined);
+  const flowCardTimerRef = useRef<number | undefined>(undefined);
+  const cardVisibleRef = useRef(false);
+  const lastTransitionEntryCellRef = useRef<number | undefined>(undefined);
   const isCurrentUserHost = currentRoom?.room.hostUserId === user?.id;
 
   useEffect(() => {
@@ -110,6 +116,8 @@ export const HostRoomPage = () => {
       setAnimationMove(undefined);
       setAnimatedPlayerId(undefined);
       setPendingDiceValues(undefined);
+      setIsFlowCardReady(true);
+      lastTransitionEntryCellRef.current = undefined;
       return;
     }
     const lastMove = currentRoom.gameState.moveHistory.at(-1);
@@ -121,8 +129,11 @@ export const HostRoomPage = () => {
       return;
     }
     processedMoveKeyRef.current = moveKey;
+    setIsFlowCardReady(false);
+    lastTransitionEntryCellRef.current = undefined;
     setPendingDiceValues(lastMove.diceValues?.length ? lastMove.diceValues : [lastMove.dice]);
     setDiceRollToken((value) => value + 1);
+    playDiceRoll();
 
     const board = BOARD_DEFINITIONS[currentRoom.room.boardType];
     const moveType = lastMove.snakeOrArrow;
@@ -136,6 +147,13 @@ export const HostRoomPage = () => {
     const pathPoints = moveType && entryCell
       ? getBoardTransitionPath(currentRoom.room.boardType, moveType, entryCell, lastMove.toCell)?.points
       : undefined;
+    lastTransitionEntryCellRef.current = entryCell;
+    if (moveType === 'snake') {
+      playSnakeMove();
+    }
+    if (moveType === 'arrow') {
+      playLadderMove();
+    }
     const tokenPathCells = moveType && entryCell
       ? buildStepwiseCellPath(lastMove.fromCell, lastMove.dice, board.maxCell).filter((cell, index, list) =>
         index === 0 || index === list.length - 1 || cell <= (entryCell ?? cell))
@@ -152,6 +170,24 @@ export const HostRoomPage = () => {
       tokenPathCells,
     });
   }, [currentRoom]);
+
+  useEffect(() => {
+    if (flowCardTimerRef.current !== undefined) {
+      window.clearTimeout(flowCardTimerRef.current);
+      flowCardTimerRef.current = undefined;
+    }
+    if (animationMove) {
+      return;
+    }
+    flowCardTimerRef.current = window.setTimeout(() => {
+      setIsFlowCardReady(true);
+    }, 260);
+    return () => {
+      if (flowCardTimerRef.current !== undefined) {
+        window.clearTimeout(flowCardTimerRef.current);
+      }
+    };
+  }, [animationMove]);
 
   if (!roomId) {
     return (
@@ -293,7 +329,27 @@ export const HostRoomPage = () => {
   };
 
   const hostCanPause = currentRoom.gameState.settings.hostCanPause;
-  const canShowCardModal = canSeeActiveCard && currentCellContent && activeCellNumber && !animationMove;
+  const canShowCardModal = canSeeActiveCard
+    && currentCellContent
+    && activeCellNumber
+    && !animationMove
+    && (isPreviewCardOpen || isFlowCardReady);
+
+  useEffect(() => {
+    if (canShowCardModal && !cardVisibleRef.current) {
+      playCardOpen();
+    }
+    cardVisibleRef.current = canShowCardModal;
+  }, [canShowCardModal]);
+
+  const latestMove = currentRoom.gameState.moveHistory.at(-1);
+  const latestMoveType = latestMove ? resolveMoveType(latestMove) : 'normal';
+  const latestPathLabel = latestMove
+    ? formatMovePathWithEntry(
+      latestMove,
+      lastTransitionEntryCellRef.current,
+    )
+    : undefined;
 
   return (
     <>
@@ -728,11 +784,8 @@ export const HostRoomPage = () => {
             moveContext={{
               fromCell: currentRoom.gameState.moveHistory.at(-1)?.fromCell ?? activeCellNumber,
               toCell: activeCellNumber,
-              type: currentRoom.gameState.moveHistory.at(-1)?.snakeOrArrow === 'snake'
-                ? 'snake'
-                : currentRoom.gameState.moveHistory.at(-1)?.snakeOrArrow === 'arrow'
-                  ? 'ladder'
-                  : 'normal',
+              type: latestMoveType,
+              pathLabel: latestPathLabel,
             }}
           />
         )}
