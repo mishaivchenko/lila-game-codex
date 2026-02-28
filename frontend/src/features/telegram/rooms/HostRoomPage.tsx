@@ -61,6 +61,7 @@ export const HostRoomPage = () => {
   const [selectedHostNotesPlayerId, setSelectedHostNotesPlayerId] = useState<string | undefined>(undefined);
   const [hostPrivateNote, setHostPrivateNote] = useState('');
   const [hostNoteStatus, setHostNoteStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [isRolling, setIsRolling] = useState(false);
   const [diceRollToken, setDiceRollToken] = useState(0);
   const [pendingDiceValues, setPendingDiceValues] = useState<number[] | undefined>(undefined);
   const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>(undefined);
@@ -652,16 +653,23 @@ export const HostRoomPage = () => {
               {!isCurrentUserHost ? (
                 <button
                   type="button"
-                  onClick={() => void rollDice()}
+                  onClick={() => {
+                    if (isRolling) {
+                      return;
+                    }
+                    setIsRolling(true);
+                    void rollDice().finally(() => setIsRolling(false));
+                  }}
                   disabled={
                     currentRoom.room.status !== 'in_progress'
                     || !isMyTurn
                     || Boolean(animationMove)
                     || Boolean(currentRoom.gameState.activeCard)
+                    || isRolling
                   }
                   className="rounded-2xl bg-[var(--lila-accent)] px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Кинути кубики
+                  {isRolling ? 'Кидаємо…' : 'Кинути кубики'}
                 </button>
               ) : (
                 <span className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-4 py-2 text-xs font-medium text-[var(--lila-text-muted)]">

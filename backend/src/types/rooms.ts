@@ -42,6 +42,7 @@ export interface RoomSettings {
 
 export interface RoomGameState {
   roomId: string;
+  turnVersion: number;
   currentTurnPlayerId: string | null;
   perPlayerState: Record<string, RoomPlayerState>;
   moveHistory: Array<{

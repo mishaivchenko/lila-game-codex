@@ -45,6 +45,7 @@ export interface RoomSettings {
 
 export interface RoomGameState {
   roomId: string;
+  turnVersion: number;
   currentTurnPlayerId: string | null;
   perPlayerState: Record<string, RoomPlayerState>;
   moveHistory: Array<{
@@ -142,8 +143,16 @@ export const joinRoomByCodeApi = async (token: string, roomCode: string): Promis
 export const hostStartRoomApi = async (token: string, roomId: string): Promise<RoomSnapshot> =>
   parseRoomRequest(`/api/rooms/${encodeURIComponent(roomId)}/start`, { method: 'POST' }, token);
 
-export const rollRoomDiceApi = async (token: string, roomId: string): Promise<RoomSnapshot> =>
-  parseRoomRequest(`/api/rooms/${encodeURIComponent(roomId)}/roll`, { method: 'POST' }, token);
+export const rollRoomDiceApi = async (
+  token: string,
+  roomId: string,
+  payload?: { expectedTurnVersion?: number },
+): Promise<RoomSnapshot> =>
+  parseRoomRequest(
+    `/api/rooms/${encodeURIComponent(roomId)}/roll`,
+    { method: 'POST', body: JSON.stringify(payload ?? {}) },
+    token,
+  );
 
 export const hostFinishRoomApi = async (token: string, roomId: string): Promise<RoomSnapshot> =>
   parseRoomRequest(`/api/rooms/${encodeURIComponent(roomId)}/finish`, { method: 'POST' }, token);

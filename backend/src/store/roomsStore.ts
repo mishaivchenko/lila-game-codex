@@ -99,6 +99,10 @@ interface RoomGameStateRow {
   updated_at: string;
 }
 
+type RoomSettingsWithTurnVersion = RoomGameState['settings'] & {
+  turnVersion?: number;
+};
+
 type DbClient = Pick<PoolClient, 'query'>;
 
 const generateRoomCode = (): string => {
@@ -144,6 +148,7 @@ const mapRoom = (roomRow: HostRoomRow, playerRows: RoomPlayerRow[], stateRow: Ro
   const players = dedupePlayers(playerRows.map(mapPlayerRow));
   const gameState: GameRoom['gameState'] = {
     roomId: stateRow.room_id,
+    turnVersion: 0,
     currentTurnPlayerId: stateRow.current_turn_player_id ?? null,
     perPlayerState: stateRow.per_player_state_json,
     moveHistory: stateRow.move_history_json,
@@ -159,6 +164,10 @@ const mapRoom = (roomRow: HostRoomRow, playerRows: RoomPlayerRow[], stateRow: Ro
       hostCanPause: true,
     },
   };
+  const settingsWithVersion = stateRow.settings_json as RoomSettingsWithTurnVersion | undefined;
+  if (typeof settingsWithVersion?.turnVersion === 'number' && Number.isFinite(settingsWithVersion.turnVersion)) {
+    gameState.turnVersion = settingsWithVersion.turnVersion;
+  }
   const hostUserId = roomRow.host_user_id;
   const currentTurnPlayer = players.find((player) => player.userId === gameState.currentTurnPlayerId);
   if (!currentTurnPlayer || currentTurnPlayer.role === 'host') {
@@ -357,7 +366,10 @@ const persistRoomGameStateDb = async (client: DbClient, room: GameRoom): Promise
       JSON.stringify(room.gameState.moveHistory),
       JSON.stringify(room.gameState.activeCard),
       JSON.stringify(room.gameState.notes),
-      JSON.stringify(room.gameState.settings),
+      JSON.stringify({
+        ...room.gameState.settings,
+        turnVersion: room.gameState.turnVersion,
+      }),
     ],
   );
 };
@@ -395,6 +407,7 @@ const createHostRoomInMemory = ({
     players: [hostPlayer],
     gameState: {
       roomId,
+      turnVersion: 0,
       // Host does not participate as a player token.
       currentTurnPlayerId: null,
       perPlayerState: {},
@@ -444,6 +457,7 @@ export const createHostRoom = async ({
     const hostDisplay = resolveDisplayName(hostUserId, hostDisplayName);
     const gameState: RoomGameState = {
       roomId,
+      turnVersion: 0,
       // Host does not participate as a player token.
       currentTurnPlayerId: null,
       perPlayerState: {},
@@ -486,7 +500,10 @@ export const createHostRoom = async ({
         JSON.stringify([]),
         JSON.stringify(null),
         JSON.stringify(gameState.notes),
-        JSON.stringify(gameState.settings),
+        JSON.stringify({
+          ...gameState.settings,
+          turnVersion: gameState.turnVersion,
+        }),
         now,
       ],
     );
@@ -938,9 +955,11 @@ export const updateRoomPlayerTokenColor = async ({
 export const rollDiceForCurrentPlayer = async ({
   roomId,
   userId,
+  expectedTurnVersion,
 }: {
   roomId: string;
   userId: string;
+  expectedTurnVersion?: number;
 }): Promise<{
   snapshot: RoomSnapshot;
   move: { userId: string; fromCell: number; toCell: number; dice: number; diceValues: number[]; snakeOrArrow: 'snake' | 'arrow' | null; nextTurnPlayerId: string | null };
@@ -955,6 +974,9 @@ export const rollDiceForCurrentPlayer = async ({
     }
     if (room.gameState.currentTurnPlayerId !== userId) {
       throw new Error('NOT_YOUR_TURN');
+    }
+    if (typeof expectedTurnVersion === 'number' && expectedTurnVersion !== room.gameState.turnVersion) {
+      throw new Error('TURN_VERSION_MISMATCH');
     }
     if (room.gameState.activeCard) {
       throw new Error('ACTIVE_CARD_PENDING');
@@ -971,6 +993,7 @@ export const rollDiceForCurrentPlayer = async ({
     }
     const nextTurnPlayerId = findNextTurnPlayerId(room, userId);
     room.gameState.currentTurnPlayerId = nextTurnPlayerId;
+    room.gameState.turnVersion += 1;
     room.gameState.moveHistory.push({ userId, fromCell, toCell, dice, diceValues, snakeOrArrow, timestamp: new Date().toISOString() });
     room.gameState.activeCard = {
       cellNumber: toCell,

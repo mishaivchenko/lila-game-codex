@@ -40,6 +40,9 @@ const roomSettingsSchema = z.object({
 const roomPlayerPreferencesSchema = z.object({
   tokenColor: z.string().min(1).max(32),
 });
+const roomRollSchema = z.object({
+  expectedTurnVersion: z.number().int().nonnegative().optional(),
+});
 
 const resolveParticipantLabel = (user: NonNullable<AuthenticatedRequest['authUser']>): string =>
   user.username ? `@${user.username}` : user.displayName;
@@ -357,11 +360,16 @@ roomsRouter.post('/:roomId/roll', requireAuth, (req: AuthenticatedRequest, res) 
     if (!req.authUser) {
       return res.status(401).json({ ok: false, error: 'Unauthorized' });
     }
+    const parsed = roomRollSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ ok: false, error: 'Invalid roll payload' });
+    }
     const roomId = Array.isArray(req.params.roomId) ? req.params.roomId[0] : req.params.roomId;
     try {
       const result = await rollDiceForCurrentPlayer({
         roomId,
         userId: req.authUser.id,
+        expectedTurnVersion: parsed.data.expectedTurnVersion,
       });
       return res.status(200).json({ ok: true, ...result.snapshot, move: result.move });
     } catch (error) {
@@ -377,6 +385,9 @@ roomsRouter.post('/:roomId/roll', requireAuth, (req: AuthenticatedRequest, res) 
       }
       if (code === 'ACTIVE_CARD_PENDING') {
         return res.status(409).json({ ok: false, error: 'Close current card before the next roll' });
+      }
+      if (code === 'TURN_VERSION_MISMATCH') {
+        return res.status(409).json({ ok: false, error: 'Room state changed. Refresh and roll again.' });
       }
       if (code === 'PLAYER_ALREADY_FINISHED') {
         return res.status(409).json({ ok: false, error: 'Player has already finished' });

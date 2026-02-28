@@ -380,7 +380,9 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     }
     playDiceRoll();
     try {
-      const snapshot = await rollRoomDiceApi(authToken, currentRoom.room.id);
+      const snapshot = await rollRoomDiceApi(authToken, currentRoom.room.id, {
+        expectedTurnVersion: currentRoom.gameState.turnVersion,
+      });
       setSnapshotSafely(snapshot);
       setError(undefined);
     } catch (error) {
