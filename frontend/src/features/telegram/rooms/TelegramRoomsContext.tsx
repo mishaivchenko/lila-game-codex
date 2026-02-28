@@ -261,8 +261,6 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
 
   const runHostAction = async (
     action: () => Promise<RoomSnapshot>,
-    socketAction: 'start' | 'pause' | 'resume' | 'finish' | 'updateSettings',
-    payload?: Partial<RoomSettings>,
   ) => {
     const isHostByRoom = currentRoom?.room.hostUserId === authUserId;
     if (!currentRoom || !isHostByRoom) {
@@ -272,7 +270,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     try {
       const snapshot = await action();
       setCurrentRoom(snapshot);
-      socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: socketAction, payload });
+      setError(undefined);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося виконати дію ведучого.');
     }
@@ -282,28 +280,28 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     if (!authToken || !currentRoom) {
       return;
     }
-    await runHostAction(() => hostStartRoomApi(authToken, currentRoom.room.id), 'start');
+    await runHostAction(() => hostStartRoomApi(authToken, currentRoom.room.id));
   };
 
   const hostPauseGame = async () => {
     if (!authToken || !currentRoom) {
       return;
     }
-    await runHostAction(() => hostPauseRoomApi(authToken, currentRoom.room.id), 'pause');
+    await runHostAction(() => hostPauseRoomApi(authToken, currentRoom.room.id));
   };
 
   const hostResumeGame = async () => {
     if (!authToken || !currentRoom) {
       return;
     }
-    await runHostAction(() => hostResumeRoomApi(authToken, currentRoom.room.id), 'resume');
+    await runHostAction(() => hostResumeRoomApi(authToken, currentRoom.room.id));
   };
 
   const hostFinishGame = async () => {
     if (!authToken || !currentRoom) {
       return;
     }
-    await runHostAction(() => hostFinishRoomApi(authToken, currentRoom.room.id), 'finish');
+    await runHostAction(() => hostFinishRoomApi(authToken, currentRoom.room.id));
     roomIdRef.current = undefined;
     setCurrentRoom(undefined);
     setLastDiceRoll(undefined);
@@ -319,7 +317,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     try {
       const snapshot = await updateRoomSettingsApi(authToken, currentRoom.room.id, patch);
       setCurrentRoom(snapshot);
-      socketRef.current?.emit('hostCommand', { roomId: currentRoom.room.id, action: 'updateSettings', payload: patch });
+      setError(undefined);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося оновити параметри кімнати.');
     }
@@ -337,24 +335,20 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       setError('Ведучий не кидає кубики. Кидок доступний лише активному гравцю.');
       return;
     }
+    if (currentRoom.gameState.currentTurnPlayerId !== authUserId) {
+      setError('Зараз не ваш хід.');
+      return;
+    }
+    if (currentRoom.gameState.activeCard) {
+      setError('Закрийте поточну картку перед новим кидком.');
+      return;
+    }
     playDiceRoll();
     try {
       const snapshot = await rollRoomDiceApi(authToken, currentRoom.room.id);
       setCurrentRoom(snapshot);
-      socketRef.current?.emit('rollDice', { roomId: currentRoom.room.id });
+      setError(undefined);
     } catch (error) {
-      // Backward-compat fallback for deployments where REST roll endpoint is not yet available.
-      if (socketRef.current) {
-        socketRef.current.emit('rollDice', { roomId: currentRoom.room.id });
-        window.setTimeout(() => {
-          void getRoomByIdApi(authToken, currentRoom.room.id)
-            .then((snapshot) => setCurrentRoom(snapshot))
-            .catch(() => {
-              // no-op, socket state update may still arrive
-            });
-        }, 500);
-        return;
-      }
       setError(error instanceof Error ? error.message : 'Не вдалося кинути кубики.');
     }
   };
@@ -366,7 +360,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     try {
       const snapshot = await closeRoomCardApi(authToken, currentRoom.room.id);
       setCurrentRoom(snapshot);
-      socketRef.current?.emit('closeCard', { roomId: currentRoom.room.id });
+      setError(undefined);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося закрити картку.');
     }
@@ -389,7 +383,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     try {
       const snapshot = await saveRoomNoteApi(authToken, currentRoom.room.id, { cellNumber, note, scope, targetPlayerId });
       setCurrentRoom(snapshot);
-      socketRef.current?.emit('updateNote', { roomId: currentRoom.room.id, cell: cellNumber, note, scope, targetPlayerId });
+      setError(undefined);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося зберегти нотатку.');
       throw error;
@@ -403,7 +397,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     try {
       const snapshot = await updateRoomPreferencesApi(authToken, currentRoom.room.id, { tokenColor });
       setCurrentRoom(snapshot);
-      socketRef.current?.emit('updatePlayerPreferences', { roomId: currentRoom.room.id, tokenColor });
+      setError(undefined);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося оновити колір фішки.');
     }

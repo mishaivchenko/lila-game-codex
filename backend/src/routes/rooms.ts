@@ -375,6 +375,9 @@ roomsRouter.post('/:roomId/roll', requireAuth, (req: AuthenticatedRequest, res) 
       if (code === 'ROOM_NOT_IN_PROGRESS') {
         return res.status(409).json({ ok: false, error: 'Room is not in progress' });
       }
+      if (code === 'ACTIVE_CARD_PENDING') {
+        return res.status(409).json({ ok: false, error: 'Close current card before the next roll' });
+      }
       if (code === 'PLAYER_ALREADY_FINISHED') {
         return res.status(409).json({ ok: false, error: 'Player has already finished' });
       }

@@ -653,7 +653,12 @@ export const HostRoomPage = () => {
                 <button
                   type="button"
                   onClick={() => void rollDice()}
-                  disabled={currentRoom.room.status !== 'in_progress'}
+                  disabled={
+                    currentRoom.room.status !== 'in_progress'
+                    || !isMyTurn
+                    || Boolean(animationMove)
+                    || Boolean(currentRoom.gameState.activeCard)
+                  }
                   className="rounded-2xl bg-[var(--lila-accent)] px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Кинути кубики

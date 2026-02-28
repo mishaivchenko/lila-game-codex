@@ -20,15 +20,43 @@ const TOKEN_COLORS = ['#1f2937', '#c57b5d', '#2cbfaf', '#8b5cf6', '#ef4444', '#f
 const EMOJI_FALLBACKS = ['🦊', '🦉', '🐬', '🦁', '🐙', '🦄', '🐢', '🪷'];
 
 const SHORT_TRANSITIONS = {
-  snakes: new Map<number, number>([[11, 3], [15, 8], [18, 5], [27, 13], [33, 20]]),
-  arrows: new Map<number, number>([[2, 9], [7, 14], [12, 19], [17, 26], [24, 32]]),
+  snakes: new Map<number, number>([
+    [19, 8],
+    [31, 20],
+  ]),
+  arrows: new Map<number, number>([
+    [3, 9],
+    [15, 25],
+  ]),
   maxCell: 34,
 } as const;
 
 const FULL_TRANSITIONS = {
-  snakes: new Map<number, number>([[17, 7], [54, 34], [62, 19], [64, 60], [87, 24], [93, 73], [95, 75], [98, 79]]),
-  arrows: new Map<number, number>([[4, 14], [9, 31], [20, 38], [28, 84], [40, 59], [51, 67], [63, 81], [71, 91]]),
-  maxCell: 100,
+  snakes: new Map<number, number>([
+    [12, 8],
+    [16, 4],
+    [24, 7],
+    [29, 6],
+    [44, 9],
+    [52, 35],
+    [55, 3],
+    [61, 13],
+    [63, 2],
+    [72, 51],
+  ]),
+  arrows: new Map<number, number>([
+    [10, 23],
+    [17, 69],
+    [20, 32],
+    [22, 60],
+    [27, 41],
+    [36, 62],
+    [37, 66],
+    [45, 67],
+    [48, 50],
+    [54, 68],
+  ]),
+  maxCell: 72,
 } as const;
 
 const transitionsByBoard: Record<RoomBoardType, { snakes: Map<number, number>; arrows: Map<number, number>; maxCell: number }> = {
@@ -927,6 +955,9 @@ export const rollDiceForCurrentPlayer = async ({
     }
     if (room.gameState.currentTurnPlayerId !== userId) {
       throw new Error('NOT_YOUR_TURN');
+    }
+    if (room.gameState.activeCard) {
+      throw new Error('ACTIVE_CARD_PENDING');
     }
     const playerState = room.gameState.perPlayerState[userId];
     if (!playerState || playerState.status === 'finished') {
