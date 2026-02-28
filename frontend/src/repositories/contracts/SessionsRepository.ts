@@ -5,4 +5,5 @@ export interface SessionsRepository {
   updateSession(sessionId: string, patch: Partial<GameSession>): Promise<GameSession | undefined>;
   getSession(sessionId: string): Promise<GameSession | undefined>;
   getLastActiveSession(): Promise<GameSession | undefined>;
+  listSessions(limit?: number, offset?: number): Promise<GameSession[]>;
 }
