@@ -94,6 +94,7 @@ export const LilaBoardCanvas = ({
     y: number;
   } | null>(null);
   const singleTapTimerRef = useRef<number | null>(null);
+  const processedAnimationIdRef = useRef<string | null>(null);
   const dragStateRef = useRef<{
     pointerId: number;
     lastX: number;
@@ -247,6 +248,7 @@ export const LilaBoardCanvas = ({
 
   useEffect(() => {
     if (!animationMove) {
+      processedAnimationIdRef.current = null;
       if (!holdTokenSync) {
         setTokenCell(currentCell);
       }
@@ -254,6 +256,10 @@ export const LilaBoardCanvas = ({
       setTokenPathPosition(undefined);
       return;
     }
+    if (processedAnimationIdRef.current === animationMove.id) {
+      return;
+    }
+    processedAnimationIdRef.current = animationMove.id;
 
     timersRef.current.forEach((timer) => window.clearTimeout(timer));
     timersRef.current = [];
@@ -305,7 +311,7 @@ export const LilaBoardCanvas = ({
     }, movementPlan.totalDurationMs);
 
     timersRef.current.push(completeTimer);
-  }, [animationMove, boardType, currentCell, holdTokenSync, movementSettings, onMoveAnimationComplete]);
+  }, [animationMove, boardType, holdTokenSync, movementSettings, onMoveAnimationComplete, currentCell]);
 
   useEffect(() => {
     return () => {
