@@ -256,14 +256,6 @@ export const LilaBoardCanvas = ({
       setTokenPathPosition(undefined);
       return;
     }
-    if (
-      tokenCell === animationMove.toCell
-      && !activePath
-      && !tokenPathPosition
-    ) {
-      onMoveAnimationComplete?.(animationMove.id);
-      return;
-    }
     if (processedAnimationIdRef.current === animationMove.id) {
       return;
     }
@@ -319,17 +311,7 @@ export const LilaBoardCanvas = ({
     }, movementPlan.totalDurationMs);
 
     timersRef.current.push(completeTimer);
-  }, [
-    animationMove,
-    boardType,
-    holdTokenSync,
-    movementSettings,
-    onMoveAnimationComplete,
-    currentCell,
-    tokenCell,
-    activePath,
-    tokenPathPosition,
-  ]);
+  }, [animationMove, boardType, holdTokenSync, movementSettings, onMoveAnimationComplete, currentCell]);
 
   useEffect(() => {
     return () => {
