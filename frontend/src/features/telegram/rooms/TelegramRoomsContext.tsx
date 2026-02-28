@@ -90,6 +90,41 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
   const [lastTokenMove, setLastTokenMove] = useState<RoomTokenMovedPayload | undefined>(undefined);
   const socketRef = useRef<HostRoomSocket | undefined>(undefined);
   const roomIdRef = useRef<string | undefined>(undefined);
+  const setSnapshotSafely = (next: RoomSnapshot) => {
+    setCurrentRoom((prev) => {
+      if (!prev || prev.room.id !== next.room.id) {
+        return next;
+      }
+
+      const prevUpdatedAt = Date.parse(prev.room.updatedAt);
+      const nextUpdatedAt = Date.parse(next.room.updatedAt);
+      if (Number.isFinite(prevUpdatedAt) && Number.isFinite(nextUpdatedAt)) {
+        if (nextUpdatedAt < prevUpdatedAt) {
+          return prev;
+        }
+        if (nextUpdatedAt > prevUpdatedAt) {
+          return next;
+        }
+      }
+
+      const prevMoves = prev.gameState.moveHistory.length;
+      const nextMoves = next.gameState.moveHistory.length;
+      if (nextMoves < prevMoves) {
+        return prev;
+      }
+      if (nextMoves > prevMoves) {
+        return next;
+      }
+
+      const prevCard = prev.gameState.activeCard?.openedAt;
+      const nextCard = next.gameState.activeCard?.openedAt;
+      if (prevCard && !nextCard && prev.room.status !== 'finished' && next.room.status !== 'finished') {
+        return prev;
+      }
+
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (!authToken) {
@@ -120,7 +155,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       setConnectionState('reconnecting');
     });
     socket.on('roomStateUpdated', (snapshot) => {
-      setCurrentRoom(snapshot);
+      setSnapshotSafely(snapshot);
       setError(undefined);
     });
     socket.on('diceRolled', (payload) => {
@@ -155,7 +190,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     const interval = window.setInterval(() => {
       void getRoomByIdApi(authToken, currentRoom.room.id)
         .then((snapshot) => {
-          setCurrentRoom(snapshot);
+          setSnapshotSafely(snapshot);
         })
         .catch(() => {
           // keep current snapshot while temporary network glitches happen
@@ -194,7 +229,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     try {
       return await withAuth(async () => {
         const snapshot = await createRoomApi(authToken!, boardType);
-        setCurrentRoom(snapshot);
+        setSnapshotSafely(snapshot);
         await refreshMyRooms();
         joinRealtimeRoom(snapshot.room.id);
         return snapshot;
@@ -212,7 +247,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     try {
       return await withAuth(async () => {
         const snapshot = await joinRoomByCodeApi(authToken!, code);
-        setCurrentRoom(snapshot);
+        setSnapshotSafely(snapshot);
         await refreshMyRooms();
         joinRealtimeRoom(snapshot.room.id);
         return snapshot;
@@ -231,12 +266,12 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       return await withAuth(async () => {
         const snapshot = await getRoomByIdApi(authToken!, roomId);
         if (snapshot.room.status === 'finished') {
-          setCurrentRoom(snapshot);
+          setSnapshotSafely(snapshot);
           await refreshMyRooms();
           return snapshot;
         }
         const joined = await joinRoomApi(authToken!, snapshot.room.id);
-        setCurrentRoom(joined);
+        setSnapshotSafely(joined);
         await refreshMyRooms();
         joinRealtimeRoom(snapshot.room.id);
         return joined;
@@ -269,7 +304,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     }
     try {
       const snapshot = await action();
-      setCurrentRoom(snapshot);
+      setSnapshotSafely(snapshot);
       setError(undefined);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося виконати дію ведучого.');
@@ -316,7 +351,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     }
     try {
       const snapshot = await updateRoomSettingsApi(authToken, currentRoom.room.id, patch);
-      setCurrentRoom(snapshot);
+      setSnapshotSafely(snapshot);
       setError(undefined);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося оновити параметри кімнати.');
@@ -346,7 +381,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     playDiceRoll();
     try {
       const snapshot = await rollRoomDiceApi(authToken, currentRoom.room.id);
-      setCurrentRoom(snapshot);
+      setSnapshotSafely(snapshot);
       setError(undefined);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося кинути кубики.');
@@ -359,7 +394,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     }
     try {
       const snapshot = await closeRoomCardApi(authToken, currentRoom.room.id);
-      setCurrentRoom(snapshot);
+      setSnapshotSafely(snapshot);
       setError(undefined);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося закрити картку.');
@@ -382,7 +417,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     }
     try {
       const snapshot = await saveRoomNoteApi(authToken, currentRoom.room.id, { cellNumber, note, scope, targetPlayerId });
-      setCurrentRoom(snapshot);
+      setSnapshotSafely(snapshot);
       setError(undefined);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося зберегти нотатку.');
@@ -396,7 +431,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     }
     try {
       const snapshot = await updateRoomPreferencesApi(authToken, currentRoom.room.id, { tokenColor });
-      setCurrentRoom(snapshot);
+      setSnapshotSafely(snapshot);
       setError(undefined);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося оновити колір фішки.');
