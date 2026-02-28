@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { BOARD_DEFINITIONS } from '../../../content/boards';
@@ -31,6 +31,13 @@ const diceModeLabel: Record<'classic' | 'fast' | 'triple', string> = {
   fast: 'Швидкий',
   triple: 'Питання дня',
 };
+
+const ONLINE_CARD_TIMINGS_MS = {
+  afterStepMove: 460,
+  beforeSpecialEntryCard: 560,
+  beforeSpecialTargetCard: 520,
+  serverSyncCard: 240,
+} as const;
 
 export const HostRoomPage = () => {
   const navigate = useNavigate();
@@ -82,7 +89,8 @@ export const HostRoomPage = () => {
   >(undefined);
   const processedMoveKeyRef = useRef<string | undefined>(undefined);
   const processedMoveCountRef = useRef(0);
-  const flowCardTimerRef = useRef<number | undefined>(undefined);
+  const cardRevealTimerRef = useRef<number | undefined>(undefined);
+  const revealedServerCardKeyRef = useRef<string | undefined>(undefined);
   const cardVisibleRef = useRef(false);
   const lastTransitionEntryCellRef = useRef<number | undefined>(undefined);
   const isCurrentUserHost = currentRoom?.room.hostUserId === user?.id;
@@ -90,6 +98,19 @@ export const HostRoomPage = () => {
     () => normalizeMovementSettings(DEFAULT_MOVEMENT_SETTINGS),
     [],
   );
+  const clearCardRevealTimer = useCallback(() => {
+    if (cardRevealTimerRef.current !== undefined) {
+      window.clearTimeout(cardRevealTimerRef.current);
+      cardRevealTimerRef.current = undefined;
+    }
+  }, []);
+  const scheduleCardReveal = useCallback((delayMs: number) => {
+    clearCardRevealTimer();
+    setIsFlowCardReady(false);
+    cardRevealTimerRef.current = window.setTimeout(() => {
+      setIsFlowCardReady(true);
+    }, delayMs);
+  }, [clearCardRevealTimer]);
 
   useEffect(() => {
     if (!isTelegramMode) {
@@ -140,6 +161,7 @@ export const HostRoomPage = () => {
       setSpecialFlow(undefined);
       setPendingDiceValues(undefined);
       setIsFlowCardReady(true);
+      clearCardRevealTimer();
       lastTransitionEntryCellRef.current = undefined;
       return;
     }
@@ -223,25 +245,11 @@ export const HostRoomPage = () => {
       pathPoints,
       tokenPathCells,
     });
-  }, [currentRoom]);
+  }, [clearCardRevealTimer, currentRoom]);
 
-  useEffect(() => {
-    if (flowCardTimerRef.current !== undefined) {
-      window.clearTimeout(flowCardTimerRef.current);
-      flowCardTimerRef.current = undefined;
-    }
-    if (animationMove) {
-      return;
-    }
-    flowCardTimerRef.current = window.setTimeout(() => {
-      setIsFlowCardReady(true);
-    }, movementSettings.modalOpenDelayMs);
-    return () => {
-      if (flowCardTimerRef.current !== undefined) {
-        window.clearTimeout(flowCardTimerRef.current);
-      }
-    };
-  }, [animationMove, movementSettings.modalOpenDelayMs]);
+  useEffect(() => () => {
+    clearCardRevealTimer();
+  }, [clearCardRevealTimer]);
 
   if (!roomId) {
     return (
@@ -442,6 +450,22 @@ export const HostRoomPage = () => {
     && !animationMove
     && (isPreviewCardOpen || isFlowCardReady),
   );
+
+  useEffect(() => {
+    if (isPreviewCardOpen || specialFlow) {
+      return;
+    }
+    if (!activeCard || animationMove) {
+      revealedServerCardKeyRef.current = undefined;
+      return;
+    }
+    const cardKey = `${activeCard.playerUserId}:${activeCard.cellNumber}`;
+    if (revealedServerCardKeyRef.current === cardKey) {
+      return;
+    }
+    revealedServerCardKeyRef.current = cardKey;
+    scheduleCardReveal(ONLINE_CARD_TIMINGS_MS.serverSyncCard);
+  }, [activeCard, animationMove, isPreviewCardOpen, scheduleCardReveal, specialFlow]);
 
   useEffect(() => {
     if (canShowCardModal && !cardVisibleRef.current) {
@@ -738,15 +762,18 @@ export const HostRoomPage = () => {
                 if (specialFlow?.phase === 'entry-animation') {
                   setAnimationMove(undefined);
                   setSpecialFlow((prev) => (prev ? { ...prev, phase: 'entry-card' } : prev));
+                  scheduleCardReveal(ONLINE_CARD_TIMINGS_MS.beforeSpecialEntryCard);
                   return;
                 }
                 if (specialFlow?.phase === 'special-animation') {
                   setAnimationMove(undefined);
                   setSpecialFlow((prev) => (prev ? { ...prev, phase: 'target-card' } : prev));
+                  scheduleCardReveal(ONLINE_CARD_TIMINGS_MS.beforeSpecialTargetCard);
                   return;
                 }
                 setAnimationMove(undefined);
                 setAnimatedPlayerId(undefined);
+                scheduleCardReveal(ONLINE_CARD_TIMINGS_MS.afterStepMove);
               }}
               onCellSelect={(cellNumber) => {
                 setPreviewCellNumber(cellNumber);
