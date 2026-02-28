@@ -60,9 +60,13 @@ It should:
 
 ## Main Flows
 ### 0. Entry Choice (Player vs Host)
-After bootstrap, the app starts with a clear first decision:
-- **Грати як гравець** for solo/local journey flow
-- **Грати як ведучий** for online room facilitation
+After bootstrap, the app opens the new **Start Screen** (`/`) with two primary actions:
+- **Одиночна гра** → `/single` (local journeys, continue, local history, start new)
+- **Гра з іншими** → `/multiplayer` (host room history, create room, join by code)
+
+Deep links stay backward-compatible:
+- `/host-room/:roomId`
+- Telegram `start_param` (`room_...`, `roomid_...`) auto-routes into multiplayer join flow
 
 ### 1. Solo Journey
 You start a game, roll dice, move through the board, open cards, write notes, and pretend you are "just testing the UI" while actually being called out by the symbolism.

@@ -102,6 +102,13 @@ class InMemorySessionsRepository implements SessionsRepository {
     const sessions = [...inMemoryStore.sessions.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
     return sessions.find((session) => !session.finished && session.sessionStatus !== 'completed');
   }
+
+  async listSessions(limit = 20, offset = 0): Promise<GameSession[]> {
+    const ordered = [...inMemoryStore.sessions.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    const start = Math.max(0, offset);
+    const end = Math.max(start, start + Math.max(1, limit));
+    return ordered.slice(start, end);
+  }
 }
 
 class InMemoryMovesRepository implements MovesRepository {
