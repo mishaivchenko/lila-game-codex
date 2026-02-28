@@ -332,11 +332,13 @@ export const HostRoomPage = () => {
   };
 
   const hostCanPause = currentRoom.gameState.settings.hostCanPause;
-  const canShowCardModal = canSeeActiveCard
+  const canShowCardModal = Boolean(
+    canSeeActiveCard
     && currentCellContent
-    && activeCellNumber
+    && activeCellNumber !== undefined
     && !animationMove
-    && (isPreviewCardOpen || isFlowCardReady);
+    && (isPreviewCardOpen || isFlowCardReady),
+  );
 
   useEffect(() => {
     if (canShowCardModal && !cardVisibleRef.current) {
@@ -350,9 +352,11 @@ export const HostRoomPage = () => {
   const latestPathLabel = latestMove
     ? formatMovePathWithEntry(
       latestMove,
-      lastTransitionEntryCellRef.current,
+      board.maxCell,
     )
     : undefined;
+  const modalCellNumberSafe = activeCellNumber ?? primaryTokenCell;
+  const modalCellContentSafe = currentCellContent ?? board.cells[Math.max(modalCellNumberSafe - 1, 0)] ?? board.cells[0];
 
   return (
     <>
@@ -769,8 +773,8 @@ export const HostRoomPage = () => {
       <AnimatePresence>
         {canShowCardModal && (
           <CellCoachModal
-            cellNumber={activeCellNumber}
-            cellContent={currentCellContent}
+            cellNumber={modalCellNumberSafe}
+            cellContent={modalCellContentSafe}
             depth="standard"
             initialText={initialModalText}
             onSave={(text) => {
@@ -787,8 +791,8 @@ export const HostRoomPage = () => {
               setPreviewCellNumber(undefined);
             }}
             moveContext={{
-              fromCell: currentRoom.gameState.moveHistory.at(-1)?.fromCell ?? activeCellNumber,
-              toCell: activeCellNumber,
+              fromCell: currentRoom.gameState.moveHistory.at(-1)?.fromCell ?? modalCellNumberSafe,
+              toCell: modalCellNumberSafe,
               type: latestMoveType,
               pathLabel: latestPathLabel,
             }}
