@@ -28,4 +28,15 @@ export class DexieSessionsRepository implements SessionsRepository {
     const sessions = await this.dexie.sessions.orderBy('updatedAt').reverse().toArray();
     return sessions.find((session) => !session.finished && session.sessionStatus !== 'completed');
   }
+
+  async listSessions(limit = 20, offset = 0): Promise<GameSession[]> {
+    const normalizedLimit = Math.max(1, limit);
+    const normalizedOffset = Math.max(0, offset);
+    return this.dexie.sessions
+      .orderBy('updatedAt')
+      .reverse()
+      .offset(normalizedOffset)
+      .limit(normalizedLimit)
+      .toArray();
+  }
 }
