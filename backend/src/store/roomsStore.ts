@@ -66,6 +66,25 @@ const transitionsByBoard: Record<RoomBoardType, { snakes: Map<number, number>; a
 
 const roomsById = new Map<string, GameRoom>();
 const roomsByCode = new Map<string, string>();
+const roomMutationLocks = new Map<string, Promise<void>>();
+
+const withRoomMutationLock = async <T>(roomId: string, action: () => Promise<T>): Promise<T> => {
+  const previous = roomMutationLocks.get(roomId) ?? Promise.resolve();
+  let release: (() => void) | undefined;
+  const current = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  roomMutationLocks.set(roomId, previous.then(() => current));
+  await previous;
+  try {
+    return await action();
+  } finally {
+    release?.();
+    if (roomMutationLocks.get(roomId) === current) {
+      roomMutationLocks.delete(roomId);
+    }
+  }
+};
 
 interface HostRoomRow {
   id: string;
@@ -964,64 +983,65 @@ export const rollDiceForCurrentPlayer = async ({
   snapshot: RoomSnapshot;
   move: { userId: string; fromCell: number; toCell: number; dice: number; diceValues: number[]; snakeOrArrow: 'snake' | 'arrow' | null; nextTurnPlayerId: string | null };
 }> => {
-  const executeMove = (room: GameRoom) => {
-    if (room.status !== 'in_progress') {
-      throw new Error('ROOM_NOT_IN_PROGRESS');
-    }
-    const actor = ensurePlayerInRoom(room, userId);
-    if (actor.role !== 'player') {
-      throw new Error('HOST_CANNOT_ROLL');
-    }
-    if (room.gameState.currentTurnPlayerId !== userId) {
-      throw new Error('NOT_YOUR_TURN');
-    }
-    if (typeof expectedTurnVersion === 'number' && expectedTurnVersion !== room.gameState.turnVersion) {
-      throw new Error('TURN_VERSION_MISMATCH');
-    }
-    if (room.gameState.activeCard) {
-      throw new Error('ACTIVE_CARD_PENDING');
-    }
-    const playerState = room.gameState.perPlayerState[userId];
-    if (!playerState || playerState.status === 'finished') {
-      throw new Error('PLAYER_ALREADY_FINISHED');
-    }
-    const { values: diceValues, total: dice } = rollDiceByMode(room.gameState.settings.diceMode);
-    const { fromCell, toCell, snakeOrArrow } = nextMoveFromDice(room.boardType, playerState.currentCell, dice);
-    playerState.currentCell = toCell;
-    if (toCell >= transitionsByBoard[room.boardType].maxCell) {
-      playerState.status = 'finished';
-    }
-    const nextTurnPlayerId = findNextTurnPlayerId(room, userId);
-    room.gameState.currentTurnPlayerId = nextTurnPlayerId;
-    room.gameState.turnVersion += 1;
-    room.gameState.moveHistory.push({ userId, fromCell, toCell, dice, diceValues, snakeOrArrow, timestamp: new Date().toISOString() });
-    room.gameState.activeCard = {
-      cellNumber: toCell,
-      playerUserId: userId,
-      openedAt: new Date().toISOString(),
+  return withRoomMutationLock(roomId, async () => {
+    const executeMove = (room: GameRoom) => {
+      if (room.status !== 'in_progress') {
+        throw new Error('ROOM_NOT_IN_PROGRESS');
+      }
+      const actor = ensurePlayerInRoom(room, userId);
+      if (actor.role !== 'player') {
+        throw new Error('HOST_CANNOT_ROLL');
+      }
+      if (room.gameState.currentTurnPlayerId !== userId) {
+        throw new Error('NOT_YOUR_TURN');
+      }
+      if (typeof expectedTurnVersion === 'number' && expectedTurnVersion !== room.gameState.turnVersion) {
+        throw new Error('TURN_VERSION_MISMATCH');
+      }
+      if (room.gameState.activeCard) {
+        throw new Error('ACTIVE_CARD_PENDING');
+      }
+      const playerState = room.gameState.perPlayerState[userId];
+      if (!playerState || playerState.status === 'finished') {
+        throw new Error('PLAYER_ALREADY_FINISHED');
+      }
+      const { values: diceValues, total: dice } = rollDiceByMode(room.gameState.settings.diceMode);
+      const { fromCell, toCell, snakeOrArrow } = nextMoveFromDice(room.boardType, playerState.currentCell, dice);
+      playerState.currentCell = toCell;
+      if (toCell >= transitionsByBoard[room.boardType].maxCell) {
+        playerState.status = 'finished';
+      }
+      const nextTurnPlayerId = findNextTurnPlayerId(room, userId);
+      room.gameState.currentTurnPlayerId = nextTurnPlayerId;
+      room.gameState.turnVersion += 1;
+      room.gameState.moveHistory.push({ userId, fromCell, toCell, dice, diceValues, snakeOrArrow, timestamp: new Date().toISOString() });
+      room.gameState.activeCard = {
+        cellNumber: toCell,
+        playerUserId: userId,
+        openedAt: new Date().toISOString(),
+      };
+      touchRoom(room);
+      return { room, move: { userId, fromCell, toCell, dice, diceValues, snakeOrArrow, nextTurnPlayerId } };
     };
-    touchRoom(room);
-    return { room, move: { userId, fromCell, toCell, dice, diceValues, snakeOrArrow, nextTurnPlayerId } };
-  };
-
-  if (!isPostgresEnabled()) {
-    const room = ensureRoom(roomId);
-    const result = executeMove(room);
-    return { snapshot: toSnapshot(result.room), move: result.move };
-  }
-
-  return withDbTransaction(async (client) => {
-    const room = await queryRoomByIdDb(client, roomId, true);
-    if (!room) {
-      throw new Error('ROOM_NOT_FOUND');
+    if (!isPostgresEnabled()) {
+      const room = ensureRoom(roomId);
+      const result = executeMove(room);
+      return { snapshot: toSnapshot(result.room), move: result.move };
     }
-    const result = executeMove(room);
-    await persistRoomGameStateDb(client, result.room);
-    const updated = await queryRoomByIdDb(client, roomId);
-    if (!updated) {
-      throw new Error('ROOM_NOT_FOUND');
-    }
-    return { snapshot: storeInMemory(updated), move: result.move };
+
+    return withDbTransaction(async (client) => {
+      const room = await queryRoomByIdDb(client, roomId, true);
+      if (!room) {
+        throw new Error('ROOM_NOT_FOUND');
+      }
+      const result = executeMove(room);
+      await persistRoomGameStateDb(client, result.room);
+      const updated = await queryRoomByIdDb(client, roomId);
+      if (!updated) {
+        throw new Error('ROOM_NOT_FOUND');
+      }
+      return { snapshot: storeInMemory(updated), move: result.move };
+    });
   });
 };
 
