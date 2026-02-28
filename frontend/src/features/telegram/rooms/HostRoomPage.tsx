@@ -364,6 +364,35 @@ export const HostRoomPage = () => {
     webApp?.openTelegramLink?.(deepLink);
   };
 
+  const startSpecialTransition = () => {
+    if (!specialFlow || specialFlow.phase !== 'entry-card') {
+      return;
+    }
+    setSpecialFlow((prev) => (prev ? { ...prev, phase: 'special-animation' } : prev));
+    setAnimationMove({
+      id: `${specialFlow.moveId}-special`,
+      fromCell: specialFlow.headCell,
+      toCell: specialFlow.tailCell,
+      type: specialFlow.type,
+      entryCell: specialFlow.headCell,
+      pathPoints: specialFlow.pathPoints,
+      tokenPathCells: [specialFlow.headCell],
+    });
+    if (specialFlow.type === 'snake') {
+      playSnakeMove();
+    } else {
+      playLadderMove();
+    }
+  };
+
+  const closeTargetSpecialCard = async () => {
+    setSpecialFlow(undefined);
+    setAnimatedPlayerId(undefined);
+    if (activeCard) {
+      await closeActiveCard();
+    }
+  };
+
   const handleCardSave = async (text: string) => {
     if (!activeCellNumber) {
       return;
@@ -378,21 +407,11 @@ export const HostRoomPage = () => {
       return;
     }
     if (specialFlow?.phase === 'entry-card') {
-      setSpecialFlow((prev) => (prev ? { ...prev, phase: 'special-animation' } : prev));
-      setAnimationMove({
-        id: `${specialFlow.moveId}-special`,
-        fromCell: specialFlow.headCell,
-        toCell: specialFlow.tailCell,
-        type: specialFlow.type,
-        entryCell: specialFlow.headCell,
-        pathPoints: specialFlow.pathPoints,
-        tokenPathCells: [specialFlow.headCell],
-      });
-      if (specialFlow.type === 'snake') {
-        playSnakeMove();
-      } else {
-        playLadderMove();
-      }
+      startSpecialTransition();
+      return;
+    }
+    if (specialFlow?.phase === 'target-card') {
+      await closeTargetSpecialCard();
       return;
     }
     await closeActiveCard();
@@ -404,21 +423,11 @@ export const HostRoomPage = () => {
       return;
     }
     if (specialFlow?.phase === 'entry-card') {
-      setSpecialFlow((prev) => (prev ? { ...prev, phase: 'special-animation' } : prev));
-      setAnimationMove({
-        id: `${specialFlow.moveId}-special`,
-        fromCell: specialFlow.headCell,
-        toCell: specialFlow.tailCell,
-        type: specialFlow.type,
-        entryCell: specialFlow.headCell,
-        pathPoints: specialFlow.pathPoints,
-        tokenPathCells: [specialFlow.headCell],
-      });
-      if (specialFlow.type === 'snake') {
-        playSnakeMove();
-      } else {
-        playLadderMove();
-      }
+      startSpecialTransition();
+      return;
+    }
+    if (specialFlow?.phase === 'target-card') {
+      await closeTargetSpecialCard();
       return;
     }
     await closeActiveCard();
@@ -899,28 +908,15 @@ export const HostRoomPage = () => {
               void handleCardSkip();
             }}
             onClose={() => {
+              if (specialFlow?.phase === 'entry-card') {
+                startSpecialTransition();
+                return;
+              }
+              if (specialFlow?.phase === 'target-card') {
+                void closeTargetSpecialCard();
+                return;
+              }
               if (!isPreviewCardOpen && activeCard) {
-                if (specialFlow?.phase === 'entry-card') {
-                  setSpecialFlow((prev) => (prev ? { ...prev, phase: 'special-animation' } : prev));
-                  setAnimationMove({
-                    id: `${specialFlow.moveId}-special`,
-                    fromCell: specialFlow.headCell,
-                    toCell: specialFlow.tailCell,
-                    type: specialFlow.type,
-                    entryCell: specialFlow.headCell,
-                    pathPoints: specialFlow.pathPoints,
-                    tokenPathCells: [specialFlow.headCell],
-                  });
-                  if (specialFlow.type === 'snake') {
-                    playSnakeMove();
-                  } else {
-                    playLadderMove();
-                  }
-                  return;
-                }
-                if (specialFlow?.phase === 'target-card') {
-                  setSpecialFlow(undefined);
-                }
                 void closeActiveCard();
                 return;
               }
