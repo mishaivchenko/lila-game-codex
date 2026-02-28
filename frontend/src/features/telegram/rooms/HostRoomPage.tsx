@@ -13,6 +13,7 @@ import { ROOM_TOKEN_COLOR_PALETTE } from './roomsApi';
 import { useTelegramRooms } from './TelegramRoomsContext';
 import { buildStepwiseCellPath, resolveTransitionEntryCell } from '../../../lib/lila/moveVisualization';
 import { getBoardTransitionPath } from '../../../lib/lila/boardProfiles';
+import type { BoardPathPoint } from '../../../lib/lila/boardProfiles/types';
 import { formatMovePathWithEntry, resolveMoveType } from '../../../lib/lila/historyFormat';
 import { playCardOpen, playDiceRoll, playLadderMove, playSnakeMove } from '../telegramHaptics';
 import { DEFAULT_ANIMATION_TIMINGS } from '../../../lib/animations/animationTimingSettings';
@@ -67,6 +68,18 @@ export const HostRoomPage = () => {
   const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>(undefined);
   const [animatedPlayerId, setAnimatedPlayerId] = useState<string | undefined>(undefined);
   const [isFlowCardReady, setIsFlowCardReady] = useState(true);
+  const [specialFlow, setSpecialFlow] = useState<
+    | {
+      moveId: string;
+      playerUserId: string;
+      type: 'snake' | 'arrow';
+      headCell: number;
+      tailCell: number;
+      pathPoints?: BoardPathPoint[];
+      phase: 'entry-animation' | 'entry-card' | 'special-animation' | 'target-card';
+    }
+    | undefined
+  >(undefined);
   const processedMoveKeyRef = useRef<string | undefined>(undefined);
   const processedMoveCountRef = useRef(0);
   const flowCardTimerRef = useRef<number | undefined>(undefined);
@@ -124,6 +137,7 @@ export const HostRoomPage = () => {
       processedMoveCountRef.current = 0;
       setAnimationMove(undefined);
       setAnimatedPlayerId(undefined);
+      setSpecialFlow(undefined);
       setPendingDiceValues(undefined);
       setIsFlowCardReady(true);
       lastTransitionEntryCellRef.current = undefined;
@@ -172,7 +186,34 @@ export const HostRoomPage = () => {
     }
     const tokenPathCells = buildStepwiseCellPath(lastMove.fromCell, lastMove.dice, board.maxCell);
 
+    const isSpecialFlow =
+      (moveType === 'snake' || moveType === 'arrow')
+      && Boolean(entryCell)
+      && Boolean(pathPoints?.length)
+      && entryCell !== lastMove.toCell;
+
     setAnimatedPlayerId(lastMove.userId);
+    if (isSpecialFlow) {
+      const entryTokenPath = tokenPathCells.filter((cell) => cell <= (entryCell ?? lastMove.toCell));
+      setSpecialFlow({
+        moveId: moveKey,
+        playerUserId: lastMove.userId,
+        type: moveType!,
+        headCell: entryCell!,
+        tailCell: lastMove.toCell,
+        pathPoints,
+        phase: 'entry-animation',
+      });
+      setAnimationMove({
+        id: moveKey,
+        fromCell: lastMove.fromCell,
+        toCell: entryCell!,
+        type: null,
+        tokenPathCells: entryTokenPath.length >= 2 ? entryTokenPath : [lastMove.fromCell, entryCell!],
+      });
+      return;
+    }
+    setSpecialFlow(undefined);
     setAnimationMove({
       id: moveKey,
       fromCell: lastMove.fromCell,
@@ -248,11 +289,17 @@ export const HostRoomPage = () => {
   const playerEntries = currentRoom.players.filter((player) => player.role === 'player');
   const currentTurnPlayer = currentRoom.players.find((entry) => entry.userId === currentRoom.gameState.currentTurnPlayerId);
   const activeCard = currentRoom.gameState.activeCard;
+  const localSpecialCard = specialFlow && (specialFlow.phase === 'entry-card' || specialFlow.phase === 'target-card')
+    ? {
+      cellNumber: specialFlow.phase === 'entry-card' ? specialFlow.headCell : specialFlow.tailCell,
+      playerUserId: specialFlow.playerUserId,
+    }
+    : undefined;
   const isPreviewCardOpen = previewCellNumber !== undefined;
-  const displayedCellNumber = previewCellNumber ?? activeCard?.cellNumber;
+  const displayedCellNumber = previewCellNumber ?? localSpecialCard?.cellNumber ?? activeCard?.cellNumber;
   const displayedPlayerUserId = isPreviewCardOpen
     ? (isCurrentUserHost ? currentTurnPlayer?.userId : user?.id)
-    : activeCard?.playerUserId;
+    : localSpecialCard?.playerUserId ?? activeCard?.playerUserId;
   const canSeeActiveCard = Boolean(
     displayedCellNumber
       && user
@@ -330,12 +377,48 @@ export const HostRoomPage = () => {
       setPreviewCellNumber(undefined);
       return;
     }
+    if (specialFlow?.phase === 'entry-card') {
+      setSpecialFlow((prev) => (prev ? { ...prev, phase: 'special-animation' } : prev));
+      setAnimationMove({
+        id: `${specialFlow.moveId}-special`,
+        fromCell: specialFlow.headCell,
+        toCell: specialFlow.tailCell,
+        type: specialFlow.type,
+        entryCell: specialFlow.headCell,
+        pathPoints: specialFlow.pathPoints,
+        tokenPathCells: [specialFlow.headCell],
+      });
+      if (specialFlow.type === 'snake') {
+        playSnakeMove();
+      } else {
+        playLadderMove();
+      }
+      return;
+    }
     await closeActiveCard();
   };
 
   const handleCardSkip = async () => {
     if (isPreviewCardOpen) {
       setPreviewCellNumber(undefined);
+      return;
+    }
+    if (specialFlow?.phase === 'entry-card') {
+      setSpecialFlow((prev) => (prev ? { ...prev, phase: 'special-animation' } : prev));
+      setAnimationMove({
+        id: `${specialFlow.moveId}-special`,
+        fromCell: specialFlow.headCell,
+        toCell: specialFlow.tailCell,
+        type: specialFlow.type,
+        entryCell: specialFlow.headCell,
+        pathPoints: specialFlow.pathPoints,
+        tokenPathCells: [specialFlow.headCell],
+      });
+      if (specialFlow.type === 'snake') {
+        playSnakeMove();
+      } else {
+        playLadderMove();
+      }
       return;
     }
     await closeActiveCard();
@@ -642,6 +725,16 @@ export const HostRoomPage = () => {
               animationTimings={DEFAULT_ANIMATION_TIMINGS}
               movementSettings={movementSettings}
               onMoveAnimationComplete={() => {
+                if (specialFlow?.phase === 'entry-animation') {
+                  setAnimationMove(undefined);
+                  setSpecialFlow((prev) => (prev ? { ...prev, phase: 'entry-card' } : prev));
+                  return;
+                }
+                if (specialFlow?.phase === 'special-animation') {
+                  setAnimationMove(undefined);
+                  setSpecialFlow((prev) => (prev ? { ...prev, phase: 'target-card' } : prev));
+                  return;
+                }
                 setAnimationMove(undefined);
                 setAnimatedPlayerId(undefined);
               }}
@@ -807,6 +900,27 @@ export const HostRoomPage = () => {
             }}
             onClose={() => {
               if (!isPreviewCardOpen && activeCard) {
+                if (specialFlow?.phase === 'entry-card') {
+                  setSpecialFlow((prev) => (prev ? { ...prev, phase: 'special-animation' } : prev));
+                  setAnimationMove({
+                    id: `${specialFlow.moveId}-special`,
+                    fromCell: specialFlow.headCell,
+                    toCell: specialFlow.tailCell,
+                    type: specialFlow.type,
+                    entryCell: specialFlow.headCell,
+                    pathPoints: specialFlow.pathPoints,
+                    tokenPathCells: [specialFlow.headCell],
+                  });
+                  if (specialFlow.type === 'snake') {
+                    playSnakeMove();
+                  } else {
+                    playLadderMove();
+                  }
+                  return;
+                }
+                if (specialFlow?.phase === 'target-card') {
+                  setSpecialFlow(undefined);
+                }
                 void closeActiveCard();
                 return;
               }

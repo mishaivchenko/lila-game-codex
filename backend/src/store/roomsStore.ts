@@ -18,6 +18,8 @@ const ROOM_CODE_LENGTH = 6;
 const MAX_ROOM_PLAYERS = 6;
 const TOKEN_COLORS = ['#1f2937', '#c57b5d', '#2cbfaf', '#8b5cf6', '#ef4444', '#f59e0b'];
 const EMOJI_FALLBACKS = ['🦊', '🦉', '🐬', '🦁', '🐙', '🦄', '🐢', '🪷'];
+const BOARD_COLUMNS = 9;
+const DEFAULT_FINISH_CELL = 68;
 
 const SHORT_TRANSITIONS = {
   snakes: new Map<number, number>([
@@ -292,6 +294,26 @@ const findNextTurnPlayerId = (room: GameRoom, currentPlayerId: string): string |
   }
   const nextIndex = (currentIndex + 1) % turnQueue.length;
   return turnQueue[nextIndex]?.userId ?? null;
+};
+
+const resolveFinishCell = (boardType: RoomBoardType): number =>
+  Math.min(DEFAULT_FINISH_CELL, transitionsByBoard[boardType].maxCell);
+
+const resolveRowStart = (cell: number): number =>
+  Math.floor((cell - 1) / BOARD_COLUMNS) * BOARD_COLUMNS + 1;
+
+const resolveEffectiveRoomDiceMode = (
+  mode: RoomDiceMode,
+  boardType: RoomBoardType,
+  currentCell: number,
+): RoomDiceMode => {
+  if (mode !== 'fast') {
+    return mode;
+  }
+  const finishCell = resolveFinishCell(boardType);
+  const finalRowStart = resolveRowStart(finishCell);
+  const finalTwoRowsStart = Math.max(1, finalRowStart - BOARD_COLUMNS);
+  return currentCell >= finalTwoRowsStart ? 'classic' : 'fast';
 };
 
 const nextMoveFromDice = (
@@ -1005,12 +1027,23 @@ export const rollDiceForCurrentPlayer = async ({
       if (!playerState || playerState.status === 'finished') {
         throw new Error('PLAYER_ALREADY_FINISHED');
       }
-      const { values: diceValues, total: dice } = rollDiceByMode(room.gameState.settings.diceMode);
-      const { fromCell, toCell, snakeOrArrow } = nextMoveFromDice(room.boardType, playerState.currentCell, dice);
-      playerState.currentCell = toCell;
-      if (toCell >= transitionsByBoard[room.boardType].maxCell) {
-        playerState.status = 'finished';
-      }
+    const effectiveDiceMode = resolveEffectiveRoomDiceMode(
+      room.gameState.settings.diceMode,
+      room.boardType,
+      playerState.currentCell,
+    );
+    const { values: diceValues, total: dice } = rollDiceByMode(effectiveDiceMode);
+    const { fromCell, toCell, snakeOrArrow } = nextMoveFromDice(room.boardType, playerState.currentCell, dice);
+    playerState.currentCell = toCell;
+    const finishCell = resolveFinishCell(room.boardType);
+    const finalRowStart = resolveRowStart(finishCell);
+    const reachedFinalRow = toCell >= finalRowStart && toCell <= transitionsByBoard[room.boardType].maxCell;
+    const finished = room.gameState.settings.diceMode === 'triple'
+      ? reachedFinalRow
+      : toCell === finishCell;
+    if (finished) {
+      playerState.status = 'finished';
+    }
       const nextTurnPlayerId = findNextTurnPlayerId(room, userId);
       room.gameState.currentTurnPlayerId = nextTurnPlayerId;
       room.gameState.turnVersion += 1;
