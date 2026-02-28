@@ -115,6 +115,21 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       if (nextMoves > prevMoves) {
         return next;
       }
+      if (nextMoves > 0) {
+        const prevLast = prev.gameState.moveHistory[prevMoves - 1];
+        const nextLast = next.gameState.moveHistory[nextMoves - 1];
+        if (
+          prevLast
+          && nextLast
+          && prevLast.userId === nextLast.userId
+          && prevLast.fromCell === nextLast.fromCell
+          && prevLast.toCell === nextLast.toCell
+          && prevLast.dice === nextLast.dice
+          && prevLast.snakeOrArrow === nextLast.snakeOrArrow
+        ) {
+          return prev;
+        }
+      }
 
       const prevCard = prev.gameState.activeCard?.openedAt;
       const nextCard = next.gameState.activeCard?.openedAt;

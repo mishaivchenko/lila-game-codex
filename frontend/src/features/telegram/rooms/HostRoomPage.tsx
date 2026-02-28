@@ -68,6 +68,7 @@ export const HostRoomPage = () => {
   const [animatedPlayerId, setAnimatedPlayerId] = useState<string | undefined>(undefined);
   const [isFlowCardReady, setIsFlowCardReady] = useState(true);
   const processedMoveKeyRef = useRef<string | undefined>(undefined);
+  const processedMoveCountRef = useRef(0);
   const flowCardTimerRef = useRef<number | undefined>(undefined);
   const cardVisibleRef = useRef(false);
   const lastTransitionEntryCellRef = useRef<number | undefined>(undefined);
@@ -120,6 +121,7 @@ export const HostRoomPage = () => {
   useEffect(() => {
     if (!currentRoom) {
       processedMoveKeyRef.current = undefined;
+      processedMoveCountRef.current = 0;
       setAnimationMove(undefined);
       setAnimatedPlayerId(undefined);
       setPendingDiceValues(undefined);
@@ -129,13 +131,20 @@ export const HostRoomPage = () => {
     }
     const lastMove = currentRoom.gameState.moveHistory.at(-1);
     if (!lastMove) {
+      processedMoveCountRef.current = 0;
+      return;
+    }
+    const moveCount = currentRoom.gameState.moveHistory.length;
+    if (moveCount <= processedMoveCountRef.current) {
       return;
     }
     const moveKey = `${lastMove.userId}:${lastMove.timestamp}:${lastMove.fromCell}:${lastMove.toCell}`;
     if (processedMoveKeyRef.current === moveKey) {
+      processedMoveCountRef.current = moveCount;
       return;
     }
     processedMoveKeyRef.current = moveKey;
+    processedMoveCountRef.current = moveCount;
     setIsFlowCardReady(false);
     lastTransitionEntryCellRef.current = undefined;
     setPendingDiceValues(lastMove.diceValues?.length ? lastMove.diceValues : [lastMove.dice]);
