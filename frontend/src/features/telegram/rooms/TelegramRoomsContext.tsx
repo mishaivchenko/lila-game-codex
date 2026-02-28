@@ -131,12 +131,6 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
         }
       }
 
-      const prevCard = prev.gameState.activeCard?.openedAt;
-      const nextCard = next.gameState.activeCard?.openedAt;
-      if (prevCard && !nextCard && prev.room.status !== 'finished' && next.room.status !== 'finished') {
-        return prev;
-      }
-
       return next;
     });
   };
@@ -202,6 +196,11 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     if (!authToken || !currentRoom?.room.id) {
       return undefined;
     }
+    // When websocket is healthy, polling can re-apply stale snapshots
+    // and restart visual flow. Keep polling only as a reconnect fallback.
+    if (connectionState === 'connected') {
+      return undefined;
+    }
     const interval = window.setInterval(() => {
       void getRoomByIdApi(authToken, currentRoom.room.id)
         .then((snapshot) => {
@@ -212,7 +211,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
         });
     }, 2500);
     return () => window.clearInterval(interval);
-  }, [authToken, currentRoom?.room.id]);
+  }, [authToken, connectionState, currentRoom?.room.id]);
 
   const joinRealtimeRoom = (roomId: string) => {
     roomIdRef.current = roomId;
