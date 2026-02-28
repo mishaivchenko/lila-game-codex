@@ -235,13 +235,13 @@ export const HostRoomPage = () => {
     }
     flowCardTimerRef.current = window.setTimeout(() => {
       setIsFlowCardReady(true);
-    }, 260);
+    }, movementSettings.modalOpenDelayMs);
     return () => {
       if (flowCardTimerRef.current !== undefined) {
         window.clearTimeout(flowCardTimerRef.current);
       }
     };
-  }, [animationMove]);
+  }, [animationMove, movementSettings.modalOpenDelayMs]);
 
   if (!roomId) {
     return (
@@ -434,6 +434,7 @@ export const HostRoomPage = () => {
   };
 
   const hostCanPause = currentRoom.gameState.settings.hostCanPause;
+  const holdBoardTokenSync = Boolean(animationMove) || Boolean(specialFlow);
   const canShowCardModal = Boolean(
     canSeeActiveCard
     && currentCellContent
@@ -750,6 +751,7 @@ export const HostRoomPage = () => {
               onCellSelect={(cellNumber) => {
                 setPreviewCellNumber(cellNumber);
               }}
+              holdTokenSync={holdBoardTokenSync}
             />
           </section>
 
