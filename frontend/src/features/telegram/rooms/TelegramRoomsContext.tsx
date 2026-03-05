@@ -10,6 +10,7 @@ import type {
 } from './roomsApi';
 import { playDiceRoll } from '../telegramHaptics';
 import {
+  addHostControlledPlayerApi,
   closeRoomCardApi,
   createRoomApi,
   createHostRoomSocket,
@@ -46,7 +47,8 @@ interface TelegramRoomsContextValue {
   hostResumeGame: () => Promise<void>;
   hostFinishGame: () => Promise<void>;
   hostUpdateSettings: (patch: Partial<RoomSettings>) => Promise<void>;
-  rollDice: () => Promise<void>;
+  rollDice: (targetPlayerId?: string) => Promise<void>;
+  addHostControlledPlayer: (name: string) => Promise<void>;
   closeActiveCard: () => Promise<void>;
   saveRoomNote: (payload: { cellNumber: number; note: string; scope: RoomNoteScope; targetPlayerId?: string }) => Promise<void>;
   updatePlayerTokenColor: (tokenColor: string) => Promise<void>;
@@ -68,6 +70,7 @@ const TelegramRoomsContext = createContext<TelegramRoomsContextValue>({
   hostFinishGame: async () => {},
   hostUpdateSettings: async () => {},
   rollDice: async () => {},
+  addHostControlledPlayer: async () => {},
   closeActiveCard: async () => {},
   saveRoomNote: async () => {},
   updatePlayerTokenColor: async () => {},
@@ -372,7 +375,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     }
   };
 
-  const rollDice = async () => {
+  const rollDice = async (targetPlayerId?: string) => {
     if (!currentRoom || !authUserId || !authToken) {
       return;
     }
@@ -380,11 +383,8 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       setError('Гру ще не розпочато або вона на паузі.');
       return;
     }
-    if (currentRoom.room.hostUserId === authUserId) {
-      setError('Ведучий не кидає кубики. Кидок доступний лише активному гравцю.');
-      return;
-    }
-    if (currentRoom.gameState.currentTurnPlayerId !== authUserId) {
+    const isHostByRoom = currentRoom.room.hostUserId === authUserId;
+    if (!isHostByRoom && currentRoom.gameState.currentTurnPlayerId !== authUserId) {
       setError('Зараз не ваш хід.');
       return;
     }
@@ -396,11 +396,35 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     try {
       const snapshot = await rollRoomDiceApi(authToken, currentRoom.room.id, {
         expectedTurnVersion: currentRoom.gameState.turnVersion,
+        targetPlayerId,
       });
       setSnapshotSafely(snapshot);
       setError(undefined);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Не вдалося кинути кубики.');
+    }
+  };
+
+  const addHostControlledPlayer = async (name: string) => {
+    if (!authToken || !currentRoom || currentRoom.room.hostUserId !== authUserId) {
+      return;
+    }
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setError('Вкажіть імʼя гравця.');
+      return;
+    }
+    if (socketRef.current && connectionState === 'connected') {
+      socketRef.current.emit('hostCreatePlayer', { roomId: currentRoom.room.id, name: trimmedName });
+      return;
+    }
+    try {
+      const snapshot = await addHostControlledPlayerApi(authToken, currentRoom.room.id, { name: trimmedName });
+      setSnapshotSafely(snapshot);
+      setError(undefined);
+      await refreshMyRooms();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Не вдалося додати host-controlled гравця.');
     }
   };
 
@@ -490,12 +514,38 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       hostFinishGame,
       hostUpdateSettings,
       rollDice,
+      addHostControlledPlayer,
       closeActiveCard,
       saveRoomNote,
       updatePlayerTokenColor,
       clearCurrentRoom,
     }),
-    [connectionState, currentRoom, currentUserRole, error, isLoading, isMyTurn, lastDiceRoll, lastTokenMove, myRooms],
+    [
+      addHostControlledPlayer,
+      clearCurrentRoom,
+      closeActiveCard,
+      connectionState,
+      createRoom,
+      currentRoom,
+      currentUserRole,
+      error,
+      hostFinishGame,
+      hostPauseGame,
+      hostResumeGame,
+      hostStartGame,
+      hostUpdateSettings,
+      isLoading,
+      isMyTurn,
+      joinRoomByCode,
+      lastDiceRoll,
+      lastTokenMove,
+      loadRoomById,
+      myRooms,
+      refreshMyRooms,
+      rollDice,
+      saveRoomNote,
+      updatePlayerTokenColor,
+    ],
   );
 
   return <TelegramRoomsContext.Provider value={value}>{children}</TelegramRoomsContext.Provider>;

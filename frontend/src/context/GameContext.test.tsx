@@ -13,6 +13,7 @@ const TestHarness = () => {
     finishSession,
     saveInsight,
     resumeLastSession,
+    markStartCardShown,
   } = useGameContext();
 
   return (
@@ -20,6 +21,7 @@ const TestHarness = () => {
       <p data-testid="cell">{currentSession?.currentCell ?? 'none'}</p>
       <p data-testid="board">{currentSession?.boardType ?? 'none'}</p>
       <p data-testid="status">{currentSession?.sessionStatus ?? 'none'}</p>
+      <p data-testid="start-card-flag">{currentSession?.hasShownStartCard ? 'shown' : 'hidden'}</p>
       <button
         type="button"
         onClick={() => {
@@ -42,6 +44,7 @@ const TestHarness = () => {
         insight
       </button>
       <button type="button" onClick={() => { void resumeLastSession(); }}>resume</button>
+      <button type="button" onClick={() => { void markStartCardShown(); }}>mark-start-card</button>
     </div>
   );
 };
@@ -65,6 +68,7 @@ describe('GameContext', () => {
     await user.click(screen.getByText('start'));
 
     await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe('1'));
+    await waitFor(() => expect(screen.getByTestId('start-card-flag').textContent).toBe('hidden'));
 
     await user.click(screen.getByText('move'));
     await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe('7'));
@@ -79,6 +83,26 @@ describe('GameContext', () => {
 
     await user.click(screen.getByText('resume'));
     await waitFor(() => expect(screen.getByTestId('cell').textContent).toBe('7'));
+
+    await db.delete();
+  });
+
+  it('initializes new session with hidden start-card flag', async () => {
+    const db = new LilaDexieDb(`ctx_start_card_${Date.now()}`);
+    const repositories = createRepositories(db);
+
+    render(
+      <GameProvider repositories={repositories}>
+        <TestHarness />
+      </GameProvider>,
+    );
+
+    const user = userEvent.setup();
+    await user.click(screen.getByText('start'));
+    await waitFor(() => expect(screen.getByTestId('start-card-flag').textContent).toBe('hidden'));
+
+    const activeSession = await repositories.sessionsRepository.getLastActiveSession();
+    expect(activeSession?.hasShownStartCard).toBe(false);
 
     await db.delete();
   });

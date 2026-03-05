@@ -1,6 +1,7 @@
 export type RoomStatus = 'open' | 'in_progress' | 'paused' | 'finished';
 export type RoomBoardType = 'short' | 'full';
 export type RoomPlayerRole = 'host' | 'player';
+export type RoomPlayerControlMode = 'self' | 'host';
 export type RoomConnectionStatus = 'online' | 'offline';
 export type RoomDiceMode = 'classic' | 'fast' | 'triple';
 
@@ -10,6 +11,7 @@ export interface RoomPlayer {
   userId: string;
   displayName: string;
   role: RoomPlayerRole;
+  controlMode: RoomPlayerControlMode;
   tokenColor: string;
   joinedAt: string;
   connectionStatus: RoomConnectionStatus;

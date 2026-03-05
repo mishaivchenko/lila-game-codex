@@ -42,6 +42,7 @@ export interface GameSession {
   finished: boolean;
   finishedAt?: string;
   hasEnteredGame: boolean;
+  hasShownStartCard?: boolean;
 }
 
 export interface GameMove {

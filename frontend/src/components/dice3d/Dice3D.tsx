@@ -11,11 +11,13 @@ import {
   normalizeDiceValues,
   sumDiceValues,
 } from './diceRoll';
+import { transitionDiceRollLifecycle, type DiceRollLifecycleState } from './useDiceRollLifecycle';
 
 interface Dice3DProps {
   rollToken: number;
   diceValues?: number[];
   onResult: (value: number) => void;
+  onAnimationComplete?: () => void;
   onFinished?: () => void;
   className?: string;
 }
@@ -189,13 +191,15 @@ const DiceBody = ({ targetValue, rolling, offsetX, offsetZ, tiltOffset }: DiceSc
   );
 };
 
-export const Dice3D = ({ rollToken, diceValues, onResult, onFinished, className }: Dice3DProps) => {
+export const Dice3D = ({ rollToken, diceValues, onResult, onAnimationComplete, onFinished, className }: Dice3DProps) => {
   const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
   const [targetValues, setTargetValues] = useState<number[]>([1]);
   const [rolling, setRolling] = useState(false);
+  const [lifecycleState, setLifecycleState] = useState<DiceRollLifecycleState>('idle');
   const latestTokenRef = useRef(0);
   const onResultRef = useRef(onResult);
+  const onAnimationCompleteRef = useRef(onAnimationComplete);
   const onFinishedRef = useRef(onFinished);
   const spreadJitter = useMemo(
     () =>
@@ -216,6 +220,10 @@ export const Dice3D = ({ rollToken, diceValues, onResult, onFinished, className 
   }, [onFinished]);
 
   useEffect(() => {
+    onAnimationCompleteRef.current = onAnimationComplete;
+  }, [onAnimationComplete]);
+
+  useEffect(() => {
     if (rollToken === 0 || rollToken === latestTokenRef.current) {
       return;
     }
@@ -227,9 +235,12 @@ export const Dice3D = ({ rollToken, diceValues, onResult, onFinished, className 
     setVisible(true);
     setFading(false);
     setRolling(true);
+    setLifecycleState((currentState) => transitionDiceRollLifecycle(currentState, 'ROLL_STARTED'));
 
     const resultTimer = window.setTimeout(() => {
+      setLifecycleState((currentState) => transitionDiceRollLifecycle(currentState, 'ROLL_SETTLED'));
       onResultRef.current(total);
+      onAnimationCompleteRef.current?.();
     }, DICE_FALL_MS + DICE_SETTLE_MS);
 
     const fadeTimer = window.setTimeout(() => {
@@ -240,6 +251,7 @@ export const Dice3D = ({ rollToken, diceValues, onResult, onFinished, className 
       setRolling(false);
       setVisible(false);
       setFading(false);
+      setLifecycleState((currentState) => transitionDiceRollLifecycle(currentState, 'ROLL_FINISHED'));
       onFinishedRef.current?.();
     }, DICE_FALL_MS + DICE_SETTLE_MS + DICE_HOLD_MS + DICE_FADE_MS);
 
@@ -291,9 +303,16 @@ export const Dice3D = ({ rollToken, diceValues, onResult, onFinished, className 
             <shadowMaterial opacity={0.22} />
           </mesh>
         </Canvas>
-        <div className="mt-1 rounded-full bg-black/45 px-3 py-1 text-center text-xs font-medium text-white">
-          Сума: {sumDiceValues(targetValues)}
-        </div>
+        {targetValues.length > 1 && (
+          <div
+            className={`mt-1 rounded-full bg-black/45 px-3 py-1 text-center text-xs font-medium text-white transition-opacity duration-200 ${
+              lifecycleState === 'settled' ? 'opacity-100' : 'opacity-0'
+            }`}
+            data-testid="dice-sum"
+          >
+            Сума: {sumDiceValues(targetValues)}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -8,6 +8,8 @@ import { useTelegramFullscreen } from './useTelegramFullscreen';
 import { useTelegramWebAppUi } from './useTelegramWebAppUi';
 import { useTelegramAuthBootstrap } from './useTelegramAuthBootstrap';
 import { useTelegramSessionSync } from './useTelegramSessionSync';
+import { resolveAppBootstrapState, bootstrapLabelByState } from './bootstrapState';
+import { useViewportHeightFix } from './useViewportHeightFix';
 
 interface TelegramAppShellProps {
   children: React.ReactNode;
@@ -25,7 +27,9 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
 
   const telegramMode = useTelegramRuntimeMode(location.pathname);
   const [authState, setAuthState] = useState<TelegramAuthContextValue>(() => createInitialState(telegramMode));
+  const [syncBannerVisible, setSyncBannerVisible] = useState(false);
   const { fullscreenRequested, requestFullScreen } = useTelegramFullscreen();
+  useViewportHeightFix(true);
 
   useEffect(() => {
     setAuthState((prev) => ({
@@ -45,15 +49,29 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
   });
   useTelegramAuthBootstrap({ telegramMode, setAuthState });
 
+  useEffect(() => {
+    if (!authState.isTelegramMode || authState.status !== 'authenticated' || !authState.token) {
+      setSyncBannerVisible(false);
+      return;
+    }
+    setSyncBannerVisible(true);
+    const timer = window.setTimeout(() => {
+      setSyncBannerVisible(false);
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [authState.isTelegramMode, authState.status, authState.token]);
+
+  const bootstrapState = resolveAppBootstrapState(authState.status, authState.appStatus, Boolean(authState.token));
+
   const shellClassName = telegramMode
-    ? 'tma-shell mx-auto min-h-[100dvh] w-full max-w-[1240px] bg-gradient-to-b from-[var(--lila-bg-start)] to-[var(--lila-bg-end)] px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+12px)] sm:px-4'
-    : '';
+    ? 'tma-shell mx-auto min-h-[var(--app-height,100dvh)] w-full max-w-[1240px] bg-gradient-to-b from-[var(--lila-bg-start)] to-[var(--lila-bg-end)] px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+12px)] sm:px-4'
+    : 'mx-auto min-h-[var(--app-height,100dvh)] w-full';
 
   return (
     <TelegramAuthProvider value={authState}>
       <TelegramRoomsProvider authToken={authState.token} authUserId={authState.user?.id}>
         <TelegramSessionSyncBridge />
-        <div className={shellClassName} data-telegram-mode={telegramMode ? 'true' : 'false'}>
+        <div className={shellClassName} data-telegram-mode={telegramMode ? 'true' : 'false'} data-testid="telegram-app-shell-root">
           {authState.isTelegramMode && !fullscreenRequested && (
             <div className="mb-3 flex justify-end">
               <button
@@ -69,15 +87,26 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
           )}
 
           <AnimatePresence>
-            {authState.isTelegramMode && authState.status === 'loading' && (
+            {authState.isTelegramMode && (bootstrapState === 'initializing' || (bootstrapState === 'syncing' && syncBannerVisible)) && (
               <motion.div
                 key="telegram-loading"
-                initial={{ opacity: 0, y: 4 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.28, ease: [0.2, 0.8, 0.2, 1] }}
                 className="mb-3 rounded-xl border border-[#e9d8cc] bg-white/80 px-3 py-2 text-xs text-[var(--lila-text-muted)]"
               >
-                Підключення Telegram Mini App...
+                <div className="space-y-1">
+                  <p>{bootstrapLabelByState[bootstrapState]}</p>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-[var(--lila-surface-muted)]">
+                    <motion.div
+                      className="h-full bg-[var(--lila-accent)]"
+                      initial={{ x: '-100%' }}
+                      animate={{ x: '100%' }}
+                      transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.2, ease: 'linear' }}
+                    />
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

@@ -95,6 +95,7 @@ const baseSession: GameSession = {
   sessionStatus: 'active',
   finished: false,
   hasEnteredGame: true,
+  hasShownStartCard: true,
 };
 
 const renderPage = () =>
@@ -123,6 +124,7 @@ describe('GamePage board/card interactions', () => {
       saveInsight: vi.fn().mockResolvedValue(undefined),
       updateSessionRequest: vi.fn().mockResolvedValue(undefined),
       resumeLastSession: vi.fn().mockResolvedValue(undefined),
+      markStartCardShown: vi.fn().mockResolvedValue(undefined),
       loading: false,
       error: undefined,
     });
@@ -142,6 +144,7 @@ describe('GamePage board/card interactions', () => {
       saveInsight: vi.fn().mockResolvedValue(undefined),
       updateSessionRequest: vi.fn().mockResolvedValue(undefined),
       resumeLastSession: vi.fn().mockResolvedValue(undefined),
+      markStartCardShown: vi.fn().mockResolvedValue(undefined),
       loading: false,
       error: undefined,
     });
@@ -237,6 +240,7 @@ describe('GamePage board/card interactions', () => {
       saveInsight: vi.fn().mockResolvedValue(undefined),
       updateSessionRequest: vi.fn().mockResolvedValue(undefined),
       resumeLastSession: vi.fn().mockResolvedValue(undefined),
+      markStartCardShown: vi.fn().mockResolvedValue(undefined),
       loading: false,
       error: undefined,
     });
@@ -250,5 +254,31 @@ describe('GamePage board/card interactions', () => {
     });
 
     expect(performMove).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens start card once for new session and marks it as shown after close', () => {
+    const markStartCardShown = vi.fn().mockResolvedValue(undefined);
+    mockUseGameContext.mockReturnValue({
+      currentSession: { ...baseSession, hasShownStartCard: false, currentCell: 1 },
+      performMove: vi.fn(),
+      finishSession: vi.fn().mockResolvedValue(undefined),
+      saveInsight: vi.fn().mockResolvedValue(undefined),
+      updateSessionRequest: vi.fn().mockResolvedValue(undefined),
+      resumeLastSession: vi.fn().mockResolvedValue(undefined),
+      markStartCardShown,
+      loading: false,
+      error: undefined,
+    });
+
+    renderPage();
+    act(() => {
+      vi.runAllTimers();
+    });
+    expect(screen.getByText('card-cell-1')).not.toBeNull();
+
+    act(() => {
+      fireEvent.click(screen.getByText('close-card'));
+    });
+    expect(markStartCardShown).toHaveBeenCalledTimes(1);
   });
 });
