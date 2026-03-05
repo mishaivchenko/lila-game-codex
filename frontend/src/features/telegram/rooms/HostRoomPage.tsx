@@ -493,6 +493,9 @@ export const HostRoomPage = () => {
   const primaryTokenCell = primaryTokenPlayer
     ? (currentRoom.gameState.perPlayerState[primaryTokenPlayer.userId]?.currentCell ?? 1)
     : 1;
+  const boardPrimaryTokenCell = pendingMovePlan && primaryTokenPlayer && pendingMovePlan.playerUserId === primaryTokenPlayer.userId
+    ? pendingMovePlan.fromCell
+    : primaryTokenCell;
   const boardOtherTokens = playerEntries
     .filter((player) => player.userId !== primaryTokenPlayer?.userId)
     .map((player) => ({
@@ -592,7 +595,7 @@ export const HostRoomPage = () => {
   };
 
   const hostCanPause = currentRoom.gameState.settings.hostCanPause;
-  const holdBoardTokenSync = Boolean(animationMove) || Boolean(specialFlow) || Boolean(pendingMovePlan);
+  const holdBoardTokenSync = Boolean(animationMove) || Boolean(specialFlow);
   const canShowCardModal = Boolean(
     canSeeActiveCard
     && currentCellContent
@@ -921,7 +924,7 @@ export const HostRoomPage = () => {
 
             <LilaBoard
               board={board}
-              currentCell={primaryTokenCell}
+              currentCell={boardPrimaryTokenCell}
               otherTokens={boardOtherTokens}
               tokenColor={primaryTokenPlayer?.tokenColor}
               animationMove={animationMove}
