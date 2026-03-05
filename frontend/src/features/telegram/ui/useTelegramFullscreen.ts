@@ -1,10 +1,13 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getTelegramWebApp } from '../telegramWebApp';
 
 export const useTelegramFullscreen = () => {
-  const [fullscreenRequested, setFullscreenRequested] = useState(() => {
+  const resolveCurrentFullscreen = () => {
     const webApp = getTelegramWebApp();
-    return Boolean(webApp?.isExpanded || webApp?.isFullscreen);
+    return Boolean(webApp?.isExpanded || webApp?.isFullscreen || document.fullscreenElement);
+  };
+  const [fullscreenRequested, setFullscreenRequested] = useState(() => {
+    return resolveCurrentFullscreen();
   });
 
   const requestFullScreen = useCallback(async () => {
@@ -33,8 +36,22 @@ export const useTelegramFullscreen = () => {
     } catch {
       // Keep UI usable even if browser denies fullscreen request.
     } finally {
-      setFullscreenRequested(true);
+      setFullscreenRequested(resolveCurrentFullscreen());
     }
+  }, []);
+
+  useEffect(() => {
+    const webApp = getTelegramWebApp();
+    const syncState = () => {
+      setFullscreenRequested(resolveCurrentFullscreen());
+    };
+    webApp?.onEvent?.('viewportChanged', syncState);
+    document.addEventListener('fullscreenchange', syncState);
+    syncState();
+    return () => {
+      webApp?.offEvent?.('viewportChanged', syncState);
+      document.removeEventListener('fullscreenchange', syncState);
+    };
   }, []);
 
   return {

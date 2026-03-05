@@ -39,6 +39,23 @@ const ONLINE_CARD_TIMINGS_MS = {
   serverSyncCard: 240,
 } as const;
 
+interface PendingMovePlan {
+  moveKey: string;
+  playerUserId: string;
+  fromCell: number;
+  toCell: number;
+  entryCell?: number;
+  type: 'snake' | 'arrow' | null;
+  pathPoints?: BoardPathPoint[];
+  tokenPathCells?: number[];
+  special?: {
+    headCell: number;
+    tailCell: number;
+    type: 'snake' | 'arrow';
+    pathPoints?: BoardPathPoint[];
+  };
+}
+
 export const HostRoomPage = () => {
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
@@ -68,13 +85,14 @@ export const HostRoomPage = () => {
   const [showAppearanceModal, setShowAppearanceModal] = useState(false);
   const [previewCellNumber, setPreviewCellNumber] = useState<number | undefined>(undefined);
   const [selectedHostNotesPlayerId, setSelectedHostNotesPlayerId] = useState<string | undefined>(undefined);
-  const [hostPrivateNote, setHostPrivateNote] = useState('');
+  const [hostPrivateNotesDraftByPlayer, setHostPrivateNotesDraftByPlayer] = useState<Record<string, string>>({});
   const [hostNoteStatus, setHostNoteStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [hostControlledDraftName, setHostControlledDraftName] = useState('');
   const [hostRollTargetId, setHostRollTargetId] = useState<string | undefined>(undefined);
   const [isRolling, setIsRolling] = useState(false);
   const [diceRollToken, setDiceRollToken] = useState(0);
   const [pendingDiceValues, setPendingDiceValues] = useState<number[] | undefined>(undefined);
+  const [pendingMovePlan, setPendingMovePlan] = useState<PendingMovePlan | undefined>(undefined);
   const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>(undefined);
   const [animatedPlayerId, setAnimatedPlayerId] = useState<string | undefined>(undefined);
   const [isFlowCardReady, setIsFlowCardReady] = useState(true);
@@ -97,6 +115,10 @@ export const HostRoomPage = () => {
   const cardVisibleRef = useRef(false);
   const lastTransitionEntryCellRef = useRef<number | undefined>(undefined);
   const isCurrentUserHost = currentRoom?.room.hostUserId === user?.id;
+  const allRoomPlayers = currentRoom?.players ?? [];
+  const playerEntriesForTurn = allRoomPlayers.filter((player) => player.role === 'player');
+  const hostControlledPlayersForTurn = playerEntriesForTurn.filter((player) => player.controlMode === 'host');
+  const currentTurnPlayerForTurn = allRoomPlayers.find((entry) => entry.userId === currentRoom?.gameState.currentTurnPlayerId);
   const movementSettings = useMemo(
     () => normalizeMovementSettings(DEFAULT_MOVEMENT_SETTINGS),
     [],
@@ -114,6 +136,21 @@ export const HostRoomPage = () => {
       setIsFlowCardReady(true);
     }, delayMs);
   }, [clearCardRevealTimer]);
+
+  useEffect(() => {
+    if (!isCurrentUserHost) {
+      return;
+    }
+    const currentTurnHostControlled = currentTurnPlayerForTurn?.controlMode === 'host' ? currentTurnPlayerForTurn.userId : undefined;
+    const nextTarget = currentTurnHostControlled ?? hostControlledPlayersForTurn[0]?.userId;
+    if (!nextTarget) {
+      setHostRollTargetId(undefined);
+      return;
+    }
+    if (!hostRollTargetId || !hostControlledPlayersForTurn.some((player) => player.userId === hostRollTargetId)) {
+      setHostRollTargetId(nextTarget);
+    }
+  }, [currentTurnPlayerForTurn, hostControlledPlayersForTurn, hostRollTargetId, isCurrentUserHost]);
 
   useEffect(() => {
     if (!isTelegramMode) {
@@ -138,21 +175,31 @@ export const HostRoomPage = () => {
 
   useEffect(() => {
     if (!currentRoom || !isCurrentUserHost) {
-      setSelectedHostNotesPlayerId(undefined);
-      setHostPrivateNote('');
+      setSelectedHostNotesPlayerId((previous) => (previous === undefined ? previous : undefined));
+      setHostPrivateNotesDraftByPlayer((previous) => (Object.keys(previous).length === 0 ? previous : {}));
       return;
     }
     const hostNotesPlayers = currentRoom.players.filter((player) => player.role === 'player');
     if (!hostNotesPlayers.length) {
-      setSelectedHostNotesPlayerId(undefined);
-      setHostPrivateNote('');
+      setSelectedHostNotesPlayerId((previous) => (previous === undefined ? previous : undefined));
+      setHostPrivateNotesDraftByPlayer((previous) => (Object.keys(previous).length === 0 ? previous : {}));
       return;
     }
     const fallbackPlayerId = selectedHostNotesPlayerId && hostNotesPlayers.some((player) => player.userId === selectedHostNotesPlayerId)
       ? selectedHostNotesPlayerId
       : hostNotesPlayers[0].userId;
     setSelectedHostNotesPlayerId(fallbackPlayerId);
-    setHostPrivateNote(currentRoom.gameState.notes.hostByPlayerId?.[fallbackPlayerId] ?? '');
+    setHostPrivateNotesDraftByPlayer((previous) => {
+      let changed = false;
+      const next = { ...previous };
+      for (const player of hostNotesPlayers) {
+        if (next[player.userId] === undefined) {
+          next[player.userId] = currentRoom.gameState.notes.hostByPlayerId?.[player.userId] ?? '';
+          changed = true;
+        }
+      }
+      return changed ? next : previous;
+    });
   }, [currentRoom, isCurrentUserHost, selectedHostNotesPlayerId]);
 
   useEffect(() => {
@@ -163,6 +210,7 @@ export const HostRoomPage = () => {
       setAnimatedPlayerId(undefined);
       setSpecialFlow(undefined);
       setPendingDiceValues(undefined);
+      setPendingMovePlan(undefined);
       setIsFlowCardReady(true);
       clearCardRevealTimer();
       lastTransitionEntryCellRef.current = undefined;
@@ -203,12 +251,6 @@ export const HostRoomPage = () => {
       ? getBoardTransitionPath(currentRoom.room.boardType, moveType, entryCell, lastMove.toCell)?.points
       : undefined;
     lastTransitionEntryCellRef.current = entryCell;
-    if (moveType === 'snake') {
-      playSnakeMove();
-    }
-    if (moveType === 'arrow') {
-      playLadderMove();
-    }
     const tokenPathCells = buildStepwiseCellPath(lastMove.fromCell, lastMove.dice, board.maxCell);
 
     const isSpecialFlow =
@@ -220,27 +262,25 @@ export const HostRoomPage = () => {
     setAnimatedPlayerId(lastMove.userId);
     if (isSpecialFlow) {
       const entryTokenPath = tokenPathCells.filter((cell) => cell <= (entryCell ?? lastMove.toCell));
-      setSpecialFlow({
-        moveId: moveKey,
+      setPendingMovePlan({
+        moveKey,
         playerUserId: lastMove.userId,
-        type: moveType!,
-        headCell: entryCell!,
-        tailCell: lastMove.toCell,
-        pathPoints,
-        phase: 'entry-animation',
-      });
-      setAnimationMove({
-        id: moveKey,
         fromCell: lastMove.fromCell,
         toCell: entryCell!,
         type: null,
         tokenPathCells: entryTokenPath.length >= 2 ? entryTokenPath : [lastMove.fromCell, entryCell!],
+        special: {
+          headCell: entryCell!,
+          tailCell: lastMove.toCell,
+          type: moveType!,
+          pathPoints,
+        },
       });
       return;
     }
-    setSpecialFlow(undefined);
-    setAnimationMove({
-      id: moveKey,
+    setPendingMovePlan({
+      moveKey,
+      playerUserId: lastMove.userId,
       fromCell: lastMove.fromCell,
       toCell: lastMove.toCell,
       type: moveType,
@@ -249,6 +289,84 @@ export const HostRoomPage = () => {
       tokenPathCells,
     });
   }, [clearCardRevealTimer, currentRoom]);
+
+  const beginPendingMoveAnimation = useCallback(() => {
+    if (!pendingMovePlan) {
+      return;
+    }
+    if (pendingMovePlan.special) {
+      setSpecialFlow({
+        moveId: pendingMovePlan.moveKey,
+        playerUserId: pendingMovePlan.playerUserId,
+        type: pendingMovePlan.special.type,
+        headCell: pendingMovePlan.special.headCell,
+        tailCell: pendingMovePlan.special.tailCell,
+        pathPoints: pendingMovePlan.special.pathPoints,
+        phase: 'entry-animation',
+      });
+      setAnimationMove({
+        id: pendingMovePlan.moveKey,
+        fromCell: pendingMovePlan.fromCell,
+        toCell: pendingMovePlan.toCell,
+        type: null,
+        tokenPathCells: pendingMovePlan.tokenPathCells,
+      });
+      setPendingMovePlan(undefined);
+      return;
+    }
+    setSpecialFlow(undefined);
+    setAnimationMove({
+      id: pendingMovePlan.moveKey,
+      fromCell: pendingMovePlan.fromCell,
+      toCell: pendingMovePlan.toCell,
+      type: pendingMovePlan.type,
+      entryCell: pendingMovePlan.entryCell,
+      pathPoints: pendingMovePlan.pathPoints,
+      tokenPathCells: pendingMovePlan.tokenPathCells,
+    });
+    setPendingMovePlan(undefined);
+  }, [pendingMovePlan]);
+
+  const handleDiceAnimationFinished = useCallback(() => {
+    setPendingDiceValues(undefined);
+    beginPendingMoveAnimation();
+  }, [beginPendingMoveAnimation]);
+
+  useEffect(() => {
+    if (previewCellNumber !== undefined || specialFlow) {
+      return;
+    }
+    const activeCard = currentRoom?.gameState.activeCard;
+    if (!activeCard || animationMove || pendingMovePlan) {
+      revealedServerCardKeyRef.current = undefined;
+      return;
+    }
+    const cardKey = `${activeCard.playerUserId}:${activeCard.cellNumber}`;
+    if (revealedServerCardKeyRef.current === cardKey) {
+      return;
+    }
+    revealedServerCardKeyRef.current = cardKey;
+    scheduleCardReveal(ONLINE_CARD_TIMINGS_MS.serverSyncCard);
+  }, [animationMove, currentRoom?.gameState.activeCard, pendingMovePlan, previewCellNumber, scheduleCardReveal, specialFlow]);
+
+  const canShowCardModalForHaptics = Boolean(
+    currentRoom
+      && user
+      && !animationMove
+      && !pendingMovePlan
+      && (previewCellNumber !== undefined || isFlowCardReady)
+      && (
+        previewCellNumber !== undefined
+        || (currentRoom.gameState.activeCard && (isCurrentUserHost || currentRoom.gameState.activeCard.playerUserId === user.id))
+      ),
+  );
+
+  useEffect(() => {
+    if (canShowCardModalForHaptics && !cardVisibleRef.current) {
+      playCardOpen();
+    }
+    cardVisibleRef.current = canShowCardModalForHaptics;
+  }, [canShowCardModalForHaptics]);
 
   useEffect(() => () => {
     clearCardRevealTimer();
@@ -335,14 +453,12 @@ export const HostRoomPage = () => {
   const botInviteUrl = buildRoomInviteUrl(currentRoom.room.code);
   const joinLink = botInviteUrl;
   const hostNotesPlayers = currentRoom.players.filter((player) => player.role === 'player');
-  const primaryTokenPlayer = useMemo(() => {
-    if (animatedPlayerId) {
-      return playerEntries.find((player) => player.userId === animatedPlayerId);
-    }
-    return isCurrentUserHost
-    ? (currentTurnPlayer?.role === 'player' ? currentTurnPlayer : playerEntries[0])
-    : selfPlayer;
-  }, [animatedPlayerId, currentTurnPlayer, isCurrentUserHost, playerEntries, selfPlayer]);
+  const hostPrivateNote = selectedHostNotesPlayerId ? (hostPrivateNotesDraftByPlayer[selectedHostNotesPlayerId] ?? '') : '';
+  const primaryTokenPlayer = animatedPlayerId
+    ? playerEntries.find((player) => player.userId === animatedPlayerId)
+    : (isCurrentUserHost
+      ? (currentTurnPlayer?.role === 'player' ? currentTurnPlayer : playerEntries[0])
+      : selfPlayer);
   const primaryTokenCell = primaryTokenPlayer
     ? (currentRoom.gameState.perPlayerState[primaryTokenPlayer.userId]?.currentCell ?? 1)
     : 1;
@@ -353,21 +469,6 @@ export const HostRoomPage = () => {
       cell: currentRoom.gameState.perPlayerState[player.userId]?.currentCell ?? 1,
       color: player.tokenColor,
     }));
-  useEffect(() => {
-    if (!isCurrentUserHost) {
-      return;
-    }
-    const currentTurnHostControlled = currentTurnPlayer?.controlMode === 'host' ? currentTurnPlayer.userId : undefined;
-    const nextTarget = currentTurnHostControlled ?? hostControlledPlayers[0]?.userId;
-    if (!nextTarget) {
-      setHostRollTargetId(undefined);
-      return;
-    }
-    if (!hostRollTargetId || !hostControlledPlayers.some((player) => player.userId === hostRollTargetId)) {
-      setHostRollTargetId(nextTarget);
-    }
-  }, [currentTurnPlayer, hostControlledPlayers, hostRollTargetId, isCurrentUserHost]);
-
   const hostMoveSummary = !lastDiceRoll
     ? 'Ще немає кидків у цій сесії.'
     : `${currentRoom.players.find((player) => player.userId === lastDiceRoll.playerId)?.displayName ?? 'Гравець'} кинув ${lastDiceRoll.diceValues.join(' + ')} = ${lastDiceRoll.dice}`;
@@ -460,37 +561,15 @@ export const HostRoomPage = () => {
   };
 
   const hostCanPause = currentRoom.gameState.settings.hostCanPause;
-  const holdBoardTokenSync = Boolean(animationMove) || Boolean(specialFlow);
+  const holdBoardTokenSync = Boolean(animationMove) || Boolean(specialFlow) || Boolean(pendingMovePlan);
   const canShowCardModal = Boolean(
     canSeeActiveCard
     && currentCellContent
     && activeCellNumber !== undefined
     && !animationMove
+    && !pendingMovePlan
     && (isPreviewCardOpen || isFlowCardReady),
   );
-
-  useEffect(() => {
-    if (isPreviewCardOpen || specialFlow) {
-      return;
-    }
-    if (!activeCard || animationMove) {
-      revealedServerCardKeyRef.current = undefined;
-      return;
-    }
-    const cardKey = `${activeCard.playerUserId}:${activeCard.cellNumber}`;
-    if (revealedServerCardKeyRef.current === cardKey) {
-      return;
-    }
-    revealedServerCardKeyRef.current = cardKey;
-    scheduleCardReveal(ONLINE_CARD_TIMINGS_MS.serverSyncCard);
-  }, [activeCard, animationMove, isPreviewCardOpen, scheduleCardReveal, specialFlow]);
-
-  useEffect(() => {
-    if (canShowCardModal && !cardVisibleRef.current) {
-      playCardOpen();
-    }
-    cardVisibleRef.current = canShowCardModal;
-  }, [canShowCardModal]);
 
   const latestMove = currentRoom.gameState.moveHistory.at(-1);
   const latestMoveType = latestMove ? resolveMoveType(latestMove) : 'normal';
@@ -505,13 +584,13 @@ export const HostRoomPage = () => {
 
   return (
     <>
-      <main className="mx-auto min-h-screen max-w-[1460px] bg-[var(--lila-bg-main)] px-3 py-4 sm:px-4 lg:px-5 xl:h-[calc(100dvh-20px)] xl:overflow-hidden">
+      <main className="mx-auto min-h-screen max-w-[1760px] bg-[var(--lila-bg-main)] px-2 py-3 sm:px-3 lg:px-4 xl:h-[calc(100dvh-16px)] xl:overflow-hidden">
       {error && (
         <p className="mb-3 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {error}
         </p>
       )}
-      <div className="grid gap-4 xl:h-full xl:grid-cols-[320px,minmax(0,1fr),320px]">
+      <div className="grid gap-3 xl:h-full xl:grid-cols-[250px,minmax(0,1.45fr),250px] 2xl:grid-cols-[280px,minmax(0,1.7fr),280px]">
         <aside className="space-y-4 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
           <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 p-4 shadow-[0_18px_48px_rgba(42,36,31,0.12)]">
             <div className="flex items-start justify-between gap-3">
@@ -720,9 +799,7 @@ export const HostRoomPage = () => {
                     <select
                       value={selectedHostNotesPlayerId}
                       onChange={(event) => {
-                        const playerId = event.target.value;
-                        setSelectedHostNotesPlayerId(playerId);
-                        setHostPrivateNote(currentRoom.gameState.notes.hostByPlayerId?.[playerId] ?? '');
+                        setSelectedHostNotesPlayerId(event.target.value);
                       }}
                       className="mt-2 w-full rounded-xl border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-3 py-2 text-sm text-[var(--lila-text-primary)]"
                     >
@@ -734,7 +811,16 @@ export const HostRoomPage = () => {
                     </select>
                     <textarea
                       value={hostPrivateNote}
-                      onChange={(event) => setHostPrivateNote(event.target.value)}
+                      onChange={(event) => {
+                        if (!selectedHostNotesPlayerId) {
+                          return;
+                        }
+                        const nextValue = event.target.value;
+                        setHostPrivateNotesDraftByPlayer((previous) => ({
+                          ...previous,
+                          [selectedHostNotesPlayerId]: nextValue,
+                        }));
+                      }}
                       placeholder="Спостереження, реакції, фокус для ведення..."
                       className="mt-2 min-h-24 w-full rounded-xl border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-3 py-2 text-sm text-[var(--lila-text-primary)]"
                     />
@@ -753,6 +839,10 @@ export const HostRoomPage = () => {
                         })
                           .then(() => {
                             setHostNoteStatus('saved');
+                            setHostPrivateNotesDraftByPlayer((previous) => ({
+                              ...previous,
+                              [selectedHostNotesPlayerId]: hostPrivateNote,
+                            }));
                             window.setTimeout(() => setHostNoteStatus('idle'), 1400);
                           })
                           .catch(() => {
@@ -785,8 +875,8 @@ export const HostRoomPage = () => {
           )}
         </aside>
 
-        <section className="space-y-4 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
-          <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 p-3 shadow-[0_18px_48px_rgba(42,36,31,0.12)]">
+        <section className="space-y-3 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
+          <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 p-2 shadow-[0_18px_48px_rgba(42,36,31,0.12)]">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--lila-text-muted)]">Shared Board</p>
@@ -855,6 +945,7 @@ export const HostRoomPage = () => {
                     currentRoom.room.status !== 'in_progress'
                     || !isMyTurn
                     || Boolean(animationMove)
+                    || Boolean(pendingMovePlan)
                     || Boolean(currentRoom.gameState.activeCard)
                     || isRolling
                   }
@@ -895,6 +986,7 @@ export const HostRoomPage = () => {
                           || currentTurnPlayer?.userId !== hostRollTargetId
                           || currentTurnPlayer?.controlMode !== 'host'
                           || Boolean(animationMove)
+                          || Boolean(pendingMovePlan)
                           || Boolean(currentRoom.gameState.activeCard)
                           || isRolling
                         }
@@ -915,7 +1007,7 @@ export const HostRoomPage = () => {
                 rollToken={diceRollToken}
                 diceValues={pendingDiceValues}
                 onResult={() => {}}
-                onFinished={() => setPendingDiceValues(undefined)}
+                onFinished={handleDiceAnimationFinished}
               />
             </div>
           </section>
