@@ -33,6 +33,7 @@ export interface GameContextValue extends GameState {
   saveInsight: (cellNumber: number, text: string, voiceNoteId?: string) => Promise<void>;
   updateSessionRequest: (patch: string | Partial<GameRequest>) => Promise<void>;
   loadSession: (session: GameSession) => Promise<void>;
+  markStartCardShown: () => Promise<void>;
 }
 
 export interface InsightSaveInput {

@@ -29,6 +29,7 @@ export const useGameContextActions = ({
   | 'saveInsight'
   | 'updateSessionRequest'
   | 'loadSession'
+  | 'markStartCardShown'
 > => {
   const loadSession = useCallback<GameContextValue['loadSession']>(
     async (session) => {
@@ -60,6 +61,7 @@ export const useGameContextActions = ({
           sessionStatus: 'active',
           finished: false,
           hasEnteredGame: false,
+          hasShownStartCard: false,
         };
         const normalizedSession = normalizeSession(session);
         await repositories.sessionsRepository.saveSession(normalizedSession);
@@ -87,12 +89,14 @@ export const useGameContextActions = ({
         normalizedSession.currentCell !== session.currentCell ||
         normalizedSession.hasEnteredGame !== session.hasEnteredGame ||
         normalizedSession.sessionStatus !== session.sessionStatus
+        || normalizedSession.hasShownStartCard !== Boolean(session.hasShownStartCard)
       ) {
         await repositories.sessionsRepository.updateSession(session.id, {
           boardType: normalizedSession.boardType,
           currentCell: normalizedSession.currentCell,
           hasEnteredGame: normalizedSession.hasEnteredGame,
           sessionStatus: normalizedSession.sessionStatus,
+          hasShownStartCard: normalizedSession.hasShownStartCard,
         });
       }
 
@@ -318,5 +322,22 @@ export const useGameContextActions = ({
     saveInsight,
     updateSessionRequest,
     loadSession,
+    markStartCardShown: async () => {
+      if (!currentSession || currentSession.hasShownStartCard) {
+        return;
+      }
+      const updatedSession = await repositories.sessionsRepository.updateSession(currentSession.id, {
+        hasShownStartCard: true,
+      }) ?? {
+        ...currentSession,
+        hasShownStartCard: true,
+        updatedAt: new Date().toISOString(),
+      };
+      await repositories.sessionsRepository.saveSession(updatedSession);
+      dispatch({
+        type: updatedSession.finished ? 'SESSION_FINISHED' : 'MOVE_PERFORMED',
+        payload: normalizeSession(updatedSession),
+      });
+    },
   };
 };

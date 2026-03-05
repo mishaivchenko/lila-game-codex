@@ -24,6 +24,7 @@ import { DeepRequestDialog } from './game/components/DeepRequestDialog';
 import { GameStatusHeader } from './game/components/GameStatusHeader';
 import { GameControlPanel } from './game/components/GameControlPanel';
 import { useSimpleMultiplayer } from './game/useSimpleMultiplayer';
+import { useStartCardAutoOpen } from './game/useStartCardAutoOpen';
 import { useBoardTheme } from '../theme';
 import { GameBoardLayout } from '../ui/layout/GameBoardLayout';
 import { createMovementEngine, DEFAULT_MOVEMENT_SETTINGS, normalizeMovementSettings } from '../engine/movement/MovementEngine';
@@ -52,6 +53,7 @@ export const GamePage = () => {
     saveInsight,
     updateSessionRequest,
     resumeLastSession,
+    markStartCardShown,
     loading,
     error,
   } = useGameContext();
@@ -281,6 +283,21 @@ export const GamePage = () => {
   useEffect(() => {
     saveAnimationTimings(animationTimings);
   }, [animationTimings]);
+
+  useStartCardAutoOpen({
+    session: currentSession,
+    isSimpleMultiplayer,
+    showCoach,
+    turnState,
+    onAutoOpen: () => {
+      openCoachCard(1, {
+        fromCell: 1,
+        toCell: 1,
+        type: 'normal',
+        pathLabel: '1',
+      }, 180);
+    },
+  });
 
   if (!currentSession) {
     return (
@@ -573,9 +590,12 @@ export const GamePage = () => {
       pendingMoveContextRef.current = undefined;
       resetSpecialFlow();
     }
+    if (activeModalCell === 1 && !isSimpleMultiplayer && !currentSession?.hasShownStartCard) {
+      void markStartCardShown();
+    }
     setShowCoach(false);
     setModalMoveContext(undefined);
-  }, [activeModalCell, resetSpecialFlow, specialFlow, specialFlowPhase]);
+  }, [activeModalCell, currentSession?.hasShownStartCard, isSimpleMultiplayer, markStartCardShown, resetSpecialFlow, specialFlow, specialFlowPhase]);
 
   const saveCoachModal = useCallback((text: string) => {
     void saveInsight(modalCellNumber, text).then(() => {

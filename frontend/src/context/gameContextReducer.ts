@@ -33,6 +33,7 @@ export const normalizeSession = (session: GameSession): GameSession => {
     currentCell: normalizedCell,
     sessionStatus: session.finished ? 'completed' : (session.sessionStatus ?? 'active'),
     hasEnteredGame: Boolean(session.hasEnteredGame),
+    hasShownStartCard: Boolean(session.hasShownStartCard),
   };
 };
 

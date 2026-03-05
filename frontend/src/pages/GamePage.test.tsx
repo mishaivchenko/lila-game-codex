@@ -51,6 +51,7 @@ const baseSession: GameSession = {
   sessionStatus: 'active',
   finished: false,
   hasEnteredGame: true,
+  hasShownStartCard: true,
 };
 
 const renderPage = () =>
