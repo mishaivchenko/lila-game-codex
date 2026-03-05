@@ -120,6 +120,37 @@ describe('Telegram auth + rooms', () => {
     expect(hostPlayers[0].role).toBe('host');
   });
 
+  it('allows host to add host-controlled players and rejects non-host', async () => {
+    const hostAuth = await request(app)
+      .post('/api/auth/telegram/webapp')
+      .send({ initData: buildTelegramInitData(BOT_TOKEN, 80101, 'soulvio') });
+    const guestAuth = await request(app)
+      .post('/api/auth/telegram/webapp')
+      .send({ initData: buildTelegramInitData(BOT_TOKEN, 80102, 'guest_user') });
+    const hostToken = hostAuth.body.token as string;
+    const guestToken = guestAuth.body.token as string;
+
+    const roomResponse = await request(app)
+      .post('/api/rooms')
+      .set('Authorization', `Bearer ${hostToken}`)
+      .send({ boardType: 'full' });
+    const roomId = roomResponse.body.room.id as string;
+
+    const hostCreatePlayerResponse = await request(app)
+      .post(`/api/rooms/${roomId}/players`)
+      .set('Authorization', `Bearer ${hostToken}`)
+      .send({ name: 'Desktop Guest' });
+    expect(hostCreatePlayerResponse.status).toBe(201);
+    const createdPlayer = hostCreatePlayerResponse.body.players.find((player: { displayName: string }) => player.displayName === 'Desktop Guest');
+    expect(createdPlayer.controlMode).toBe('host');
+
+    const guestCreatePlayerResponse = await request(app)
+      .post(`/api/rooms/${roomId}/players`)
+      .set('Authorization', `Bearer ${guestToken}`)
+      .send({ name: 'Should fail' });
+    expect(guestCreatePlayerResponse.status).toBe(403);
+  });
+
   it('returns current user via /api/auth/me for valid token', async () => {
     const initData = buildTelegramInitData(BOT_TOKEN, 888100);
     const authResponse = await request(app).post('/api/auth/telegram/webapp').send({ initData });
@@ -543,7 +574,9 @@ describe('Telegram auth + rooms', () => {
       .send({});
     expect(startResponse.status).toBe(200);
 
-    await expect(rollDiceForCurrentPlayer({ roomId, userId: hostAuth.body.user.id as string })).rejects.toThrow('HOST_CANNOT_ROLL');
+    await expect(rollDiceForCurrentPlayer({ roomId, userId: hostAuth.body.user.id as string })).rejects.toThrow(
+      'HOST_TARGET_REQUIRED',
+    );
   });
 
   it('binds admin access to the current Telegram chat scope', async () => {

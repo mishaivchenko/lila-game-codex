@@ -4,6 +4,7 @@ import { apiFetch } from '../../../lib/api/apiClient';
 export type RoomStatus = 'open' | 'in_progress' | 'paused' | 'finished';
 export type RoomBoardType = 'short' | 'full';
 export type RoomPlayerRole = 'host' | 'player';
+export type RoomPlayerControlMode = 'self' | 'host';
 export type RoomDiceMode = 'classic' | 'fast' | 'triple';
 export type RoomNoteScope = 'host' | 'player' | 'host_player';
 
@@ -13,6 +14,7 @@ export interface RoomPlayer {
   userId: string;
   displayName: string;
   role: RoomPlayerRole;
+  controlMode: RoomPlayerControlMode;
   tokenColor: string;
   joinedAt: string;
   connectionStatus: 'online' | 'offline';
@@ -146,7 +148,7 @@ export const hostStartRoomApi = async (token: string, roomId: string): Promise<R
 export const rollRoomDiceApi = async (
   token: string,
   roomId: string,
-  payload?: { expectedTurnVersion?: number },
+  payload?: { expectedTurnVersion?: number; targetPlayerId?: string },
 ): Promise<RoomSnapshot> =>
   parseRoomRequest(
     `/api/rooms/${encodeURIComponent(roomId)}/roll`,
@@ -187,6 +189,13 @@ export const updateRoomPreferencesApi = async (
 ): Promise<RoomSnapshot> =>
   parseRoomRequest(`/api/rooms/${encodeURIComponent(roomId)}/preferences`, { method: 'PATCH', body: JSON.stringify(payload) }, token);
 
+export const addHostControlledPlayerApi = async (
+  token: string,
+  roomId: string,
+  payload: { name: string },
+): Promise<RoomSnapshot> =>
+  parseRoomRequest(`/api/rooms/${encodeURIComponent(roomId)}/players`, { method: 'POST', body: JSON.stringify(payload) }, token);
+
 export type HostRoomSocket = Socket<
   {
     roomStateUpdated: (snapshot: RoomSnapshot) => void;
@@ -198,10 +207,11 @@ export type HostRoomSocket = Socket<
   },
   {
     joinRoom: (payload: { roomId: string }) => void;
-    rollDice: (payload: { roomId: string }) => void;
+    rollDice: (payload: { roomId: string; targetPlayerId?: string }) => void;
     updateNote: (payload: { roomId: string; cell: number; note: string; scope: RoomNoteScope; targetPlayerId?: string }) => void;
     closeCard: (payload: { roomId: string }) => void;
     updatePlayerPreferences: (payload: { roomId: string; tokenColor: string }) => void;
+    hostCreatePlayer: (payload: { roomId: string; name: string }) => void;
     hostCommand: (payload: {
       roomId: string;
       action: 'start' | 'pause' | 'resume' | 'finish' | 'updateSettings';

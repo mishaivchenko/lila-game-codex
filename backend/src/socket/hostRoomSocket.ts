@@ -3,6 +3,7 @@ import { Server } from 'socket.io';
 import { verifyAppToken } from '../lib/appToken.js';
 import { getUserById } from '../store/usersStore.js';
 import {
+  addHostControlledPlayer,
   closeRoomCard,
   getRoomById,
   joinRoom,
@@ -79,10 +80,10 @@ export const attachHostRoomSocket = (server: HttpServer): Server => {
       })();
     });
 
-    socket.on('rollDice', ({ roomId }: { roomId: string }) => {
+    socket.on('rollDice', ({ roomId, targetPlayerId }: { roomId: string; targetPlayerId?: string }) => {
       void (async () => {
         try {
-          const result = await rollDiceForCurrentPlayer({ roomId, userId: authUser.id });
+          const result = await rollDiceForCurrentPlayer({ roomId, userId: authUser.id, targetPlayerId });
           namespace.to(`room:${roomId}`).emit('diceRolled', {
             playerId: result.move.userId,
             dice: result.move.dice,
@@ -156,6 +157,30 @@ export const attachHostRoomSocket = (server: HttpServer): Server => {
           namespace.to(`room:${roomId}`).emit('roomStateUpdated', snapshot);
         } catch (error) {
           socket.emit('roomError', { message: error instanceof Error ? error.message : 'Failed to update player preferences' });
+        }
+      })();
+    });
+
+    socket.on('hostCreatePlayer', ({ roomId, name }: { roomId: string; name: string }) => {
+      void (async () => {
+        try {
+          const room = await getRoomById(roomId);
+          if (!room) {
+            socket.emit('roomError', { message: 'Room not found' });
+            return;
+          }
+          if (room.room.hostUserId !== authUser.id) {
+            socket.emit('roomError', { message: 'Only host can add players' });
+            return;
+          }
+          const snapshot = await addHostControlledPlayer({
+            roomId,
+            hostUserId: authUser.id,
+            displayName: name,
+          });
+          namespace.to(`room:${roomId}`).emit('roomStateUpdated', snapshot);
+        } catch (error) {
+          socket.emit('roomError', { message: error instanceof Error ? error.message : 'Failed to add player' });
         }
       })();
     });

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { requireAuth, type AuthenticatedRequest } from '../lib/authMiddleware.js';
 import { hasAdminBindingForChat } from '../store/usersStore.js';
 import {
+  addHostControlledPlayer,
   closeRoomCard,
   createHostRoom,
   getRoomByCode,
@@ -42,6 +43,10 @@ const roomPlayerPreferencesSchema = z.object({
 });
 const roomRollSchema = z.object({
   expectedTurnVersion: z.number().int().nonnegative().optional(),
+  targetPlayerId: z.string().uuid().optional(),
+});
+const addHostControlledPlayerSchema = z.object({
+  name: z.string().min(1).max(80),
 });
 
 const resolveParticipantLabel = (user: NonNullable<AuthenticatedRequest['authUser']>): string =>
@@ -333,6 +338,42 @@ roomsRouter.patch('/:roomId/preferences', requireAuth, (req: AuthenticatedReques
   })();
 });
 
+roomsRouter.post('/:roomId/players', requireAuth, (req: AuthenticatedRequest, res) => {
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const parsed = addHostControlledPlayerSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ ok: false, error: 'Invalid payload' });
+    }
+    const roomId = Array.isArray(req.params.roomId) ? req.params.roomId[0] : req.params.roomId;
+    try {
+      const snapshot = await addHostControlledPlayer({
+        roomId,
+        hostUserId: req.authUser.id,
+        displayName: parsed.data.name,
+      });
+      return res.status(201).json({ ok: true, ...snapshot });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : '';
+      if (code === 'FORBIDDEN') {
+        return res.status(403).json({ ok: false, error: 'Only host can add host-controlled players' });
+      }
+      if (code === 'ROOM_FULL') {
+        return res.status(409).json({ ok: false, error: 'Room is full' });
+      }
+      if (code === 'PLAYER_NAME_REQUIRED') {
+        return res.status(400).json({ ok: false, error: 'Player name is required' });
+      }
+      if (code === 'ROOM_FINISHED') {
+        return res.status(409).json({ ok: false, error: 'Room is finished' });
+      }
+      return res.status(404).json({ ok: false, error: 'Room not found' });
+    }
+  })();
+});
+
 roomsRouter.post('/:roomId/start', requireAuth, (req: AuthenticatedRequest, res) => {
   void (async () => {
     if (!req.authUser) {
@@ -370,12 +411,16 @@ roomsRouter.post('/:roomId/roll', requireAuth, (req: AuthenticatedRequest, res) 
         roomId,
         userId: req.authUser.id,
         expectedTurnVersion: parsed.data.expectedTurnVersion,
+        targetPlayerId: parsed.data.targetPlayerId,
       });
       return res.status(200).json({ ok: true, ...result.snapshot, move: result.move });
     } catch (error) {
       const code = error instanceof Error ? error.message : '';
-      if (code === 'HOST_CANNOT_ROLL') {
-        return res.status(403).json({ ok: false, error: 'Host cannot roll dice' });
+      if (code === 'HOST_CANNOT_ROLL' || code === 'HOST_TARGET_FORBIDDEN') {
+        return res.status(403).json({ ok: false, error: 'Host cannot roll for this player' });
+      }
+      if (code === 'HOST_TARGET_REQUIRED') {
+        return res.status(400).json({ ok: false, error: 'Host must select a host-controlled player' });
       }
       if (code === 'NOT_YOUR_TURN') {
         return res.status(409).json({ ok: false, error: 'It is not your turn' });

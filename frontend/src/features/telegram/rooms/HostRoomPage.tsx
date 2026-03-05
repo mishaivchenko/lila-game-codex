@@ -54,6 +54,7 @@ export const HostRoomPage = () => {
     hostFinishGame,
     hostUpdateSettings,
     rollDice,
+    addHostControlledPlayer,
     closeActiveCard,
     saveRoomNote,
     updatePlayerTokenColor,
@@ -69,6 +70,8 @@ export const HostRoomPage = () => {
   const [selectedHostNotesPlayerId, setSelectedHostNotesPlayerId] = useState<string | undefined>(undefined);
   const [hostPrivateNote, setHostPrivateNote] = useState('');
   const [hostNoteStatus, setHostNoteStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [hostControlledDraftName, setHostControlledDraftName] = useState('');
+  const [hostRollTargetId, setHostRollTargetId] = useState<string | undefined>(undefined);
   const [isRolling, setIsRolling] = useState(false);
   const [diceRollToken, setDiceRollToken] = useState(0);
   const [pendingDiceValues, setPendingDiceValues] = useState<number[] | undefined>(undefined);
@@ -295,6 +298,7 @@ export const HostRoomPage = () => {
   const board = BOARD_DEFINITIONS[currentRoom.room.boardType];
   const selfPlayer = currentRoom.players.find((player) => player.userId === user?.id);
   const playerEntries = currentRoom.players.filter((player) => player.role === 'player');
+  const hostControlledPlayers = playerEntries.filter((player) => player.controlMode === 'host');
   const currentTurnPlayer = currentRoom.players.find((entry) => entry.userId === currentRoom.gameState.currentTurnPlayerId);
   const activeCard = currentRoom.gameState.activeCard;
   const localSpecialCard = specialFlow && (specialFlow.phase === 'entry-card' || specialFlow.phase === 'target-card')
@@ -349,6 +353,20 @@ export const HostRoomPage = () => {
       cell: currentRoom.gameState.perPlayerState[player.userId]?.currentCell ?? 1,
       color: player.tokenColor,
     }));
+  useEffect(() => {
+    if (!isCurrentUserHost) {
+      return;
+    }
+    const currentTurnHostControlled = currentTurnPlayer?.controlMode === 'host' ? currentTurnPlayer.userId : undefined;
+    const nextTarget = currentTurnHostControlled ?? hostControlledPlayers[0]?.userId;
+    if (!nextTarget) {
+      setHostRollTargetId(undefined);
+      return;
+    }
+    if (!hostRollTargetId || !hostControlledPlayers.some((player) => player.userId === hostRollTargetId)) {
+      setHostRollTargetId(nextTarget);
+    }
+  }, [currentTurnPlayer, hostControlledPlayers, hostRollTargetId, isCurrentUserHost]);
 
   const hostMoveSummary = !lastDiceRoll
     ? 'Ще немає кидків у цій сесії.'
@@ -611,6 +629,37 @@ export const HostRoomPage = () => {
                 </button>
               </div>
 
+              <div className="mt-4 hidden rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] p-3 lg:block">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--lila-text-muted)]">Host-controlled гравці (desktop)</p>
+                <p className="mt-1 text-xs text-[var(--lila-text-muted)]">Цих гравців ведучий додає сам і кидає за них кубики.</p>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    value={hostControlledDraftName}
+                    onChange={(event) => setHostControlledDraftName(event.target.value)}
+                    placeholder="Імʼя гравця"
+                    className="min-w-0 flex-1 rounded-xl border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-3 py-2 text-sm text-[var(--lila-text-primary)]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = hostControlledDraftName.trim();
+                      if (!name) {
+                        return;
+                      }
+                      void addHostControlledPlayer(name).then(() => setHostControlledDraftName(''));
+                    }}
+                    className="rounded-xl bg-[var(--lila-accent)] px-3 py-2 text-sm font-medium text-white"
+                  >
+                    Додати
+                  </button>
+                </div>
+                {hostControlledPlayers.length > 0 && (
+                  <p className="mt-2 text-xs text-[var(--lila-text-muted)]">
+                    Активні: {hostControlledPlayers.map((player) => player.displayName).join(', ')}
+                  </p>
+                )}
+              </div>
+
               <div className="mt-5 space-y-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-[var(--lila-text-muted)]">Режим кубиків кімнати</p>
@@ -787,7 +836,9 @@ export const HostRoomPage = () => {
               <div>
                 <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--lila-text-muted)]">Player Action</p>
                 <h3 className="text-lg font-semibold text-[var(--lila-text-primary)]">
-                  {isMyTurn ? 'Ваш хід' : `Хід: ${currentTurnPlayer?.displayName ?? '—'}`}
+                  {!isCurrentUserHost && isMyTurn
+                    ? 'Ваш хід'
+                    : `Хід: ${currentTurnPlayer?.displayName ?? '—'}`}
                 </h3>
               </div>
               {!isCurrentUserHost ? (
@@ -812,9 +863,48 @@ export const HostRoomPage = () => {
                   {isRolling ? 'Кидаємо…' : 'Кинути кубики'}
                 </button>
               ) : (
-                <span className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-4 py-2 text-xs font-medium text-[var(--lila-text-muted)]">
-                  Ведучий не кидає кубики
-                </span>
+                <div className="min-w-[280px] space-y-2 rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] p-3">
+                  <p className="text-xs font-semibold text-[var(--lila-text-primary)]">Host-controlled хід</p>
+                  {hostControlledPlayers.length === 0 ? (
+                    <p className="text-xs text-[var(--lila-text-muted)]">Додайте host-controlled гравця в адмінці.</p>
+                  ) : (
+                    <>
+                      <select
+                        value={hostRollTargetId}
+                        onChange={(event) => setHostRollTargetId(event.target.value)}
+                        className="w-full rounded-xl border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-3 py-2 text-sm text-[var(--lila-text-primary)]"
+                      >
+                        {hostControlledPlayers.map((player) => (
+                          <option key={player.userId} value={player.userId}>
+                            {player.displayName}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isRolling || !hostRollTargetId) {
+                            return;
+                          }
+                          setIsRolling(true);
+                          void rollDice(hostRollTargetId).finally(() => setIsRolling(false));
+                        }}
+                        disabled={
+                          !hostRollTargetId
+                          || currentRoom.room.status !== 'in_progress'
+                          || currentTurnPlayer?.userId !== hostRollTargetId
+                          || currentTurnPlayer?.controlMode !== 'host'
+                          || Boolean(animationMove)
+                          || Boolean(currentRoom.gameState.activeCard)
+                          || isRolling
+                        }
+                        className="w-full rounded-xl bg-[var(--lila-accent)] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isRolling ? 'Кидаємо…' : 'Кинути за обраного гравця'}
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
             </div>
             <p className="mt-2 text-sm text-[var(--lila-text-muted)]">
@@ -869,7 +959,7 @@ export const HostRoomPage = () => {
                         <p className="text-xs text-[var(--lila-text-muted)]">
                           {player.role === 'host'
                             ? `Ведучий · Без фішки · ${player.connectionStatus}`
-                            : `Гравець · Клітина ${playerState?.currentCell ?? 1} · ${player.connectionStatus}`}
+                            : `${player.controlMode === 'host' ? 'Host-controlled' : 'Self'} · Клітина ${playerState?.currentCell ?? 1} · ${player.connectionStatus}`}
                         </p>
                       </div>
                       <span
@@ -877,6 +967,11 @@ export const HostRoomPage = () => {
                         style={{ backgroundColor: player.tokenColor }}
                       />
                     </div>
+                    {player.role === 'player' && player.controlMode === 'host' && (
+                      <p className="mt-2 inline-flex rounded-full bg-[var(--lila-accent-soft)] px-2 py-0.5 text-[11px] text-[var(--lila-chip-active-text)]">
+                        Керується ведучим
+                      </p>
+                    )}
                   </li>
                 );
               })}
