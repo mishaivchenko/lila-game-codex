@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import snakeSpiritAsset from '../../assets/lila/snake-spirit.svg';
+import { BrandLogo } from '../../components/BrandLogo';
 
 interface IntroOverlayProps {
   visible: boolean;
@@ -42,13 +42,12 @@ export const IntroOverlay = ({ visible }: IntroOverlayProps) => {
           <motion.div
             className="relative flex flex-col items-center"
             initial={{ opacity: 0, y: 8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.52, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
+            animate={{ opacity: [0, 1, 1], y: [8, 0, -2], scale: [0.92, 1, 1.02] }}
+            transition={{ duration: 1.25, ease: [0.22, 1, 0.36, 1], times: [0, 0.46, 1] }}
           >
-            <img
-              src={snakeSpiritAsset}
+            <BrandLogo
               alt="Soulvio Lila"
-              className="h-20 w-20 rounded-full border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/88 p-3 shadow-[0_18px_48px_rgba(10,12,32,0.38)]"
+              className="h-24 w-24 rounded-full border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/88 p-2 shadow-[0_18px_48px_rgba(10,12,32,0.38)]"
             />
             <p className="mt-4 text-[12px] uppercase tracking-[0.34em] text-[var(--lila-text-muted)]">Soulvio Lila</p>
           </motion.div>

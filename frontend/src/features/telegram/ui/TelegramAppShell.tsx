@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { TelegramAuthProvider, type TelegramAuthContextValue } from '../auth/TelegramAuthContext';
@@ -29,6 +29,7 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
   const [authState, setAuthState] = useState<TelegramAuthContextValue>(() => createInitialState(telegramMode));
   const [syncBannerVisible, setSyncBannerVisible] = useState(false);
   const { fullscreenRequested, requestFullScreen } = useTelegramFullscreen();
+  const autoFullscreenRequestedRef = useRef(false);
   useViewportHeightFix(true);
 
   useEffect(() => {
@@ -60,6 +61,17 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
     }, 600);
     return () => window.clearTimeout(timer);
   }, [authState.isTelegramMode, authState.status, authState.token]);
+
+  useEffect(() => {
+    if (!telegramMode || fullscreenRequested || autoFullscreenRequestedRef.current) {
+      return;
+    }
+    autoFullscreenRequestedRef.current = true;
+    const timer = window.setTimeout(() => {
+      void requestFullScreen();
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [fullscreenRequested, requestFullScreen, telegramMode]);
 
   const bootstrapState = resolveAppBootstrapState(authState.status, authState.appStatus, Boolean(authState.token));
 

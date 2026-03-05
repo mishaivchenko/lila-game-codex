@@ -1,19 +1,14 @@
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import snakeSpiritAsset from '../../assets/lila/snake-spirit.svg';
+import { BrandLogo } from '../../components/BrandLogo';
 import { useTelegramAuth } from '../../features/telegram';
 import { playCardOpen } from '../../features/telegram/telegramHaptics';
 import { consumeTelegramStartParam } from '../../features/telegram/telegramWebApp';
 import { IntroOverlay } from './IntroOverlay';
 
-const INTRO_SEEN_KEY = 'lila:start-intro-seen:v1';
-
 const shouldShowIntro = (): boolean => {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-  return window.sessionStorage.getItem(INTRO_SEEN_KEY) !== '1';
+  return true;
 };
 
 export const StartPage = () => {
@@ -27,8 +22,7 @@ export const StartPage = () => {
     }
     const done = window.setTimeout(() => {
       setShowIntro(false);
-      window.sessionStorage.setItem(INTRO_SEEN_KEY, '1');
-    }, 1600);
+    }, 1750);
     return () => window.clearTimeout(done);
   }, [showIntro]);
 
@@ -81,10 +75,9 @@ export const StartPage = () => {
               }}
               aria-hidden="true"
             />
-            <img
-              src={snakeSpiritAsset}
+            <BrandLogo
               alt="Lila symbol"
-              className="relative h-20 w-20 rounded-full border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] p-3 shadow-[0_10px_22px_rgba(42,36,31,0.18)]"
+              className="relative h-20 w-20 rounded-full border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] p-2 shadow-[0_10px_22px_rgba(42,36,31,0.18)]"
             />
           </div>
 
