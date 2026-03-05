@@ -26,12 +26,6 @@ const roomStatusLabel: Record<'open' | 'in_progress' | 'paused' | 'finished', st
   finished: 'Завершена',
 };
 
-const diceModeLabel: Record<'classic' | 'fast' | 'triple', string> = {
-  classic: 'Класичний',
-  fast: 'Швидкий',
-  triple: 'Питання дня',
-};
-
 const ONLINE_CARD_TIMINGS_MS = {
   afterStepMove: 460,
   beforeSpecialEntryCard: 560,
@@ -72,6 +66,7 @@ export const HostRoomPage = () => {
     hostUpdateSettings,
     rollDice,
     addHostControlledPlayer,
+    hostSetPlayerCell,
     closeActiveCard,
     saveRoomNote,
     updatePlayerTokenColor,
@@ -89,6 +84,7 @@ export const HostRoomPage = () => {
   const [hostNoteStatus, setHostNoteStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [hostControlledDraftName, setHostControlledDraftName] = useState('');
   const [hostRollTargetId, setHostRollTargetId] = useState<string | undefined>(undefined);
+  const [hostMoveCellDraftByPlayer, setHostMoveCellDraftByPlayer] = useState<Record<string, number>>({});
   const [isRolling, setIsRolling] = useState(false);
   const [diceRollToken, setDiceRollToken] = useState(0);
   const [pendingDiceValues, setPendingDiceValues] = useState<number[] | undefined>(undefined);
@@ -289,6 +285,17 @@ export const HostRoomPage = () => {
       tokenPathCells,
     });
   }, [clearCardRevealTimer, currentRoom]);
+
+  useEffect(() => {
+    if (!currentRoom || currentRoom.room.status === 'in_progress') {
+      return;
+    }
+    setPendingDiceValues(undefined);
+    setPendingMovePlan(undefined);
+    setAnimationMove(undefined);
+    setSpecialFlow(undefined);
+    setAnimatedPlayerId(undefined);
+  }, [currentRoom?.room.status]);
 
   const beginPendingMoveAnimation = useCallback(() => {
     if (!pendingMovePlan) {
@@ -740,25 +747,9 @@ export const HostRoomPage = () => {
               </div>
 
               <div className="mt-5 space-y-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--lila-text-muted)]">Режим кубиків кімнати</p>
-                  <div className="mt-2 grid grid-cols-3 gap-2">
-                    {(['classic', 'fast', 'triple'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => void hostUpdateSettings({ diceMode: mode })}
-                        className={`min-h-[56px] rounded-2xl border px-2 py-2 text-center text-xs leading-tight sm:text-sm ${
-                          currentRoom.gameState.settings.diceMode === mode
-                            ? 'border-[var(--lila-accent)] bg-[var(--lila-chip-active-bg)] text-[var(--lila-chip-active-text)]'
-                            : 'border-[var(--lila-chip-border)] bg-[var(--lila-chip-bg)] text-[var(--lila-chip-text)]'
-                        }`}
-                      >
-                      {diceModeLabel[mode]}
-                    </button>
-                  ))}
+                <div className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-3 py-2 text-xs text-[var(--lila-text-muted)]">
+                  Онлайн-режим: тільки класичний кубик (1d6), щоб синхронізація ходу була стабільною.
                 </div>
-              </div>
 
               <button
                 type="button"
@@ -994,6 +985,37 @@ export const HostRoomPage = () => {
                       >
                         {isRolling ? 'Кидаємо…' : 'Кинути за обраного гравця'}
                       </button>
+                      <div className="mt-2 flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          max={board.maxCell}
+                          value={hostRollTargetId ? (hostMoveCellDraftByPlayer[hostRollTargetId] ?? 1) : 1}
+                          onChange={(event) => {
+                            const next = Number.parseInt(event.target.value, 10);
+                            if (!hostRollTargetId) {
+                              return;
+                            }
+                            setHostMoveCellDraftByPlayer((previous) => ({
+                              ...previous,
+                              [hostRollTargetId]: Number.isFinite(next) ? next : 1,
+                            }));
+                          }}
+                          className="min-w-0 flex-1 rounded-xl border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-3 py-2 text-sm text-[var(--lila-text-primary)]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!hostRollTargetId) {
+                              return;
+                            }
+                            void hostSetPlayerCell(hostRollTargetId, hostMoveCellDraftByPlayer[hostRollTargetId] ?? 1);
+                          }}
+                          className="rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] px-3 py-2 text-sm text-[var(--lila-text-primary)]"
+                        >
+                          Перемістити
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>
@@ -1063,6 +1085,36 @@ export const HostRoomPage = () => {
                       <p className="mt-2 inline-flex rounded-full bg-[var(--lila-accent-soft)] px-2 py-0.5 text-[11px] text-[var(--lila-chip-active-text)]">
                         Керується ведучим
                       </p>
+                    )}
+                    {isCurrentUserHost && player.role === 'player' && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          max={board.maxCell}
+                          value={hostMoveCellDraftByPlayer[player.userId] ?? (playerState?.currentCell ?? 1)}
+                          onChange={(event) => {
+                            const next = Number.parseInt(event.target.value, 10);
+                            setHostMoveCellDraftByPlayer((previous) => ({
+                              ...previous,
+                              [player.userId]: Number.isFinite(next) ? next : 1,
+                            }));
+                          }}
+                          className="min-w-0 flex-1 rounded-lg border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-2 py-1.5 text-xs text-[var(--lila-text-primary)]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void hostSetPlayerCell(
+                              player.userId,
+                              hostMoveCellDraftByPlayer[player.userId] ?? (playerState?.currentCell ?? 1),
+                            );
+                          }}
+                          className="rounded-lg border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] px-2 py-1.5 text-xs text-[var(--lila-text-primary)]"
+                        >
+                          Set cell
+                        </button>
+                      </div>
                     )}
                   </li>
                 );

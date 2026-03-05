@@ -494,7 +494,7 @@ describe('Telegram auth + rooms', () => {
       .set('Authorization', `Bearer ${hostToken}`)
       .send({ diceMode: 'triple', hostCanPause: false });
     expect(hostUpdate.status).toBe(200);
-    expect(hostUpdate.body.gameState.settings.diceMode).toBe('triple');
+    expect(hostUpdate.body.gameState.settings.diceMode).toBe('classic');
     expect(hostUpdate.body.gameState.settings.hostCanPause).toBe(false);
   });
 

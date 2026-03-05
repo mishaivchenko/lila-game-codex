@@ -1039,9 +1039,11 @@ export const updateRoomSettings = async ({
     if (room.hostUserId !== hostUserId) {
       throw new Error('FORBIDDEN');
     }
+    const { diceMode: _ignoredDiceMode, ...restPatch } = patch;
     room.gameState.settings = {
       ...room.gameState.settings,
-      ...patch,
+      ...restPatch,
+      diceMode: 'classic',
     };
     touchRoom(room);
     return toSnapshot(room);
@@ -1153,7 +1155,7 @@ export const rollDiceForCurrentPlayer = async ({
         throw new Error('PLAYER_ALREADY_FINISHED');
       }
     const effectiveDiceMode = resolveEffectiveRoomDiceMode(
-      room.gameState.settings.diceMode,
+      'classic',
       room.boardType,
       playerState.currentCell,
     );
@@ -1161,11 +1163,7 @@ export const rollDiceForCurrentPlayer = async ({
     const { fromCell, toCell, snakeOrArrow } = nextMoveFromDice(room.boardType, playerState.currentCell, dice);
     playerState.currentCell = toCell;
     const finishCell = resolveFinishCell(room.boardType);
-    const finalRowStart = resolveRowStart(finishCell);
-    const reachedFinalRow = toCell >= finalRowStart && toCell <= transitionsByBoard[room.boardType].maxCell;
-    const finished = room.gameState.settings.diceMode === 'triple'
-      ? reachedFinalRow
-      : toCell === finishCell;
+    const finished = toCell === finishCell;
     if (finished) {
       playerState.status = 'finished';
     }
@@ -1200,6 +1198,56 @@ export const rollDiceForCurrentPlayer = async ({
       }
       return { snapshot: storeInMemory(updated), move: result.move };
     });
+  });
+};
+
+export const hostSetPlayerCell = async ({
+  roomId,
+  hostUserId,
+  playerUserId,
+  targetCell,
+}: {
+  roomId: string;
+  hostUserId: string;
+  playerUserId: string;
+  targetCell: number;
+}): Promise<RoomSnapshot> => {
+  const apply = (room: GameRoom): RoomSnapshot => {
+    if (!isRoomHost(room, hostUserId)) {
+      throw new Error('FORBIDDEN');
+    }
+    const player = ensurePlayerInRoom(room, playerUserId);
+    if (player.role !== 'player') {
+      throw new Error('INVALID_PLAYER');
+    }
+    const boardMaxCell = transitionsByBoard[room.boardType].maxCell;
+    const nextCell = Math.min(Math.max(targetCell, 1), boardMaxCell);
+    const state = room.gameState.perPlayerState[playerUserId];
+    if (!state) {
+      throw new Error('PLAYER_NOT_FOUND');
+    }
+    state.currentCell = nextCell;
+    const finishCell = resolveFinishCell(room.boardType);
+    state.status = nextCell >= finishCell ? 'finished' : 'in_progress';
+    if (room.gameState.activeCard?.playerUserId === playerUserId) {
+      room.gameState.activeCard = null;
+    }
+    touchRoom(room);
+    return toSnapshot(room);
+  };
+
+  if (!isPostgresEnabled()) {
+    return apply(ensureRoom(roomId));
+  }
+
+  return withDbTransaction(async (client) => {
+    const room = await queryRoomByIdDb(client, roomId, true);
+    if (!room) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+    const snapshot = apply(room);
+    await persistRoomGameStateDb(client, room);
+    return snapshot;
   });
 };
 

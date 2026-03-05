@@ -196,6 +196,18 @@ export const addHostControlledPlayerApi = async (
 ): Promise<RoomSnapshot> =>
   parseRoomRequest(`/api/rooms/${encodeURIComponent(roomId)}/players`, { method: 'POST', body: JSON.stringify(payload) }, token);
 
+export const hostSetPlayerCellApi = async (
+  token: string,
+  roomId: string,
+  playerId: string,
+  payload: { cell: number },
+): Promise<RoomSnapshot> =>
+  parseRoomRequest(
+    `/api/rooms/${encodeURIComponent(roomId)}/players/${encodeURIComponent(playerId)}/cell`,
+    { method: 'PATCH', body: JSON.stringify(payload) },
+    token,
+  );
+
 export type HostRoomSocket = Socket<
   {
     roomStateUpdated: (snapshot: RoomSnapshot) => void;

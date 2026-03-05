@@ -11,6 +11,7 @@ import type {
 import { playDiceRoll } from '../telegramHaptics';
 import {
   addHostControlledPlayerApi,
+  hostSetPlayerCellApi,
   closeRoomCardApi,
   createRoomApi,
   createHostRoomSocket,
@@ -49,6 +50,7 @@ interface TelegramRoomsContextValue {
   hostUpdateSettings: (patch: Partial<RoomSettings>) => Promise<void>;
   rollDice: (targetPlayerId?: string) => Promise<void>;
   addHostControlledPlayer: (name: string) => Promise<void>;
+  hostSetPlayerCell: (playerId: string, cell: number) => Promise<void>;
   closeActiveCard: () => Promise<void>;
   saveRoomNote: (payload: { cellNumber: number; note: string; scope: RoomNoteScope; targetPlayerId?: string }) => Promise<void>;
   updatePlayerTokenColor: (tokenColor: string) => Promise<void>;
@@ -71,6 +73,7 @@ const TelegramRoomsContext = createContext<TelegramRoomsContextValue>({
   hostUpdateSettings: async () => {},
   rollDice: async () => {},
   addHostControlledPlayer: async () => {},
+  hostSetPlayerCell: async () => {},
   closeActiveCard: async () => {},
   saveRoomNote: async () => {},
   updatePlayerTokenColor: async () => {},
@@ -428,6 +431,20 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
     }
   };
 
+  const hostSetPlayerCell = async (playerId: string, cell: number) => {
+    if (!authToken || !currentRoom || currentRoom.room.hostUserId !== authUserId) {
+      return;
+    }
+    const normalizedCell = Math.max(1, Math.round(cell));
+    try {
+      const snapshot = await hostSetPlayerCellApi(authToken, currentRoom.room.id, playerId, { cell: normalizedCell });
+      setSnapshotSafely(snapshot);
+      setError(undefined);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Не вдалося перемістити фішку гравця.');
+    }
+  };
+
   const closeActiveCard = async () => {
     if (!authToken || !currentRoom) {
       return;
@@ -515,6 +532,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       hostUpdateSettings,
       rollDice,
       addHostControlledPlayer,
+      hostSetPlayerCell,
       closeActiveCard,
       saveRoomNote,
       updatePlayerTokenColor,
@@ -544,6 +562,7 @@ export const TelegramRoomsProvider = ({ authToken, authUserId, children }: Teleg
       refreshMyRooms,
       rollDice,
       saveRoomNote,
+      hostSetPlayerCell,
       updatePlayerTokenColor,
     ],
   );

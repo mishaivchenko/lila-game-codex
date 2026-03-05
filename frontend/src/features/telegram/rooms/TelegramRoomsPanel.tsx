@@ -20,8 +20,6 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
     joinRoomByCode,
     loadRoomById,
     connectionState,
-    myRooms,
-    refreshMyRooms,
   } = useTelegramRooms();
   const [roomCodeInput, setRoomCodeInput] = useState('');
   const [autoJoinHandled, setAutoJoinHandled] = useState(false);
@@ -72,13 +70,6 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
       }
     });
   }, [autoJoinHandled, backendUnavailable, initialRoomId, loadRoomById, navigate, token]);
-
-  useEffect(() => {
-    if (!token || backendUnavailable) {
-      return;
-    }
-    void refreshMyRooms();
-  }, [backendUnavailable, token]);
 
   if (!isTelegramMode) {
     return null;
@@ -200,29 +191,6 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
           >
             Відкрити кімнату
           </button>
-        </div>
-      )}
-
-      {myRooms.length > 0 && (
-        <div className="mt-3 rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-3 py-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lila-text-muted)]">Збережені групові сесії</p>
-          <ul className="mt-2 space-y-2">
-            {myRooms.slice(0, 5).map((roomSnapshot) => (
-              <li key={roomSnapshot.room.id} className="flex items-center justify-between gap-2 rounded-lg bg-[var(--lila-surface)] px-2 py-2">
-                <div>
-                  <p className="text-xs font-semibold text-[var(--lila-text-primary)]">#{roomSnapshot.room.code}</p>
-                  <p className="text-[11px] text-[var(--lila-text-muted)]">{roomSnapshot.room.status}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/host-room/${roomSnapshot.room.id}`)}
-                  className="rounded-lg border border-[var(--lila-border-soft)] px-2 py-1 text-xs text-[var(--lila-text-primary)]"
-                >
-                  Відкрити
-                </button>
-              </li>
-            ))}
-          </ul>
         </div>
       )}
 

@@ -12,6 +12,7 @@ import {
   joinRoom,
   listRoomsForUser,
   recordRoomNote,
+  hostSetPlayerCell,
   setRoomStatus,
   startRoom,
   updateRoomPlayerTokenColor,
@@ -47,6 +48,9 @@ const roomRollSchema = z.object({
 });
 const addHostControlledPlayerSchema = z.object({
   name: z.string().min(1).max(80),
+});
+const hostSetPlayerCellSchema = z.object({
+  cell: z.number().int().min(1),
 });
 
 const resolveParticipantLabel = (user: NonNullable<AuthenticatedRequest['authUser']>): string =>
@@ -368,6 +372,38 @@ roomsRouter.post('/:roomId/players', requireAuth, (req: AuthenticatedRequest, re
       }
       if (code === 'ROOM_FINISHED') {
         return res.status(409).json({ ok: false, error: 'Room is finished' });
+      }
+      return res.status(404).json({ ok: false, error: 'Room not found' });
+    }
+  })();
+});
+
+roomsRouter.patch('/:roomId/players/:playerId/cell', requireAuth, (req: AuthenticatedRequest, res) => {
+  void (async () => {
+    if (!req.authUser) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    const parsed = hostSetPlayerCellSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ ok: false, error: 'Invalid payload' });
+    }
+    const roomId = Array.isArray(req.params.roomId) ? req.params.roomId[0] : req.params.roomId;
+    const playerId = Array.isArray(req.params.playerId) ? req.params.playerId[0] : req.params.playerId;
+    try {
+      const snapshot = await hostSetPlayerCell({
+        roomId,
+        hostUserId: req.authUser.id,
+        playerUserId: playerId,
+        targetCell: parsed.data.cell,
+      });
+      return res.status(200).json({ ok: true, ...snapshot });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : '';
+      if (code === 'FORBIDDEN') {
+        return res.status(403).json({ ok: false, error: 'Only host can move players' });
+      }
+      if (code === 'INVALID_PLAYER' || code === 'PLAYER_NOT_FOUND') {
+        return res.status(400).json({ ok: false, error: 'Invalid player' });
       }
       return res.status(404).json({ ok: false, error: 'Room not found' });
     }

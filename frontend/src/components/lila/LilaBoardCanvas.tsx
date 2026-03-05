@@ -250,7 +250,14 @@ export const LilaBoardCanvas = ({
     if (!animationMove) {
       processedAnimationIdRef.current = null;
       if (!holdTokenSync) {
-        setTokenCell(currentCell);
+        setTokenCell((previous) => {
+          // Prevent visual jump on server-synced multiplayer updates:
+          // when currentCell leaps far, the dedicated animation pipeline should drive token movement.
+          if (Math.abs(currentCell - previous) > 1) {
+            return previous;
+          }
+          return currentCell;
+        });
       }
       setActivePath(undefined);
       setTokenPathPosition(undefined);
