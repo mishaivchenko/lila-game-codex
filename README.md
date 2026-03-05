@@ -60,9 +60,14 @@ It should:
 
 ## Main Flows
 ### 0. Entry Choice (Player vs Host)
-After bootstrap, the app opens a short branded intro overlay (`~1.6s`) and then the new Start Screen:
+After bootstrap, the app opens a branded intro overlay (`~0.8s`) and then transitions through auth sync (if needed) into the Start Screen:
 - **Одиночна гра** (`/single`) for solo/local journey flow.
 - **Гра з іншими** (`/multiplayer`) for online shared journey flow.
+
+Boot sequence:
+- `BOOT_SPLASH` → brand logo transition
+- `BOOT_AUTH_LOADING` → subtle Telegram/backend sync indicator
+- `BOOT_READY` (or `BOOT_OFFLINE`) → mode selection screen
 
 Deep links stay compatible:
 - Telegram `start_param` like `room_<CODE>` or `roomid_<UUID>` automatically routes into multiplayer join flow.
@@ -96,6 +101,10 @@ Room invites and management now run through Telegram bot deep links:
 - plain browser open is treated as fallback, Telegram is the primary entry
 
 Optional bot webhook commands (for admin/operator flows):
+- `/start` friendly welcome + Mini App CTA (shorter on repeated calls)
+- `/help` command reference (player-first; host section shown only when allowed)
+- `/player` quick guide for player flow
+- `/host` host-only operations help
 - `/start room_<CODE>` open room entry
 - `/myrooms` list recent rooms for linked account
 - `/room CODE` room status snapshot

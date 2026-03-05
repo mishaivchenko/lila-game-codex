@@ -1,15 +1,20 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { BrandLogo } from '../../components/BrandLogo';
+import type { StartBootPhase } from './appBootState';
 
 interface IntroOverlayProps {
   visible: boolean;
+  phase: StartBootPhase;
+  loadingLabel?: string;
 }
 
-export const IntroOverlay = ({ visible }: IntroOverlayProps) => {
+export const IntroOverlay = ({ visible, phase, loadingLabel }: IntroOverlayProps) => {
+  const isAuthLoading = phase === 'BOOT_AUTH_LOADING';
   return (
     <AnimatePresence>
       {visible && (
         <motion.div
+          data-testid="start-intro-overlay"
           className="fixed inset-0 z-[120] flex items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -50,6 +55,21 @@ export const IntroOverlay = ({ visible }: IntroOverlayProps) => {
               className="h-24 w-24 rounded-full border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/88 p-2 shadow-[0_18px_48px_rgba(10,12,32,0.38)]"
             />
             <p className="mt-4 text-[12px] uppercase tracking-[0.34em] text-[var(--lila-text-muted)]">Soulvio Lila</p>
+            {isAuthLoading && (
+              <div className="mt-4 w-52">
+                <p className="text-center text-xs text-[var(--lila-text-muted)]" data-testid="start-intro-loading-label">
+                  {loadingLabel ?? 'Синхронізуємо подорож…'}
+                </p>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--lila-surface-muted)]/80">
+                  <motion.div
+                    className="h-full bg-[var(--lila-accent)]"
+                    initial={{ x: '-100%' }}
+                    animate={{ x: '100%' }}
+                    transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.1, ease: 'linear' }}
+                  />
+                </div>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}
