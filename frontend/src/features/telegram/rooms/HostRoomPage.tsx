@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { BOARD_DEFINITIONS } from '../../../content/boards';
@@ -198,7 +198,7 @@ export const HostRoomPage = () => {
     });
   }, [currentRoom, isCurrentUserHost, selectedHostNotesPlayerId]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!currentRoom) {
       processedMoveKeyRef.current = undefined;
       processedMoveCountRef.current = 0;
@@ -207,6 +207,19 @@ export const HostRoomPage = () => {
       setSpecialFlow(undefined);
       setPendingDiceValues(undefined);
       setPendingMovePlan(undefined);
+      setIsFlowCardReady(true);
+      clearCardRevealTimer();
+      lastTransitionEntryCellRef.current = undefined;
+      return;
+    }
+    if (currentRoom.room.status !== 'in_progress') {
+      processedMoveCountRef.current = currentRoom.gameState.moveHistory.length;
+      processedMoveKeyRef.current = undefined;
+      setPendingDiceValues(undefined);
+      setPendingMovePlan(undefined);
+      setAnimationMove(undefined);
+      setSpecialFlow(undefined);
+      setAnimatedPlayerId(undefined);
       setIsFlowCardReady(true);
       clearCardRevealTimer();
       lastTransitionEntryCellRef.current = undefined;
@@ -298,6 +311,11 @@ export const HostRoomPage = () => {
   }, [currentRoom?.room.status]);
 
   const beginPendingMoveAnimation = useCallback(() => {
+    if (currentRoom?.room.status !== 'in_progress') {
+      setPendingMovePlan(undefined);
+      setPendingDiceValues(undefined);
+      return;
+    }
     if (!pendingMovePlan) {
       return;
     }
@@ -332,7 +350,7 @@ export const HostRoomPage = () => {
       tokenPathCells: pendingMovePlan.tokenPathCells,
     });
     setPendingMovePlan(undefined);
-  }, [pendingMovePlan]);
+  }, [currentRoom?.room.status, pendingMovePlan]);
 
   const handleDiceAnimationFinished = useCallback(() => {
     setPendingDiceValues(undefined);
@@ -461,6 +479,12 @@ export const HostRoomPage = () => {
   const joinLink = botInviteUrl;
   const hostNotesPlayers = currentRoom.players.filter((player) => player.role === 'player');
   const hostPrivateNote = selectedHostNotesPlayerId ? (hostPrivateNotesDraftByPlayer[selectedHostNotesPlayerId] ?? '') : '';
+  const hostPrivateSavedNotes = hostNotesPlayers
+    .map((player) => ({
+      player,
+      text: currentRoom.gameState.notes.hostByPlayerId?.[player.userId]?.trim() ?? '',
+    }))
+    .filter((item) => item.text.length > 0);
   const primaryTokenPlayer = animatedPlayerId
     ? playerEntries.find((player) => player.userId === animatedPlayerId)
     : (isCurrentUserHost
@@ -850,6 +874,21 @@ export const HostRoomPage = () => {
                     {hostNoteStatus === 'error' && (
                       <p className="mt-2 text-xs text-rose-700">Не вдалося зберегти нотатку.</p>
                     )}
+                    <div className="mt-3 rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-2">
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--lila-text-muted)]">Збережені нотатки</p>
+                      {hostPrivateSavedNotes.length === 0 ? (
+                        <p className="mt-1 text-xs text-[var(--lila-text-muted)]">Поки немає збережених нотаток.</p>
+                      ) : (
+                        <ul className="mt-1 space-y-1">
+                          {hostPrivateSavedNotes.map(({ player, text }) => (
+                            <li key={player.userId} className="text-xs text-[var(--lila-text-primary)]">
+                              <span className="font-semibold">{player.displayName}:</span>{' '}
+                              <span className="text-[var(--lila-text-muted)]">{text}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <p className="mt-2 text-xs text-[var(--lila-text-muted)]">Зʼявиться, коли в кімнаті буде хоча б один гравець.</p>
