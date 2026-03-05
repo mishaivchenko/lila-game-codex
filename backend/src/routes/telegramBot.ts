@@ -2,8 +2,18 @@ import { Router, type Request, type Response } from 'express';
 import { createHostRoom, getRoomByCode, listRoomsForUser, setRoomStatus } from '../store/roomsStore.js';
 import { getUserByTelegramId } from '../store/usersStore.js';
 import { sendBotMessage } from '../lib/telegramBotApi.js';
+import {
+  buildHelpMessage,
+  buildHostHelpMessage,
+  buildHostOnlyGuardMessage,
+  buildPlayerHelpMessage,
+  buildRoomHelpText,
+  buildStartMessage,
+  buildUnknownCommandMessage,
+} from '../lib/telegramBotCopy.js';
 
 const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME ?? 'soulviobot';
+const startedChats = new Set<number>();
 
 interface TelegramMessage {
   message_id: number;
@@ -31,11 +41,6 @@ const parseCommand = (text?: string): { command?: string; args: string[] } => {
 
 const buildMiniAppUrl = (startParam: string): string =>
   `https://t.me/${BOT_USERNAME}?startapp=${encodeURIComponent(startParam)}`;
-
-const buildRoomHelpText = (roomCode: string): string => [
-  `Кімната <b>${roomCode}</b>`,
-  'Щоб приєднатися до сесії, відкрийте Mini App кнопкою нижче.',
-].join('\n');
 
 const UUID_V4_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -76,6 +81,7 @@ const processWebhook = (req: Request, res: Response) => {
 
     const fromTelegramId = message.from?.id ? String(message.from.id) : undefined;
     const appUser = fromTelegramId ? await getUserByTelegramId(fromTelegramId) : undefined;
+    const canHost = Boolean(appUser?.isAdmin || appUser?.isSuperAdmin);
     const { command, args } = parseCommand(message.text);
 
     try {
@@ -91,17 +97,16 @@ const processWebhook = (req: Request, res: Response) => {
             },
           });
         } else {
+          const isRepeatStart = startedChats.has(message.chat.id);
+          startedChats.add(message.chat.id);
+          const displayName = appUser?.displayName ?? message.from?.first_name;
           await sendBotMessage({
             chatId: message.chat.id,
-            text: [
-              'Ласкаво просимо до Lila Mini App.',
-              'Команди:',
-              '/myrooms — мої кімнати',
-              '/newroom [full|short] — створити кімнату (для ведучого)',
-              '/join CODE — кнопка входу в кімнату',
-              '/room CODE — статус кімнати',
-              '/pause CODE / /resume CODE / /finish CODE — для ведучого',
-            ].join('\n'),
+            text: buildStartMessage({
+              isRepeat: isRepeatStart,
+              canHost,
+              displayName,
+            }),
             replyMarkup: {
               inline_keyboard: [[{ text: 'Відкрити Mini App', url: buildMiniAppUrl('home') }]],
             },
@@ -110,13 +115,37 @@ const processWebhook = (req: Request, res: Response) => {
         return res.status(200).json({ ok: true });
       }
 
+      if (command === 'help') {
+        await sendBotMessage({
+          chatId: message.chat.id,
+          text: buildHelpMessage({ canHost }),
+        });
+        return res.status(200).json({ ok: true });
+      }
+
+      if (command === 'player') {
+        await sendBotMessage({
+          chatId: message.chat.id,
+          text: buildPlayerHelpMessage(),
+        });
+        return res.status(200).json({ ok: true });
+      }
+
+      if (command === 'host') {
+        await sendBotMessage({
+          chatId: message.chat.id,
+          text: buildHostHelpMessage({ canHost }),
+        });
+        return res.status(200).json({ ok: true });
+      }
+
       if (command === 'newroom') {
         if (!appUser) {
           await sendBotMessage({ chatId: message.chat.id, text: 'Спочатку увійдіть у Mini App, щоб привʼязати акаунт.' });
           return res.status(200).json({ ok: true });
         }
-        if (!appUser.isAdmin && !appUser.isSuperAdmin) {
-          await sendBotMessage({ chatId: message.chat.id, text: 'Створювати кімнати може лише ведучий (admin).' });
+        if (!canHost) {
+          await sendBotMessage({ chatId: message.chat.id, text: buildHostOnlyGuardMessage('newroom') });
           return res.status(200).json({ ok: true });
         }
         const boardType = (args[0] ?? '').toLowerCase() === 'short' ? 'short' : 'full';
@@ -248,13 +277,20 @@ const processWebhook = (req: Request, res: Response) => {
           return res.status(200).json({ ok: true });
         }
         if (room.room.hostUserId !== appUser.id && !appUser.isSuperAdmin) {
-          await sendBotMessage({ chatId: message.chat.id, text: 'Лише ведучий кімнати може виконати цю команду.' });
+          await sendBotMessage({ chatId: message.chat.id, text: buildHostOnlyGuardMessage(command) });
           return res.status(200).json({ ok: true });
         }
         const targetStatus = command === 'pause' ? 'paused' : command === 'resume' ? 'in_progress' : 'finished';
         await setRoomStatus(room.room.id, room.room.hostUserId, targetStatus);
         await sendBotMessage({ chatId: message.chat.id, text: `Кімнату #${room.room.code} оновлено: ${targetStatus}` });
         return res.status(200).json({ ok: true });
+      }
+
+      if (command) {
+        await sendBotMessage({
+          chatId: message.chat.id,
+          text: buildUnknownCommandMessage(command),
+        });
       }
 
       return res.status(200).json({ ok: true, ignored: true });
