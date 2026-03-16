@@ -20,6 +20,7 @@ describe('GameSetupPage', () => {
       </GameProvider>,
     );
 
+    expect(screen.getByRole('main').className).toContain('lila-page-shell');
     const user = userEvent.setup();
     const requestField = screen.getAllByLabelText('Мій запит')[0];
     await user.type(requestField, 'Хочу зрозуміти свої емоції');

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { createRepositories } from '../repositories';
 import { AppearanceCustomizationPanel } from '../components/AppearanceCustomizationPanel';
+import { CanvaWingAccent } from '../components/CanvaWingAccent';
+import { createRepositories } from '../repositories';
 
 const repositories = createRepositories();
 
@@ -26,13 +27,22 @@ export const SettingsPage = () => {
   };
 
   return (
-    <main className="mx-auto min-h-screen max-w-lg bg-[var(--lila-bg-main)] px-4 py-5">
-      <div className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4 shadow-[0_12px_30px_rgba(98,76,62,0.1)]">
-        <h1 className="text-xl font-semibold">Налаштування подорожі</h1>
-        <p className="mt-2 text-sm text-stone-600">Глобальні параметри зберігаються локально в IndexedDB.</p>
+    <main className="lila-page-shell lila-page-shell--center">
+      <div className="lila-panel mx-auto w-full max-w-3xl px-5 py-5 sm:px-6">
+        <CanvaWingAccent className="pointer-events-none absolute -right-10 top-0 hidden h-32 w-48 text-[color:rgba(90,72,135,0.18)] md:block" />
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="lila-utility-label">Settings</p>
+            <h1 className="mt-3 text-3xl font-black tracking-[-0.04em] text-[var(--lila-text-primary)]">Налаштування подорожі</h1>
+            <p className="mt-3 text-sm text-[var(--lila-text-muted)]">Глобальні параметри зберігаються локально в IndexedDB.</p>
+          </div>
+          <Link className="lila-secondary-button px-4 py-2 text-sm font-medium" to="/game">
+            До гри
+          </Link>
+        </div>
 
-        <div className="mt-4 space-y-2 text-sm text-stone-700">
-          <label className="flex items-center justify-between rounded-xl border border-stone-200 p-3">
+        <div className="mt-6 grid gap-3 text-sm text-[var(--lila-text-primary)] sm:grid-cols-2">
+          <label className="lila-list-card flex items-center justify-between px-4 py-4">
             Звук
             <input
               type="checkbox"
@@ -44,7 +54,7 @@ export const SettingsPage = () => {
               }}
             />
           </label>
-          <label className="flex items-center justify-between rounded-xl border border-stone-200 p-3">
+          <label className="lila-list-card flex items-center justify-between px-4 py-4">
             Музика
             <input
               type="checkbox"
@@ -59,9 +69,6 @@ export const SettingsPage = () => {
         </div>
 
         <AppearanceCustomizationPanel className="mt-5" defaultExpanded title="Вигляд і анімації" />
-        <Link className="mt-4 inline-block text-sm text-[#9b6d57]" to="/game">
-          Повернутися до гри
-        </Link>
       </div>
     </main>
   );

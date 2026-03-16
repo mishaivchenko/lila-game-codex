@@ -21,19 +21,20 @@ export const DeepRequestDialog = ({
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#1f1730]/55 p-4 backdrop-blur-[6px]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="w-full max-w-lg rounded-3xl bg-white p-4 shadow-xl"
+        className="lila-panel w-full max-w-xl p-5"
         initial={{ opacity: 0, y: 16, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 10, scale: 0.99 }}
       >
-        <h3 className="text-lg font-semibold text-stone-900">Мій запит</h3>
-        <p className="mt-2 text-sm text-stone-600">
+        <p className="lila-utility-label">Deep Entry</p>
+        <h3 className="mt-2 text-2xl font-semibold text-[var(--lila-text-primary)]">Мій запит</h3>
+        <p className="mt-3 text-sm leading-6 text-[var(--lila-text-muted)]">
           Ще не 6. Уточніть намір і киньте кубик знову.
         </p>
         <textarea
@@ -42,20 +43,20 @@ export const DeepRequestDialog = ({
           placeholder={
             'Сформулюй його чітко за формулою:\nПотреба + Питання\n(“Хочу відчувати гармонію у стосунках” +\n“Що мені заважає це відчувати?”)'
           }
-          className="mt-3 min-h-32 w-full rounded-2xl border border-stone-200 px-3 py-3 text-sm text-stone-700 outline-none focus:border-[#d6b29c]"
+          className="lila-textarea mt-4 min-h-32 w-full px-4 py-3 text-sm leading-6 text-[var(--lila-text-primary)]"
         />
         <div className="mt-3 flex gap-2">
           <button
             type="button"
             onClick={onSave}
-            className="flex-1 rounded-xl bg-[var(--lila-accent)] px-3 py-2.5 text-sm font-medium text-white"
+            className="lila-primary-button flex-1 px-4 py-3 text-sm font-semibold"
           >
             Зберегти намір
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-stone-300 px-3 py-2.5 text-sm text-stone-700"
+            className="lila-secondary-button px-4 py-3 text-sm font-medium"
           >
             Закрити
           </button>
@@ -64,4 +65,3 @@ export const DeepRequestDialog = ({
     </motion.div>
   );
 };
-

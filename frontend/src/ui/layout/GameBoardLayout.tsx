@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { CanvaWingAccent } from '../../components/CanvaWingAccent';
 import { useBoardTheme } from '../../theme';
 
 interface GameBoardLayoutProps {
@@ -18,23 +19,25 @@ export const GameBoardLayout = ({
 
   return (
     <main
-      className="mx-auto min-h-screen w-full bg-[var(--lila-bg-main)] px-2 pb-5 pt-2 sm:px-3"
+      className="lila-page-shell"
+      data-testid="game-board-layout"
       style={{ maxWidth: `${theme.layout.pageMaxWidthPx}px` }}
     >
-      <div className="space-y-2.5">
-        <section className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 p-2.5 shadow-[0_6px_20px_rgba(98,76,62,0.08)]">
+      <div className="grid min-h-0 gap-3 xl:grid-cols-[minmax(0,1.62fr)_360px] xl:grid-rows-[auto_minmax(0,1fr)]">
+        <section className="lila-panel px-4 py-4 sm:px-5 xl:col-span-2">
           {header}
         </section>
 
         <section
-          className="relative overflow-hidden rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 shadow-[0_16px_36px_rgba(98,76,62,0.14)]"
+          className="lila-panel min-h-[48vh] min-w-0 sm:min-h-[56vh] xl:min-h-0"
           style={{ padding: `${theme.layout.boardPanelPaddingPx}px` }}
         >
+          <CanvaWingAccent className="pointer-events-none absolute -right-10 top-0 hidden h-32 w-48 text-[color:rgba(90,72,135,0.16)] md:block" />
           {board}
         </section>
 
         <section
-          className="rounded-2xl p-2"
+          className="lila-panel-muted min-h-0 px-3 py-3 sm:px-4 xl:overflow-y-auto"
           style={{
             background: theme.layout.floatingControlsBackground,
             border: `1px solid ${theme.layout.floatingControlsBorder}`,
@@ -44,7 +47,7 @@ export const GameBoardLayout = ({
           {controls}
         </section>
         {sideContent && (
-          <section className="space-y-3">
+          <section className="min-h-0 xl:col-span-2">
             {sideContent}
           </section>
         )}

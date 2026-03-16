@@ -48,6 +48,7 @@ describe('StartPage', () => {
     );
 
     finishIntro();
+    expect(screen.getByRole('main').className).toContain('lila-page-shell');
     expect(screen.getByRole('button', { name: /одиночна гра/i })).not.toBeNull();
     expect(screen.getByRole('button', { name: /гра з іншими/i })).not.toBeNull();
   });

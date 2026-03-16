@@ -40,8 +40,8 @@
   --lila-font-heading: var(--font-heading);
   --lila-font-ui: var(--font-accent);
 
-  --lila-font-size-body: 15.5px;
-  --lila-line-height-body: 1.62;
-  --lila-line-height-heading: 1.28;
-  --lila-letter-spacing-heading: 0.01em;
+  --lila-font-size-body: 15px;
+  --lila-line-height-body: 1.56;
+  --lila-line-height-heading: 1.08;
+  --lila-letter-spacing-heading: -0.035em;
 }

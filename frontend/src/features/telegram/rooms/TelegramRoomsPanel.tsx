@@ -34,8 +34,16 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
   );
   const flowOptions = useMemo(
     () => [
-      { id: 'player' as const, label: 'Я гравець', caption: 'Приєднатися до вже створеної кімнати та кидати власний кубик.' },
-      { id: 'host' as const, label: 'Я ведучий', caption: 'Створювати кімнати, ставити гру на паузу та вести групу.' },
+      {
+        id: 'player' as const,
+        label: 'Я гравець',
+        caption: 'Приєднатися до вже створеної кімнати та кидати власний кубик.',
+      },
+      {
+        id: 'host' as const,
+        label: 'Я ведучий',
+        caption: 'Створювати кімнати, ставити гру на паузу та вести групу.',
+      },
     ],
     [],
   );
@@ -88,19 +96,27 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
   };
 
   return (
-    <section className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 p-4 shadow-[0_12px_28px_rgba(89,66,54,0.12)]">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lila-text-muted)]">Host Room Online</p>
-      <h3 className="mt-1 text-base font-semibold text-[var(--lila-text-primary)]">Спільна подорож</h3>
-      <p className="mt-1 text-xs text-[var(--lila-text-muted)]">
-        Хост керує простором, але кожен гравець кидає власний кубик.
-      </p>
-      {backendUnavailable && (
-        <p className="mt-2 rounded-xl border border-amber-300/70 bg-amber-50/90 px-3 py-2 text-xs text-amber-900">
-          Host Room потребує backend-синхронізації. Зараз сервер недоступний.
-        </p>
-      )}
+    <section className="lila-panel-muted p-4 sm:p-5" data-testid="telegram-rooms-panel">
+      <div className="flex flex-col gap-3 border-b border-[var(--lila-border-soft)]/70 pb-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="lila-utility-label">Host Room Online</p>
+            <h3 className="mt-2 text-xl font-semibold text-[var(--lila-text-primary)]">Спільна подорож</h3>
+          </div>
+          <p className="max-w-md text-sm leading-6 text-[var(--lila-text-muted)]">
+            Хост тримає простір, але кожен гравець зберігає власний ритм і власний кубик. Весь flow лишається компактним і
+            Telegram-friendly.
+          </p>
+        </div>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {backendUnavailable && (
+          <p className="rounded-[20px] border border-amber-300/70 bg-amber-50/90 px-4 py-3 text-sm leading-6 text-amber-900">
+            Host Room потребує backend-синхронізації. Зараз сервер недоступний.
+          </p>
+        )}
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {flowOptions.map((option) => {
           const active = selectedFlow === option.id;
           const disabled = amCurrentRoomHost && option.id === 'player';
@@ -115,14 +131,12 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
                 setSelectedFlow(option.id);
               }}
               disabled={disabled}
-              className={`rounded-2xl border px-4 py-3 text-left transition ${
-                active
-                  ? 'border-[var(--lila-accent)] bg-[var(--lila-accent-soft)]'
-                  : 'border-[var(--lila-border-soft)] bg-[var(--lila-surface)]'
-              } disabled:cursor-not-allowed disabled:opacity-60`}
+              className={`lila-action-card p-4 text-left disabled:cursor-not-allowed disabled:opacity-60 ${
+                active ? 'border-[var(--lila-accent)] bg-[var(--lila-accent-soft)]/80' : ''
+              }`}
             >
-              <p className="text-sm font-semibold text-[var(--lila-text-primary)]">{option.label}</p>
-              <p className="mt-1 text-xs text-[var(--lila-text-muted)]">
+              <p className="text-base font-semibold text-[var(--lila-text-primary)]">{option.label}</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
                 {disabled ? 'Ви вже ведучий у поточній кімнаті.' : option.caption}
               </p>
             </button>
@@ -133,68 +147,91 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
       {selectedFlow === 'host' ? (
         <div className="mt-4 space-y-3">
           {canHost ? (
-            <button
-              type="button"
-              onClick={() => {
-                void createRoom('full').then((snapshot) => {
-                  if (snapshot?.room.id) {
-                    navigate(`/host-room/${snapshot.room.id}`);
-                  }
-                });
-              }}
-              disabled={status !== 'authenticated' || isLoading || backendUnavailable}
-              className="w-full rounded-xl bg-[var(--lila-accent)] px-4 py-3 text-sm font-medium text-white transition hover:bg-[var(--lila-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Створити Host Room
-            </button>
+            <div className="lila-list-card space-y-4 p-4">
+              <div>
+                <p className="lila-utility-label">Host Flow</p>
+                <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Запустіть кімнату для групи</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
+                  Після створення кімнати Codex-застилений shell не змінює host/player logic, pause flow або порядок ходів.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  void createRoom('full').then((snapshot) => {
+                    if (snapshot?.room.id) {
+                      navigate(`/host-room/${snapshot.room.id}`);
+                    }
+                  });
+                }}
+                disabled={status !== 'authenticated' || isLoading || backendUnavailable}
+                className="lila-primary-button w-full px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Створити Host Room
+              </button>
+            </div>
           ) : (
-            <div className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] p-4">
-              <p className="text-sm font-semibold text-[var(--lila-text-primary)]">Host mode locked</p>
-              <p className="mt-1 text-xs text-[var(--lila-text-muted)]">
+            <div className="lila-list-card p-4">
+              <p className="lila-utility-label">Host Mode Locked</p>
+              <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Доступ лише для адміністратора</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
                 Лише адмін чату може створювати групові сесії. Зверніться до ведучого або бота для доступу.
               </p>
             </div>
           )}
         </div>
       ) : (
-        <form onSubmit={submitJoin} className="mt-4 flex gap-2">
-          <input
-            value={roomCodeInput}
-            onChange={(event) => setRoomCodeInput(event.target.value.toUpperCase())}
-            maxLength={8}
-            placeholder="Код кімнати"
-            className="min-w-0 flex-1 rounded-xl border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-3 py-2 text-sm text-[var(--lila-text-primary)] outline-none focus:border-[var(--lila-accent)]"
-          />
-          <button
-            type="submit"
-            disabled={status !== 'authenticated' || isLoading || backendUnavailable}
-            className="rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-3 py-2 text-sm text-[var(--lila-text-primary)] disabled:opacity-50"
-          >
-            Join
-          </button>
+        <form onSubmit={submitJoin} className="mt-4 space-y-3">
+          <div className="lila-list-card space-y-4 p-4">
+            <div>
+              <p className="lila-utility-label">Join Room</p>
+              <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Увійти за кодом кімнати</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
+                Короткий код залишається головною точкою входу, але тепер живе всередині спокійної Canva-like surface.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                value={roomCodeInput}
+                onChange={(event) => setRoomCodeInput(event.target.value.toUpperCase())}
+                maxLength={8}
+                placeholder="Код кімнати"
+                className="lila-field min-w-0 flex-1 px-3 py-3 text-sm font-medium tracking-[0.18em] text-[var(--lila-text-primary)] uppercase"
+              />
+              <button
+                type="submit"
+                disabled={status !== 'authenticated' || isLoading || backendUnavailable}
+                className="lila-secondary-button px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Join
+              </button>
+            </div>
+          </div>
         </form>
       )}
 
       {currentRoom && (
-        <div className="mt-3 rounded-xl bg-[var(--lila-accent-soft)] px-3 py-2 text-sm text-[var(--lila-text-primary)]">
-          {amCurrentRoomHost && (
-            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lila-text-muted)]">Ви ведучий цієї кімнати</p>
-          )}
-          <p>
-            Кімната: <span className="font-semibold tracking-wider">{currentRoom.room.code}</span>
-          </p>
-          <p className="text-xs text-[var(--lila-text-muted)]">Стан зʼєднання: {connectionState}</p>
-          <button
-            type="button"
-            onClick={() => navigate(`/host-room/${currentRoom.room.id}`)}
-            className="mt-2 rounded-lg border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] px-3 py-1.5 text-xs font-medium"
-          >
-            Відкрити кімнату
-          </button>
+        <div className="lila-list-card mt-4 p-4">
+          {amCurrentRoomHost && <p className="lila-utility-label">Ви ведучий цієї кімнати</p>}
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-base font-semibold text-[var(--lila-text-primary)]">
+                Кімната: <span className="tracking-[0.24em]">{currentRoom.room.code}</span>
+              </p>
+              <p className="mt-1 text-sm text-[var(--lila-text-muted)]">Стан зʼєднання: {connectionState}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate(`/host-room/${currentRoom.room.id}`)}
+              className="lila-secondary-button px-4 py-3 text-sm font-medium"
+            >
+              Відкрити кімнату
+            </button>
+          </div>
         </div>
       )}
 
-      {error && <p className="mt-2 text-xs text-rose-700">{error}</p>}
+      {error && <p className="mt-3 text-sm text-[var(--lila-danger-text)]">{error}</p>}
     </section>
   );
 };

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { CanvaWingAccent } from '../../components/CanvaWingAccent';
 import { TelegramRoomsPanel, useTelegramAuth } from '../../features/telegram';
 import { useTelegramRooms } from '../../features/telegram/rooms/TelegramRoomsContext';
 
@@ -31,80 +32,91 @@ export const MultiplayerStartPage = () => {
   const canNext = (page + 1) * PAGE_SIZE < myRooms.length;
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-4xl bg-gradient-to-b from-[var(--lila-bg-start)] to-[var(--lila-bg-end)] px-4 py-6 sm:px-6">
-      <section className="rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 p-6 shadow-[0_18px_44px_rgba(42,36,31,0.14)]">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--lila-text-muted)]">Гра з іншими</p>
-            <h1 className="mt-1 text-2xl font-semibold text-[var(--lila-text-primary)] sm:text-3xl">Спільна подорож</h1>
+    <main className="lila-page-shell">
+      <div className="grid min-h-0 gap-3 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <section className="lila-panel min-h-0 px-5 py-5 sm:px-6">
+          <CanvaWingAccent className="pointer-events-none absolute -right-10 top-0 hidden h-32 w-48 text-[color:rgba(90,72,135,0.18)] md:block" />
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="lila-utility-label">Shared Journey</p>
+              <h1 className="mt-3 text-3xl font-black tracking-[-0.04em] text-[var(--lila-text-primary)] sm:text-4xl">Спільна подорож</h1>
+              <p className="mt-3 max-w-md text-sm text-[var(--lila-text-muted)]">
+                Host Room Online: ведучий тримає простір, а кожен гравець зберігає власний хід і власний ритм.
+              </p>
+            </div>
+            <Link to="/" className="lila-secondary-button px-4 py-2 text-sm font-medium">Назад</Link>
           </div>
-          <Link to="/" className="rounded-xl border border-[var(--lila-border-soft)] px-3 py-2 text-sm text-[var(--lila-text-primary)]">Назад</Link>
-        </div>
 
-        <p className="mt-2 text-sm text-[var(--lila-text-muted)]">
-          HOST ROOM ONLINE: ведучий керує ритмом групи, а кожен гравець кидає власний кубик.
-        </p>
-
-        <div className="mt-4">
-          <TelegramRoomsPanel
-            defaultFlow="host"
-            initialRoomCode={initialRoomCode}
-            initialRoomId={initialRoomId}
-          />
-        </div>
-      </section>
-
-      <section className="mt-4 rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 p-5">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--lila-text-muted)]">Минулі кімнати</h2>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPage((value) => Math.max(0, value - 1))}
-              disabled={!canPrev}
-              className="rounded-lg border border-[var(--lila-border-soft)] px-2 py-1 text-xs text-[var(--lila-text-primary)] disabled:opacity-50"
-            >
-              Назад
-            </button>
-            <button
-              type="button"
-              onClick={() => setPage((value) => (canNext ? value + 1 : value))}
-              disabled={!canNext}
-              className="rounded-lg border border-[var(--lila-border-soft)] px-2 py-1 text-xs text-[var(--lila-text-primary)] disabled:opacity-50"
-            >
-              Далі
-            </button>
+          <div className="mt-5 rounded-[26px] border border-[var(--lila-border-soft)] bg-[var(--lila-accent-soft)]/70 px-4 py-3 text-sm text-[var(--lila-text-primary)]">
+            HOST ROOM ONLINE: ведучий керує ритмом групи, а кожен гравець кидає власний кубик.
           </div>
-        </div>
 
-        {!isTelegramMode ? (
-          <p className="mt-3 text-sm text-[var(--lila-text-muted)]">Для multiplayer відкрийте застосунок у Telegram Mini App.</p>
-        ) : pagedRooms.length === 0 ? (
-          <p className="mt-3 text-sm text-[var(--lila-text-muted)]">Ще немає збережених кімнат.</p>
-        ) : (
-          <ul className="mt-3 space-y-2">
-            {pagedRooms.map((snapshot) => (
-              <li key={snapshot.room.id} className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--lila-text-primary)]">#{snapshot.room.code}</p>
-                    <p className="text-xs text-[var(--lila-text-muted)]">{snapshot.room.status} · {snapshot.room.boardType}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/host-room/${snapshot.room.id}`)}
-                    className="rounded-lg border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-3 py-1.5 text-xs text-[var(--lila-text-primary)]"
-                  >
-                    Відкрити
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+          <div className="lila-scroll-pane mt-5 pr-1">
+            <TelegramRoomsPanel
+              defaultFlow="host"
+              initialRoomCode={initialRoomCode}
+              initialRoomId={initialRoomId}
+            />
+          </div>
+        </section>
 
-        {error && <p className="mt-3 text-xs text-rose-700">{error}</p>}
-      </section>
+        <section className="lila-panel min-h-0 px-5 py-5 sm:px-6">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="lila-utility-label">Recent Rooms</p>
+              <h2 className="mt-2 text-xl font-semibold text-[var(--lila-text-primary)]">Минулі кімнати</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((value) => Math.max(0, value - 1))}
+                disabled={!canPrev}
+                className="lila-secondary-button px-3 py-1.5 text-xs disabled:opacity-50"
+              >
+                Назад
+              </button>
+              <button
+                type="button"
+                onClick={() => setPage((value) => (canNext ? value + 1 : value))}
+                disabled={!canNext}
+                className="lila-secondary-button px-3 py-1.5 text-xs disabled:opacity-50"
+              >
+                Далі
+              </button>
+            </div>
+          </div>
+
+          <div className="lila-scroll-pane mt-4 pr-1">
+            {!isTelegramMode ? (
+              <p className="text-sm text-[var(--lila-text-muted)]">Для multiplayer відкрийте застосунок у Telegram Mini App.</p>
+            ) : pagedRooms.length === 0 ? (
+              <p className="text-sm text-[var(--lila-text-muted)]">Ще немає збережених кімнат.</p>
+            ) : (
+              <ul className="space-y-3">
+                {pagedRooms.map((snapshot) => (
+                  <li key={snapshot.room.id} className="lila-list-card px-4 py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--lila-text-primary)]">#{snapshot.room.code}</p>
+                        <p className="mt-1 text-xs text-[var(--lila-text-muted)]">{snapshot.room.status} · {snapshot.room.boardType}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/host-room/${snapshot.room.id}`)}
+                        className="lila-secondary-button px-3 py-2 text-xs font-medium"
+                      >
+                        Відкрити
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {error && <p className="mt-3 text-xs text-[var(--lila-danger-text)]">{error}</p>}
+          </div>
+        </section>
+      </div>
     </main>
   );
 };

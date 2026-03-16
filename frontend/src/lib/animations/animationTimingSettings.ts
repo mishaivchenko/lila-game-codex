@@ -45,6 +45,9 @@ export const loadAnimationTimings = (): AnimationTimingSettings => {
   if (typeof window === 'undefined') {
     return DEFAULT_ANIMATION_TIMINGS;
   }
+  if (typeof window.localStorage?.getItem !== 'function') {
+    return DEFAULT_ANIMATION_TIMINGS;
+  }
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (!raw) {
     return DEFAULT_ANIMATION_TIMINGS;
@@ -59,6 +62,9 @@ export const loadAnimationTimings = (): AnimationTimingSettings => {
 
 export const saveAnimationTimings = (settings: AnimationTimingSettings): void => {
   if (typeof window === 'undefined') {
+    return;
+  }
+  if (typeof window.localStorage?.setItem !== 'function') {
     return;
   }
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));

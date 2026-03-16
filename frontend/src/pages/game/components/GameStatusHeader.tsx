@@ -29,32 +29,38 @@ export const GameStatusHeader = ({
   isDeepEntryPending,
   entryHint,
 }: GameStatusHeaderProps) => (
-  <header className="mb-3 rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4 shadow-[0_12px_30px_rgba(98,76,62,0.1)]">
-    <div className="flex items-start justify-between gap-3">
-      <p className="min-w-0 text-sm font-medium text-[var(--lila-text-primary)]">
-        {isSimpleMultiplayer
-          ? `Хід: ${activeSimplePlayerName ?? 'Учасник'} · клітина ${safeCurrentCell}`
-          : `Ви зараз на клітині ${safeCurrentCell}`}
-      </p>
+  <header className="lila-panel mb-3 p-4 sm:p-5">
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="min-w-0">
+        <p className="lila-utility-label">Current Focus</p>
+        <p className="mt-2 text-lg font-semibold text-[var(--lila-text-primary)]">
+          {isSimpleMultiplayer
+            ? `Хід: ${activeSimplePlayerName ?? 'Учасник'} · клітина ${safeCurrentCell}`
+            : `Ви зараз на клітині ${safeCurrentCell}`}
+        </p>
+        <h1 className="mt-2 text-3xl font-semibold text-[var(--lila-text-primary)]">{currentChakra?.name ?? 'Шлях триває'}</h1>
+      </div>
       <button
         type="button"
         onClick={onToggleHintInfo}
         aria-label="Підказка про змій і стріли"
-        className="rounded-full border border-[var(--lila-border-soft)] px-2 py-1 text-xs text-[var(--lila-text-muted)] transition hover:bg-[var(--lila-surface-muted)]"
+        className="self-start rounded-full border border-[var(--lila-border-soft)] bg-white/70 px-3 py-1.5 text-xs text-[var(--lila-text-muted)] transition hover:bg-[var(--lila-surface-muted)]"
       >
         ?
       </button>
     </div>
-    <h1 className="mt-1 text-base font-semibold text-[var(--lila-text-primary)]">{currentChakra?.name ?? 'Шлях триває'}</h1>
+
+    {currentChakra && <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--lila-text-muted)]">{currentChakra.description}</p>}
+
     {isSimpleMultiplayer && (
-      <div className="mt-2 flex flex-wrap gap-2" data-testid="simple-players-strip">
+      <div className="mt-4 flex flex-wrap gap-2" data-testid="simple-players-strip">
         {simplePlayers.map((player, index) => (
           <span
             key={player.id}
-            className={`inline-flex max-w-full items-start gap-1 rounded-2xl border px-2 py-1 text-xs ${
+            className={`inline-flex max-w-full items-start gap-2 rounded-[20px] border px-3 py-2 text-xs ${
               index === activeSimplePlayerIndex
-                ? 'border-[var(--lila-accent)] bg-[var(--lila-accent-soft)] text-[var(--lila-text-primary)]'
-                : 'border-[var(--lila-border-soft)] bg-[var(--lila-surface)] text-[var(--lila-text-primary)]'
+                ? 'border-[var(--lila-accent)] bg-[var(--lila-accent-soft)] text-[var(--lila-text-primary)] shadow-[0_12px_28px_rgba(90,72,135,0.14)]'
+                : 'border-[var(--lila-border-soft)] bg-white/85 text-[var(--lila-text-primary)]'
             }`}
           >
             <span
@@ -69,19 +75,19 @@ export const GameStatusHeader = ({
         ))}
       </div>
     )}
-    {currentChakra && <p className="mt-1 text-xs text-[var(--lila-text-muted)]">{currentChakra.description}</p>}
+
     {isDeepEntryPending && (
-      <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+      <p className="mt-4 rounded-[20px] bg-amber-50 px-4 py-3 text-sm text-amber-800">
         Щоб увійти в глибоку гру, потрібно викинути 6.
       </p>
     )}
-    {entryHint && <p className="mt-2 rounded-xl bg-[#f4e6dc] px-3 py-2 text-xs text-[#6f4a3a]">{entryHint}</p>}
+    {entryHint && <p className="mt-3 rounded-[20px] bg-[#f4e6dc] px-4 py-3 text-sm text-[#6f4a3a]">{entryHint}</p>}
     {showHintInfo && (
-      <p className="mt-2 rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-3 py-2 text-xs text-[var(--lila-text-primary)]">
+      <p className="mt-3 rounded-[20px] border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-4 py-3 text-sm text-[var(--lila-text-primary)]">
         Змії — це уроки. Стріли — це ресурси.
       </p>
     )}
-    <div className="mt-2">
+    <div className="mt-4">
       <ChakraNotification text={`Ви увійшли в ${currentChakra?.name ?? 'новий рівень'}.`} />
     </div>
   </header>

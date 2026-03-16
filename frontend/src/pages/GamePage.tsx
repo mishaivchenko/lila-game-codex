@@ -301,15 +301,21 @@ export const GamePage = () => {
 
   if (!currentSession) {
     return (
-      <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-6">
-        <p className="text-sm text-stone-700">
-          {loading
-            ? 'Відновлюємо останню сесію...'
-            : 'Немає активної сесії. Поверніться в налаштування.'}
-        </p>
-        {!loading && (
-          <Link to="/setup" className="mt-3 inline-block text-sm text-[#8d6b5a]">До налаштувань</Link>
-        )}
+      <main className="lila-page-shell lila-page-shell--center" data-testid="game-page-empty-state">
+        <section className="lila-panel mx-auto w-full max-w-2xl p-5 sm:p-6">
+          <p className="lila-utility-label">Session State</p>
+          <h1 className="mt-2 text-3xl font-semibold text-[var(--lila-text-primary)]">
+            {loading ? 'Відновлюємо останню сесію...' : 'Немає активної сесії'}
+          </h1>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--lila-text-muted)]">
+            Зберігаємо той самий flow: якщо активної гри немає, користувач м’яко повертається в setup без зміни session behavior.
+          </p>
+          {!loading && (
+            <Link to="/setup" className="lila-secondary-button mt-4 inline-flex px-4 py-3 text-sm font-medium">
+              До налаштувань
+            </Link>
+          )}
+        </section>
       </main>
     );
   }
@@ -615,7 +621,7 @@ export const GamePage = () => {
 
   if ((!isSimpleMultiplayer && currentSession.finished) || multiplayerFinished) {
     return (
-      <main className="mx-auto min-h-screen max-w-lg bg-stone-50 px-4 py-6">
+      <main className="lila-page-shell lila-page-shell--center" data-testid="game-page-finished-state">
         <FinalScreen onViewPath={() => navigate('/history')} onStartNew={() => navigate('/setup')} />
       </main>
     );
@@ -624,65 +630,66 @@ export const GamePage = () => {
   return (
     <>
       <GameBoardLayout
-      header={(
-        <GameStatusHeader
-          isSimpleMultiplayer={isSimpleMultiplayer}
-          activeSimplePlayerName={activeSimplePlayer?.name}
-          safeCurrentCell={safeCurrentCell}
-          showHintInfo={showHintInfo}
-          onToggleHintInfo={() => setShowHintInfo((prev) => !prev)}
-          simplePlayers={simplePlayers}
-          activeSimplePlayerIndex={activeSimplePlayerIndex}
-          simpleColorHex={SIMPLE_COLOR_HEX}
-          currentChakra={currentChakra}
-          isDeepEntryPending={currentSession.request.isDeepEntry && !currentSession.hasEnteredGame}
-          entryHint={entryHint}
-        />
-      )}
-      board={(
-        <LilaBoard
-          board={board}
-          currentCell={safeCurrentCell}
-          tokenColor={activeSimplePlayer ? SIMPLE_COLOR_HEX[activeSimplePlayer.color] ?? '#1f2937' : tokenColorValue}
-          otherTokens={
-            isSimpleMultiplayer
-              ? simplePlayers
-                  .filter((player) => player.id !== activeSimplePlayer?.id)
-                  .map((player) => ({
-                    id: player.id,
-                    cell: player.currentCell,
-                    color: SIMPLE_COLOR_HEX[player.color] ?? '#6b7280',
-                  }))
-              : undefined
-          }
-          animationMove={animationMove}
-          animationTimings={effectiveAnimationTimings}
-          movementSettings={movementSettings}
-          onMoveAnimationComplete={onMoveAnimationComplete}
-          onCellSelect={handleBoardCellSelect}
-          disableCellSelect={turnState !== 'idle'}
-          holdTokenSync={turnState !== 'idle'}
-        />
-      )}
-      controls={(
-        <GameControlPanel
-          lastMove={lastMove}
-          boardMaxCell={board.maxCell}
-          isSimpleMultiplayer={isSimpleMultiplayer}
-          error={error}
-          turnState={turnState}
-          lastMoveType={lastMoveType}
-          lastMovePresentation={lastMovePresentation}
-          onRoll={() => triggerDiceRoll()}
-          onOpenFinishConfirm={() => setShowFinishConfirm(true)}
-          onOpenAnimationSettings={() => setShowAnimationSettings(true)}
-        />
-      )}
-      sideContent={undefined}
+        header={(
+          <GameStatusHeader
+            isSimpleMultiplayer={isSimpleMultiplayer}
+            activeSimplePlayerName={activeSimplePlayer?.name}
+            safeCurrentCell={safeCurrentCell}
+            showHintInfo={showHintInfo}
+            onToggleHintInfo={() => setShowHintInfo((prev) => !prev)}
+            simplePlayers={simplePlayers}
+            activeSimplePlayerIndex={activeSimplePlayerIndex}
+            simpleColorHex={SIMPLE_COLOR_HEX}
+            currentChakra={currentChakra}
+            isDeepEntryPending={currentSession.request.isDeepEntry && !currentSession.hasEnteredGame}
+            entryHint={entryHint}
+          />
+        )}
+        board={(
+          <LilaBoard
+            board={board}
+            currentCell={safeCurrentCell}
+            tokenColor={activeSimplePlayer ? SIMPLE_COLOR_HEX[activeSimplePlayer.color] ?? '#1f2937' : tokenColorValue}
+            otherTokens={
+              isSimpleMultiplayer
+                ? simplePlayers
+                    .filter((player) => player.id !== activeSimplePlayer?.id)
+                    .map((player) => ({
+                      id: player.id,
+                      cell: player.currentCell,
+                      color: SIMPLE_COLOR_HEX[player.color] ?? '#6b7280',
+                    }))
+                : undefined
+            }
+            animationMove={animationMove}
+            animationTimings={effectiveAnimationTimings}
+            movementSettings={movementSettings}
+            onMoveAnimationComplete={onMoveAnimationComplete}
+            onCellSelect={handleBoardCellSelect}
+            disableCellSelect={turnState !== 'idle'}
+            holdTokenSync={turnState !== 'idle'}
+          />
+        )}
+        controls={(
+          <GameControlPanel
+            lastMove={lastMove}
+            boardMaxCell={board.maxCell}
+            isSimpleMultiplayer={isSimpleMultiplayer}
+            error={error}
+            turnState={turnState}
+            lastMoveType={lastMoveType}
+            lastMovePresentation={lastMovePresentation}
+            onRoll={() => triggerDiceRoll()}
+            onOpenFinishConfirm={() => setShowFinishConfirm(true)}
+            onOpenAnimationSettings={() => setShowAnimationSettings(true)}
+          />
+        )}
+        sideContent={undefined}
       />
 
       <AnimatePresence>
         <FinishSessionDialog
+          key="finish-session-dialog"
           open={showFinishConfirm}
           onConfirm={() => {
             void finishSession().then(() => setShowFinishConfirm(false));
@@ -690,6 +697,7 @@ export const GamePage = () => {
           onCancel={() => setShowFinishConfirm(false)}
         />
         <DeepRequestDialog
+          key="deep-request-dialog"
           open={showDeepRequestModal}
           value={deepRequestDraft}
           onChange={setDeepRequestDraft}
@@ -702,6 +710,7 @@ export const GamePage = () => {
         />
         {showCoach && (
           <CellCoachModal
+            key={`cell-coach-${modalCellNumber}`}
             cellNumber={modalCellNumber}
             cellContent={cellContent}
             depth={currentSession.settings.depth}
@@ -712,6 +721,7 @@ export const GamePage = () => {
           />
         )}
         <AnimationSettingsModal
+          key="animation-settings-dialog"
           open={showAnimationSettings}
           settings={animationTimings}
           onChange={(next) => setAnimationTimings(normalizeAnimationTimings(next))}

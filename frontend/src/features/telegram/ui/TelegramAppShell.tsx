@@ -76,7 +76,7 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
   const bootstrapState = resolveAppBootstrapState(authState.status, authState.appStatus, Boolean(authState.token));
 
   const shellClassName = telegramMode
-    ? 'tma-shell mx-auto min-h-[var(--app-height,100dvh)] w-full max-w-[1240px] bg-gradient-to-b from-[var(--lila-bg-start)] to-[var(--lila-bg-end)] px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+12px)] sm:px-4'
+    ? 'tma-shell mx-auto min-h-[var(--app-height,100dvh)] w-full max-w-[1600px] px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+12px)] sm:px-4'
     : 'mx-auto min-h-[var(--app-height,100dvh)] w-full';
 
   return (
@@ -91,7 +91,7 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
                 onClick={() => {
                   void requestFullScreen();
                 }}
-                className="rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] px-3 py-1.5 text-xs font-medium text-[var(--lila-text-primary)] shadow-sm transition hover:bg-[var(--lila-surface-muted)]"
+                className="lila-secondary-button px-3 py-2 text-xs font-medium"
               >
                 Open full screen
               </button>
@@ -106,7 +106,7 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.28, ease: [0.2, 0.8, 0.2, 1] }}
-                className="mb-3 rounded-xl border border-[#e9d8cc] bg-white/80 px-3 py-2 text-xs text-[var(--lila-text-muted)]"
+                className="lila-list-card mb-3 px-4 py-3 text-xs text-[var(--lila-text-muted)]"
               >
                 <div className="space-y-1">
                   <p>{bootstrapLabelByState[bootstrapState]}</p>

@@ -30,49 +30,75 @@ export const GameControlPanel = ({
   onOpenFinishConfirm,
   onOpenAnimationSettings,
 }: GameControlPanelProps) => (
-  <section className="rounded-xl p-2">
-    <div className="mb-3 flex items-center justify-between">
-      <Dice value={lastMove?.dice} />
-      <div className="text-right text-xs text-stone-600">
-        <p>{isSimpleMultiplayer ? 'Гравці ходять по черзі.' : 'Можна зробити паузу будь-коли.'}</p>
-        {error && <p className="text-red-600">{error}</p>}
+  <section className="flex h-full min-h-0 flex-col gap-3">
+    <div className="lila-list-card flex items-center justify-between gap-3 p-4">
+      <div className="flex items-center gap-3">
+        <Dice value={lastMove?.dice} />
+        <div>
+          <p className="lila-utility-label">Next Action</p>
+          <p className="mt-1 text-base font-semibold text-[var(--lila-text-primary)]">
+            {isSimpleMultiplayer ? 'Гравці ходять по черзі' : 'Ваш спокійний наступний крок'}
+          </p>
+        </div>
+      </div>
+      <div className="max-w-[180px] text-right text-xs leading-5 text-[var(--lila-text-muted)]">
+        <p>{isSimpleMultiplayer ? 'Ритм гри лишається послідовним.' : 'Можна зробити паузу будь-коли.'}</p>
+        {error && <p className="mt-1 text-[var(--lila-danger-text)]">{error}</p>}
       </div>
     </div>
+
     {lastMove && lastMoveType !== 'normal' && (
-      <p className={`mb-3 rounded-xl px-3 py-2 text-xs font-medium ${lastMovePresentation.badgeClassName}`}>
+      <p className={`rounded-[20px] px-4 py-3 text-sm font-medium ${lastMovePresentation.badgeClassName}`}>
         {lastMovePresentation.icon} Спецхід: {lastMovePresentation.label} · {formatMovePathWithEntry(lastMove, boardMaxCell)}
       </p>
     )}
-    <motion.button
-      onClick={onRoll}
-      type="button"
-      disabled={turnState !== 'idle'}
-      className="w-full rounded-xl bg-[var(--lila-accent)] px-4 py-4 text-base font-semibold text-white transition duration-300 ease-out hover:bg-[var(--lila-accent-hover)] disabled:opacity-70"
-      whileTap={buttonTapScale}
-      whileHover={buttonHoverScale}
-    >
-      Кинути кубик
-    </motion.button>
-    <button
-      type="button"
-      onClick={onOpenFinishConfirm}
-      disabled={turnState !== 'idle'}
-      className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 text-sm font-medium text-stone-700 transition disabled:opacity-50"
-    >
-      Завершити подорож
-    </button>
-    <div className="mt-3 flex items-center justify-between text-xs text-stone-600">
-      <button
-        type="button"
-        onClick={onOpenAnimationSettings}
-        className="transition duration-200 ease-out hover:scale-[1.02] active:scale-[0.99]"
-      >
-        Налаштування
-      </button>
-      <Link className="transition duration-200 ease-out hover:scale-[1.02] active:scale-[0.99]" to="/history">
-        Мій шлях
-      </Link>
-      <span>Звук</span>
+
+    <div className="lila-panel-muted flex flex-1 min-h-0 flex-col justify-between p-4">
+      <div className="space-y-3">
+        <div>
+          <p className="lila-utility-label">Control Panel</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
+            Кубик і головні дії залишаються в пріоритеті, без зайвих сайдбарів і без зменшення фокусу на board.
+          </p>
+        </div>
+
+        <motion.button
+          onClick={onRoll}
+          type="button"
+          disabled={turnState !== 'idle'}
+          className="lila-primary-button w-full px-4 py-4 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-70"
+          whileTap={buttonTapScale}
+          whileHover={buttonHoverScale}
+        >
+          Кинути кубик
+        </motion.button>
+
+        <button
+          type="button"
+          onClick={onOpenFinishConfirm}
+          disabled={turnState !== 'idle'}
+          className="lila-secondary-button w-full px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Завершити подорож
+        </button>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-2 text-xs text-[var(--lila-text-muted)]">
+        <button
+          type="button"
+          onClick={onOpenAnimationSettings}
+          className="lila-badge justify-center border-none bg-white/70 px-3 py-2 transition duration-200 ease-out hover:scale-[1.02] active:scale-[0.99]"
+        >
+          Налаштування
+        </button>
+        <Link
+          className="lila-badge justify-center border-none bg-white/70 px-3 py-2 transition duration-200 ease-out hover:scale-[1.02] active:scale-[0.99]"
+          to="/history"
+        >
+          Мій шлях
+        </Link>
+        <span className="lila-badge border-none bg-white/60 px-3 py-2">Звук</span>
+      </div>
     </div>
   </section>
 );

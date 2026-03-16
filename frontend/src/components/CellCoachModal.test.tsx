@@ -54,7 +54,7 @@ describe('CellCoachModal image layout', () => {
     );
 
     const modalShell = screen.getByTestId('cell-coach-modal-shell');
-    expect(modalShell.className).toContain('sm:max-w-4xl');
+    expect(modalShell.className).toContain('sm:max-w-[1180px]');
   });
 
   it('shows per-cell text from Lila master content map', () => {

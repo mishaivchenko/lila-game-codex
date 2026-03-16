@@ -171,140 +171,215 @@ export const JourneySetupHub = () => {
   };
 
   return (
-    <section className="mt-5 rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/92 p-3 shadow-[0_18px_40px_rgba(98,76,62,0.12)] backdrop-blur sm:p-4">
-      <div className="grid grid-cols-3 gap-2 rounded-2xl bg-[var(--lila-surface-muted)]/90 p-1">
-        <button
-          type="button"
-          onClick={() => setActiveTab('simple')}
-          className={`rounded-xl px-2 py-2 text-xs sm:text-sm ${
-            activeTab === 'simple'
-              ? 'bg-[var(--lila-surface)] text-[var(--lila-text-primary)] shadow-sm'
-              : 'text-[var(--lila-text-muted)]'
-          }`}
-        >
-          Проста гра
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('deep')}
-          className={`rounded-xl px-2 py-2 text-xs sm:text-sm ${
-            activeTab === 'deep'
-              ? 'bg-[var(--lila-surface)] text-[var(--lila-text-primary)] shadow-sm'
-              : 'text-[var(--lila-text-muted)]'
-          }`}
-        >
-          Глибока гра
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('rules')}
-          className={`rounded-xl px-2 py-2 text-xs sm:text-sm ${
-            activeTab === 'rules'
-              ? 'bg-[var(--lila-surface)] text-[var(--lila-text-primary)] shadow-sm'
-              : 'text-[var(--lila-text-muted)]'
-          }`}
-        >
-          Правила гри
-        </button>
+    <section className="lila-panel mt-5 flex min-h-0 flex-col p-4 sm:p-5" data-testid="journey-setup-hub">
+      <div className="flex flex-col gap-3 border-b border-[var(--lila-border-soft)]/70 pb-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="lila-utility-label">Journey Studio</p>
+            <h2 className="mt-2 text-2xl font-semibold text-[var(--lila-text-primary)]">Оберіть формат входу</h2>
+          </div>
+          <p className="max-w-xl text-sm leading-6 text-[var(--lila-text-muted)]">
+            Простий старт для групи вже готовий. Глибоку AI-подорож залишаємо м’яко заблокованою, а правила тримаємо поруч у
+            компактному форматі без перевантаження екрана.
+          </p>
+        </div>
+
+        <div className="lila-segmented grid-cols-3">
+          <button
+            type="button"
+            onClick={() => setActiveTab('simple')}
+            className="lila-segmented-button"
+            data-active={activeTab === 'simple'}
+          >
+            Проста гра
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('deep')}
+            className="lila-segmented-button"
+            data-active={activeTab === 'deep'}
+          >
+            Глибока гра
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('rules')}
+            className="lila-segmented-button"
+            data-active={activeTab === 'rules'}
+          >
+            Правила гри
+          </button>
+        </div>
       </div>
 
       {activeTab === 'simple' && (
-        <div className="mt-4 space-y-3">
-          <p className="text-sm text-[var(--lila-text-muted)]">
-            Легка точка входу для групи до 4 учасників.
-          </p>
+        <div className="mt-5 flex min-h-0 flex-1 flex-col gap-4">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_320px]">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <article className="lila-list-card p-4">
+                <p className="lila-utility-label">Rhythm</p>
+                <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">До 4 учасників</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
+                  Імена, запити та кольори зібрані в одному потоці, щоб група зайшла в гру без зайвих кроків.
+                </p>
+              </article>
+              <article className="lila-list-card p-4">
+                <p className="lila-utility-label">Dice Mode</p>
+                <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Поточний формат: {diceMode}</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
+                  Режим кидка підтягнуто з налаштувань теми, тому старт простий і не розриває current app behavior.
+                </p>
+              </article>
+              <article className="lila-list-card p-4 sm:col-span-2 xl:col-span-1">
+                <p className="lila-utility-label">Focus</p>
+                <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Один екран, одна точка входу</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
+                  Деталі залишаються всередині карток та модалок, без page-level scroll у головному флоу.
+                </p>
+              </article>
+            </div>
 
-          {players.map((player, index) => (
-            <article key={player.id} className="rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-3 sm:p-4">
-              <p className="text-xs uppercase tracking-wide text-[var(--lila-text-muted)]">Учасник {index + 1}</p>
-
-              <label className="mt-2 block text-sm text-[var(--lila-text-primary)]">
-                Імʼя
-                <input
-                  value={player.name}
-                  onChange={(event) => updatePlayer(player.id, { name: event.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-3 py-2 text-sm text-[var(--lila-text-primary)] outline-none focus:border-[var(--lila-accent)]"
-                />
-              </label>
-
-              <label className="mt-2 block text-sm text-[var(--lila-text-primary)]">
-                Мій запит
-                <textarea
-                  value={player.request}
-                  onChange={(event) => updatePlayer(player.id, { request: event.target.value })}
-                  className="mt-1 min-h-20 w-full rounded-xl border border-[var(--lila-input-border)] bg-[var(--lila-input-bg)] px-3 py-2 text-sm text-[var(--lila-text-primary)] outline-none focus:border-[var(--lila-accent)]"
-                />
-              </label>
-
-              <div className="mt-2">
-                <p className="text-sm text-[var(--lila-text-primary)]">Колір</p>
-                <div className="mt-1 flex flex-wrap gap-2">
-                  {colors.map((color) => (
-                    <button
-                      key={color.id}
-                      type="button"
-                      onClick={() => updatePlayer(player.id, { color: color.id })}
-                      className={`h-7 w-7 rounded-full border-2 ${color.className} ${
-                        player.color === color.id ? 'border-[var(--lila-accent)] scale-110' : 'border-[var(--lila-surface)]'
-                      } transition`}
-                      aria-label={color.id}
-                    />
-                  ))}
-                </div>
+            <aside className="lila-panel-muted flex flex-col gap-3 p-4">
+              <p className="lila-utility-label">Before You Start</p>
+              <h3 className="text-lg font-semibold text-[var(--lila-text-primary)]">М’який груповий вхід</h3>
+              <p className="text-sm leading-6 text-[var(--lila-text-muted)]">
+                Додайте тільки тих учасників, хто вже готовий сформулювати ім’я або запит. Решту можна включити пізніше.
+              </p>
+              <div className="lila-list-card space-y-2 p-4 text-sm leading-6 text-[var(--lila-text-muted)]">
+                <p>1. Заповніть активних учасників.</p>
+                <p>2. Зафіксуйте колір фішки для читабельності ходу.</p>
+                <p>3. Запустіть гру, не торкаючись логіки board/session.</p>
               </div>
-            </article>
-          ))}
+            </aside>
+          </div>
 
-          <button
-            type="button"
-            onClick={addPlayer}
-            disabled={players.length >= 4}
-            className="w-full rounded-xl border border-[var(--lila-btn-secondary-border)] bg-[var(--lila-btn-secondary-bg)] px-3 py-2 text-sm text-[var(--lila-btn-secondary-text)] transition hover:bg-[var(--lila-surface-muted)] disabled:opacity-40"
-          >
-            Додати учасника
-          </button>
+          <div className="lila-scroll-pane -mr-1 flex min-h-0 flex-1 flex-col gap-3 pr-1">
+            {players.map((player, index) => (
+              <article key={player.id} className="lila-list-card p-4 sm:p-5">
+                <div className="grid gap-4 lg:grid-cols-[140px_minmax(0,1fr)_240px]">
+                  <div>
+                    <p className="lila-utility-label">Player {index + 1}</p>
+                    <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">
+                      {player.name.trim() || `Учасник ${index + 1}`}
+                    </p>
+                    <p className="mt-2 text-sm text-[var(--lila-text-muted)]">
+                      Стисла картка замість великої форми, щоб layout залишався щільним і керованим.
+                    </p>
+                  </div>
 
-          {simpleError && (
-            <p className="rounded-xl bg-[var(--lila-danger-bg)] px-3 py-2 text-sm text-[var(--lila-danger-text)]">{simpleError}</p>
-          )}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block text-sm font-medium text-[var(--lila-text-primary)]">
+                      Імʼя
+                      <input
+                        value={player.name}
+                        onChange={(event) => updatePlayer(player.id, { name: event.target.value })}
+                        className="lila-field mt-2 px-3 py-3 text-sm text-[var(--lila-text-primary)]"
+                      />
+                    </label>
 
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => {
-              void startSimpleGame();
-            }}
-            className="w-full rounded-xl bg-[var(--lila-accent)] px-3 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--lila-accent-hover)] disabled:opacity-60"
-          >
-            Почати гру
-          </button>
+                    <label className="block text-sm font-medium text-[var(--lila-text-primary)] sm:col-span-2">
+                      Мій запит
+                      <textarea
+                        value={player.request}
+                        onChange={(event) => updatePlayer(player.id, { request: event.target.value })}
+                        className="lila-textarea mt-2 min-h-28 px-3 py-3 text-sm leading-6 text-[var(--lila-text-primary)]"
+                      />
+                    </label>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-[var(--lila-text-primary)]">Колір фішки</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {colors.map((color) => (
+                        <button
+                          key={color.id}
+                          type="button"
+                          onClick={() => updatePlayer(player.id, { color: color.id })}
+                          className={`h-9 w-9 rounded-full border-2 transition ${
+                            color.className
+                          } ${
+                            player.color === color.id
+                              ? 'scale-110 border-[var(--lila-accent)] shadow-[0_10px_20px_rgba(90,72,135,0.18)]'
+                              : 'border-white/80'
+                          }`}
+                          aria-label={color.id}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+            {simpleError && (
+              <p className="rounded-[20px] bg-[var(--lila-danger-bg)] px-4 py-3 text-sm text-[var(--lila-danger-text)] sm:col-span-3">
+                {simpleError}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={addPlayer}
+              disabled={players.length >= 4}
+              className="lila-secondary-button w-full px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Додати учасника
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => {
+                void startSimpleGame();
+              }}
+              className="lila-primary-button w-full px-5 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            >
+              Почати гру
+            </button>
+          </div>
         </div>
       )}
 
       {activeTab === 'deep' && (
-        <div className="mt-4 space-y-3">
-          <article className="relative overflow-hidden rounded-2xl border border-[var(--lila-border-soft)] bg-gradient-to-b from-[var(--lila-surface)] to-[var(--lila-surface-muted)] p-4">
-            <div className="space-y-3 opacity-60 blur-[1px]">
-              <h3 className="text-base font-semibold text-[var(--lila-text-primary)]">Глибока гра</h3>
-              <p className="mt-1 text-sm text-[var(--lila-text-muted)]">Індивідуальний простір трансформаційної роботи.</p>
-              <div className="rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] px-3 py-2 text-sm text-[var(--lila-text-muted)]">
-                Запит, фокус і персональний формат будуть доступні після релізу AI.
+        <div className="mt-5">
+          <article className="lila-panel-muted relative overflow-hidden p-4 sm:p-5">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <div className="space-y-4 opacity-60 blur-[1px]">
+                <div>
+                  <p className="lila-utility-label">Deep Flow</p>
+                  <h3 className="mt-2 text-2xl font-semibold text-[var(--lila-text-primary)]">Глибока AI-подорож</h3>
+                </div>
+                <p className="max-w-2xl text-sm leading-6 text-[var(--lila-text-muted)]">
+                  Індивідуальний простір трансформаційної роботи залишаємо в стилі Canva: м’який surface, сильний акцент на
+                  намірі й мінімум шуму навколо.
+                </p>
+                <div className="lila-list-card p-4 text-sm leading-6 text-[var(--lila-text-muted)]">
+                  Запит, фокус і персональний формат будуть доступні після релізу AI.
+                </div>
+                <button
+                  type="button"
+                  disabled
+                  className="lila-primary-button w-full max-w-xs px-4 py-3 text-sm font-semibold disabled:opacity-60"
+                >
+                  Почати гру
+                </button>
               </div>
-              <button
-                type="button"
-                disabled
-                className="w-full rounded-xl bg-[var(--lila-accent)] px-3 py-2.5 text-sm font-medium text-white disabled:opacity-60"
-              >
-                Почати гру
-              </button>
+
+              <div className="lila-list-card p-4">
+                <p className="lila-utility-label">Preview</p>
+                <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Патерни, глибші інтерпретації, AI-рефлексія</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
+                  Зараз цей режим навмисно не форсуємо в продукт, щоб не порушити чинний ритм основної гри.
+                </p>
+              </div>
             </div>
 
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--lila-bg-main)]/86 p-4 backdrop-blur-[2px]">
-              <div className="w-full max-w-md rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4 text-center text-[var(--lila-text-primary)] shadow-[0_14px_36px_rgba(100,74,56,0.2)]">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--lila-text-muted)]">Locked Section</p>
-                <h4 className="mt-1 text-lg font-semibold text-[var(--lila-text-primary)]">Ask AI assistant (Coming soon)</h4>
-                <p className="mt-2 text-sm text-[var(--lila-text-muted)]">
-                  Розділ глибокої AI-роботи ще недоступний. Ви зможете активувати його після релізу.
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--lila-bg-main)]/80 p-4 backdrop-blur-[4px]">
+              <div className="lila-panel w-full max-w-lg p-5 text-center">
+                <p className="lila-utility-label">Locked Section</p>
+                <h4 className="mt-2 text-2xl font-semibold text-[var(--lila-text-primary)]">Ask AI assistant</h4>
+                <p className="mt-3 text-sm leading-6 text-[var(--lila-text-muted)]">
+                  Розділ глибокої AI-роботи ще недоступний. Ви зможете активувати його після релізу, без зміни core gameplay.
                 </p>
               </div>
             </div>
@@ -313,15 +388,21 @@ export const JourneySetupHub = () => {
       )}
 
       {activeTab === 'rules' && (
-        <div className="mt-4 rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4">
-          <MarkdownText source={rulesMarkdown} />
-          <p className="mt-3 rounded-xl bg-[var(--lila-warning-bg)] p-3 text-xs leading-5 text-[var(--lila-warning-text)]">
-            Якщо щось емоційно непросто, сповільніться. У цій грі цінна не швидкість, а чесний контакт із собою.
-          </p>
-          <div className="mt-3 rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] p-3 text-xs text-[var(--lila-text-muted)]">
-            {chakraLevels.map((item) => (
-              <p key={item} className="mt-1 first:mt-0">{item}</p>
-            ))}
+        <div className="mt-5 grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.25fr)_320px]">
+          <div className="lila-list-card lila-scroll-pane min-h-0 p-5">
+            <MarkdownText source={rulesMarkdown} />
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <div className="rounded-[22px] bg-[var(--lila-warning-bg)] p-4 text-sm leading-6 text-[var(--lila-warning-text)]">
+              Якщо щось емоційно непросто, сповільніться. У цій грі цінна не швидкість, а чесний контакт із собою.
+            </div>
+            <div className="lila-list-card lila-scroll-pane min-h-0 p-4 text-sm leading-6 text-[var(--lila-text-muted)]">
+              <p className="lila-utility-label mb-3">8 Levels</p>
+              {chakraLevels.map((item) => (
+                <p key={item} className="mt-2 first:mt-0">{item}</p>
+              ))}
+            </div>
           </div>
         </div>
       )}

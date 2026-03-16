@@ -7,6 +7,7 @@ import { getMovePresentation } from '../lib/lila/historyFormat';
 import { getNoteValidationError } from '../lib/lila/noteValidation';
 import { MarkdownText } from './MarkdownText';
 import { useOverlayLock } from '../hooks/useOverlayLock';
+import { CanvaWingAccent } from './CanvaWingAccent';
 import {
   buttonHoverScale,
   buttonTapScale,
@@ -181,7 +182,7 @@ export const CellCoachModal = ({
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-end bg-black/45 p-0 sm:items-center sm:justify-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end bg-[#1f1730]/55 p-0 backdrop-blur-[6px] sm:items-center sm:justify-center sm:p-4"
       initial="initial"
       animate="animate"
       exit="exit"
@@ -200,7 +201,7 @@ export const CellCoachModal = ({
     >
       <motion.div
         data-testid="cell-coach-modal-shell"
-        className={`relative w-full max-h-[94vh] overflow-hidden shadow-xl sm:max-h-[92vh] sm:max-w-4xl ${theme.modal.radiusClassName}`}
+        className={`relative w-full max-h-[95vh] overflow-hidden shadow-[0_30px_80px_rgba(22,16,35,0.36)] sm:max-h-[92vh] sm:max-w-[1180px] ${theme.modal.radiusClassName}`}
         style={{
           background: theme.modal.panelBackground,
           border: `1px solid ${theme.modal.panelBorder}`,
@@ -209,19 +210,30 @@ export const CellCoachModal = ({
         variants={modalPanelVariants}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex max-h-[94vh] flex-col overflow-hidden sm:max-h-[92vh] sm:flex-row">
+        <div className="flex max-h-[95vh] flex-col overflow-hidden sm:max-h-[92vh] sm:flex-row">
           <section
-            className="w-full shrink-0 border-b p-3 sm:w-[44%] sm:border-b-0 sm:border-r sm:p-4"
+            className="relative w-full shrink-0 border-b p-3 sm:w-[42%] sm:border-b-0 sm:border-r sm:p-5"
             style={{
               borderColor: theme.modal.imagePaneBorder,
               background: theme.modal.imagePaneBackground,
             }}
           >
-            <button className="mb-2 text-sm text-stone-500" onClick={onClose} type="button">
-              Закрити
-            </button>
+            <CanvaWingAccent className="pointer-events-none absolute -right-16 top-2 h-36 w-52 text-[rgba(100,84,151,0.18)]" />
+            <div className="relative z-[1] mb-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="lila-utility-label">Reflection Card</p>
+                <p className="mt-1 text-sm text-[var(--lila-text-muted)]">Клітина {cellNumber}</p>
+              </div>
+              <button
+                className="rounded-full border border-[var(--lila-border-soft)] bg-white/80 px-3 py-1.5 text-xs font-medium text-[var(--lila-text-muted)] transition hover:bg-[var(--lila-surface-muted)]"
+                onClick={onClose}
+                type="button"
+              >
+                Закрити
+              </button>
+            </div>
             <div
-              className="relative flex h-full items-center justify-center overflow-hidden rounded-2xl border p-2 sm:p-3"
+              className="relative flex h-full min-h-[320px] items-center justify-center overflow-hidden rounded-[28px] border p-3 sm:p-4"
               style={{
                 borderColor: theme.modal.imageCanvasBorder,
                 background: theme.modal.imageCanvasBackground,
@@ -266,39 +278,42 @@ export const CellCoachModal = ({
           </section>
 
           <section
-            className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6"
+            className="lila-scroll-pane min-h-0 flex-1 p-4 sm:p-6"
             style={{ background: contentPanelBackground }}
           >
-            <h3 className="text-xl font-semibold text-stone-900">{lilaContent.title}</h3>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3 border-b border-[var(--lila-border-soft)]/70 pb-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="lila-utility-label">Card Meaning</p>
+                    <h3 className="mt-2 text-3xl font-semibold text-[var(--lila-text-primary)]">{lilaContent.title}</h3>
+                  </div>
+                  <span className="lila-badge self-start">Клітина {cellNumber}</span>
+                </div>
+                <p className="max-w-2xl text-sm leading-6 text-[var(--lila-text-muted)]">
+                  Внутрішній scroll лишається тільки тут: картка може бути глибокою, але основний game shell не втрачає one-screen rhythm.
+                </p>
+              </div>
+
             {moveContext && (
-              <div className="mt-2 flex items-center gap-2">
-                <p className="rounded-lg bg-stone-100 px-2.5 py-1.5 text-xs text-stone-600">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="lila-badge">
                   Хід: {moveContext.pathLabel ?? `${moveContext.fromCell} ${movePresentation?.symbol ?? '→'} ${moveContext.toCell}`}
                 </p>
                 {movePresentation && moveContext.type !== 'normal' && (
-                  <span className={`rounded-full px-2 py-1 text-xs font-medium ${movePresentation.badgeClassName}`}>
+                  <span className={`rounded-full px-3 py-1.5 text-xs font-medium ${movePresentation.badgeClassName}`}>
                     {movePresentation.icon} {movePresentation.label} {movePresentation.symbol}
                   </span>
                 )}
               </div>
             )}
-            <div
-              className="mt-3 rounded-2xl border p-3"
-              style={{
-                borderColor: 'var(--lila-border-soft)',
-                backgroundColor: 'var(--lila-surface-muted)',
-              }}
-            >
+
+            <div className="lila-list-card p-4 sm:p-5">
               <MarkdownText source={combinedMarkdown} />
             </div>
 
             <textarea
-              className="mt-5 min-h-32 max-h-[42vh] w-full resize-y overflow-y-auto rounded-xl border px-3 py-2.5 text-[15px] leading-6 placeholder:text-[color:var(--lila-text-muted)]"
-              style={{
-                backgroundColor: 'var(--lila-input-bg)',
-                borderColor: 'var(--lila-input-border)',
-                color: 'var(--lila-text-primary)',
-              }}
+              className="lila-textarea min-h-32 max-h-[42vh] w-full resize-y overflow-y-auto px-4 py-3 text-[15px] leading-6 placeholder:text-[color:var(--lila-text-muted)]"
               value={text}
               onChange={(event) => {
                 setText(event.target.value);
@@ -313,13 +328,12 @@ export const CellCoachModal = ({
               spellCheck
             />
             {validationError && (
-              <p className="mt-2 text-xs text-amber-700">{validationError}</p>
+              <p className="text-sm text-amber-700">{validationError}</p>
             )}
 
-            <div className="mt-5 flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <motion.button
-                className="flex-1 rounded-xl px-3 py-3 text-sm font-medium text-white disabled:opacity-50"
-                style={{ backgroundColor: 'var(--lila-accent)' }}
+                className="lila-primary-button flex-1 px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                 type="button"
                 onClick={handleSave}
                 disabled={readOnly && text.trim().length === 0}
@@ -330,7 +344,7 @@ export const CellCoachModal = ({
               </motion.button>
               {!readOnly && (
                 <motion.button
-                  className="rounded-xl border border-stone-300 px-3 py-3 text-sm text-stone-700"
+                  className="lila-secondary-button px-4 py-3 text-sm font-medium"
                   type="button"
                   onClick={onSkip}
                   whileTap={buttonTapScale}
@@ -342,10 +356,11 @@ export const CellCoachModal = ({
             </div>
 
             {!readOnly && (
-              <p className="mt-3 text-xs text-stone-500">
+              <p className="text-sm leading-6 text-[var(--lila-text-muted)]">
                 Це нормально. Ви зможете повернутися до цієї клітини в «Мій шлях».
               </p>
             )}
+            </div>
           </section>
         </div>
         {isVeilVisible && (

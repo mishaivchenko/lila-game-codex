@@ -13,33 +13,34 @@ export const FinishSessionDialog = ({ open, onConfirm, onCancel }: FinishSession
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#1f1730]/55 p-4 backdrop-blur-[6px]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="w-full max-w-md rounded-3xl bg-white p-4 shadow-xl"
+        className="lila-panel w-full max-w-md p-5"
         initial={{ opacity: 0, y: 16, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 10, scale: 0.99 }}
       >
-        <h3 className="text-lg font-semibold text-stone-900">Завершити подорож?</h3>
-        <p className="mt-2 text-sm text-stone-600">
+        <p className="lila-utility-label">Finish Session</p>
+        <h3 className="mt-2 text-2xl font-semibold text-[var(--lila-text-primary)]">Завершити подорож?</h3>
+        <p className="mt-3 text-sm leading-6 text-[var(--lila-text-muted)]">
           Поточну сесію буде позначено завершеною. Нові ходи стануть недоступними.
         </p>
         <div className="mt-4 flex gap-2">
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 rounded-xl bg-[var(--lila-accent)] px-3 py-2.5 text-sm font-medium text-white"
+            className="lila-primary-button flex-1 px-4 py-3 text-sm font-semibold"
           >
             Так, завершити
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-xl border border-stone-300 px-3 py-2.5 text-sm text-stone-700"
+            className="lila-secondary-button px-4 py-3 text-sm font-medium"
           >
             Повернутись
           </button>
@@ -48,4 +49,3 @@ export const FinishSessionDialog = ({ open, onConfirm, onCancel }: FinishSession
     </motion.div>
   );
 };
-
