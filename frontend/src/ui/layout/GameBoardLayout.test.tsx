@@ -35,8 +35,10 @@ describe('GameBoardLayout', () => {
     const frame = layout.firstElementChild as HTMLElement | null;
     const layoutGrid = screen.getByTestId('game-board-layout-grid');
     expect(layout.className).toContain('lila-page-shell');
+    expect(layout.className).toContain('lila-page-shell--game');
     expect(frame?.className).toContain('flex-1');
     expect(layoutGrid.className).toContain('grid-rows-[auto_minmax(0,1fr)]');
+    expect(layoutGrid.className).toContain('min-[1120px]:grid-cols-[minmax(0,1fr)_220px]');
     expect(layout.getAttribute('style')).toContain('1480px');
     expect(screen.getByText('BOARD')).not.toBeNull();
     expect(screen.getByText('CONTROLS')).not.toBeNull();

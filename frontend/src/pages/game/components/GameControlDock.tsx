@@ -23,12 +23,12 @@ export const GameControlDock = ({
   onRoll,
   onOpenUtilityMenu,
 }: GameControlDockProps) => (
-  <section className="flex h-full min-h-0 flex-col gap-2">
-    <div className="lila-panel-muted flex items-center gap-2 px-3 py-2.5">
-      <Dice value={lastMove?.dice} />
+  <section className="flex h-full min-h-0 flex-col gap-1.5">
+    <div className="lila-panel-muted flex items-center gap-2 px-2.5 py-2">
+      <Dice value={lastMove?.dice} compact />
       <div className="min-w-0 flex-1">
         <p className="lila-utility-label">Хід</p>
-        <p className="mt-1 truncate text-sm font-semibold text-[var(--lila-text-primary)]">
+        <p className="mt-0.5 truncate text-sm font-semibold text-[var(--lila-text-primary)]">
           {isSimpleMultiplayer ? 'Черга гравця' : 'Спокійний наступний крок'}
         </p>
       </div>
@@ -36,14 +36,14 @@ export const GameControlDock = ({
         type="button"
         onClick={onRoll}
         disabled={turnState !== 'idle'}
-        className="lila-primary-button shrink-0 px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-70"
+        className="lila-primary-button shrink-0 px-3 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-70"
       >
         Кинути
       </button>
       <button
         type="button"
         onClick={onOpenUtilityMenu}
-        className="lila-secondary-button shrink-0 px-3 py-3 text-sm font-medium"
+        className="lila-secondary-button shrink-0 px-3 py-2.5 text-sm font-medium"
       >
         Меню
       </button>

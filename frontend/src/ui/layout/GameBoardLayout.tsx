@@ -20,33 +20,33 @@ export const GameBoardLayout = ({
 
   return (
     <main
-      className="lila-page-shell"
+      className="lila-page-shell lila-page-shell--game"
       data-testid="game-board-layout"
       style={{ maxWidth: `${theme.layout.pageMaxWidthPx}px` }}
     >
       <div className="lila-canva-frame min-h-0 flex-1 overflow-hidden">
         <div
-          className="grid min-h-0 flex-1 gap-2 overflow-hidden grid-rows-[auto_minmax(0,1fr)] min-[1180px]:grid-cols-[minmax(0,1fr)_268px] min-[1180px]:grid-rows-[auto_minmax(0,1fr)]"
+          className="grid min-h-0 flex-1 gap-1.5 overflow-hidden grid-rows-[auto_minmax(0,1fr)] min-[1120px]:grid-cols-[minmax(0,1fr)_220px] min-[1120px]:grid-rows-[auto_minmax(0,1fr)]"
           data-testid="game-board-layout-grid"
         >
-          <section className="min-[1180px]:col-span-2">
+          <section className="min-[1120px]:col-span-2">
             {header}
           </section>
 
           <section
-            className="relative flex min-h-0 min-w-0 items-start justify-center overflow-hidden pb-[5rem] sm:pb-[5.6rem] min-[1180px]:items-center min-[1180px]:pb-0"
+            className="relative flex min-h-0 min-w-0 items-start justify-center overflow-hidden pb-[4.2rem] sm:pb-[4.8rem] min-[1120px]:items-center min-[1120px]:pb-0"
             style={{ padding: `${theme.layout.boardPanelPaddingPx}px` }}
           >
             {board}
             {mobileControls ? (
-              <div className="absolute inset-x-2 bottom-2 z-10 min-[1180px]:hidden" data-testid="game-mobile-controls-overlay">
+              <div className="absolute inset-x-1.5 bottom-1.5 z-10 min-[1120px]:hidden" data-testid="game-mobile-controls-overlay">
                 {mobileControls}
               </div>
             ) : null}
           </section>
 
           <section
-            className="hidden min-h-0 lila-canva-sidebar px-3 py-3 sm:px-4 min-[1180px]:block min-[1180px]:overflow-y-auto"
+            className="hidden min-h-0 lila-canva-sidebar px-2.5 py-2.5 sm:px-3 min-[1120px]:block min-[1120px]:overflow-y-auto"
             style={{
               background: theme.layout.floatingControlsBackground,
               border: `1px solid ${theme.layout.floatingControlsBorder}`,
@@ -56,7 +56,7 @@ export const GameBoardLayout = ({
             {controls}
           </section>
           {sideContent && (
-            <section className="min-h-0 min-[1180px]:col-span-2">
+            <section className="min-h-0 min-[1120px]:col-span-2">
               {sideContent}
             </section>
           )}

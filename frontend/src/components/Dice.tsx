@@ -2,12 +2,13 @@ import { motion } from 'framer-motion';
 
 interface DiceProps {
   value?: number;
+  compact?: boolean;
 }
 
-export const Dice = ({ value }: DiceProps) => {
+export const Dice = ({ value, compact = false }: DiceProps) => {
   return (
     <motion.div
-      className="flex h-16 w-16 items-center justify-center rounded-2xl border border-stone-300 bg-white text-2xl font-semibold text-stone-700 shadow-sm"
+      className={`flex items-center justify-center rounded-2xl border border-stone-300 bg-white font-semibold text-stone-700 shadow-sm ${compact ? 'h-12 w-12 text-xl' : 'h-16 w-16 text-2xl'}`}
       key={value ?? 'empty'}
       initial={{ scale: 0.96, opacity: 0.5 }}
       animate={{ scale: 1, opacity: 1 }}

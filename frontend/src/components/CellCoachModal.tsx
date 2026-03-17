@@ -70,7 +70,31 @@ export const CellCoachModal = ({
     && (window.matchMedia?.('(pointer: coarse)').matches || 'ontouchstart' in window);
   const useVeil = DEFAULT_CARD_LOADING_SETTINGS.veilEnabledOnMobile && isTouchDevice;
   const isDarkFramedBlend = theme.modal.imageBlendMode === 'dark-framed';
-  const contentPanelBackground = isDarkFramedBlend ? 'var(--lila-surface)' : theme.modal.panelBackground;
+  const contentPanelBackground = isDarkFramedBlend
+    ? 'linear-gradient(180deg, rgba(251,247,241,0.99), rgba(244,237,228,0.98))'
+    : theme.modal.panelBackground;
+  const contentPanelText = isDarkFramedBlend ? '#32273f' : 'var(--lila-text-primary)';
+  const contentPanelMuted = isDarkFramedBlend ? '#72636d' : 'var(--lila-text-muted)';
+  const contentPanelBorder = isDarkFramedBlend ? 'rgba(143, 128, 168, 0.24)' : 'var(--lila-border-soft)';
+  const contentCardBackground = isDarkFramedBlend
+    ? 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,240,232,0.98))'
+    : 'linear-gradient(180deg, var(--lila-canva-panel-bg-soft), var(--lila-canva-panel-bg))';
+  const contentCardShadow = isDarkFramedBlend
+    ? '0 14px 26px rgba(67, 53, 82, 0.08)'
+    : undefined;
+  const textareaBackground = isDarkFramedBlend ? 'rgba(255,255,255,0.98)' : 'var(--lila-input-bg)';
+  const textareaText = isDarkFramedBlend ? '#32273f' : 'var(--lila-text-primary)';
+  const textareaBorder = isDarkFramedBlend ? 'rgba(143, 128, 168, 0.28)' : 'var(--lila-input-border)';
+  const closeButtonBackground = isDarkFramedBlend ? 'rgba(255,248,241,0.96)' : 'rgba(255,255,255,0.8)';
+  const closeButtonText = isDarkFramedBlend ? '#67556d' : 'var(--lila-text-muted)';
+  const primaryButtonStyle = isDarkFramedBlend
+    ? {
+        background: 'linear-gradient(180deg, rgba(239,231,248,0.98), rgba(255,252,248,0.98))',
+        color: contentPanelText,
+        border: `1px solid ${contentPanelBorder}`,
+        boxShadow: '0 12px 24px rgba(95, 78, 122, 0.12)',
+      }
+    : undefined;
   useOverlayLock(true);
 
   const clearVeilTimers = () => {
@@ -225,7 +249,12 @@ export const CellCoachModal = ({
                 <p className="mt-1 text-sm text-[var(--lila-text-muted)]">Клітина {cellNumber}</p>
               </div>
               <button
-                className="rounded-full border border-[var(--lila-border-soft)] bg-white/80 px-3 py-1.5 text-xs font-medium text-[var(--lila-text-muted)] transition hover:bg-[var(--lila-surface-muted)]"
+                className="rounded-full px-3 py-1.5 text-xs font-medium transition"
+                style={{
+                  border: `1px solid ${contentPanelBorder}`,
+                  background: closeButtonBackground,
+                  color: closeButtonText,
+                }}
                 onClick={onClose}
                 type="button"
               >
@@ -279,18 +308,21 @@ export const CellCoachModal = ({
 
           <section
             className="lila-scroll-pane min-h-0 flex-1 p-4 sm:p-6"
-            style={{ background: contentPanelBackground }}
+            style={{
+              background: contentPanelBackground,
+              color: contentPanelText,
+            }}
           >
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-3 border-b border-[var(--lila-border-soft)]/70 pb-4">
+              <div className="flex flex-col gap-3 pb-4" style={{ borderBottom: `1px solid ${contentPanelBorder}` }}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="lila-utility-label">Card Meaning</p>
-                    <h3 className="mt-2 text-3xl font-semibold text-[var(--lila-text-primary)]">{lilaContent.title}</h3>
+                    <h3 className="mt-2 text-3xl font-semibold" style={{ color: contentPanelText }}>{lilaContent.title}</h3>
                   </div>
                   <span className="lila-badge self-start">Клітина {cellNumber}</span>
                 </div>
-                <p className="max-w-2xl text-sm leading-6 text-[var(--lila-text-muted)]">
+                <p className="max-w-2xl text-sm leading-6" style={{ color: contentPanelMuted }}>
                   Внутрішній scroll лишається тільки тут: картка може бути глибокою, але основний game shell не втрачає one-screen rhythm.
                 </p>
               </div>
@@ -308,8 +340,19 @@ export const CellCoachModal = ({
               </div>
             )}
 
-            <div className="lila-list-card p-4 sm:p-5">
-              <MarkdownText source={combinedMarkdown} />
+            <div
+              className="lila-list-card p-4 sm:p-5"
+              style={{
+                background: contentCardBackground,
+                border: `1px solid ${contentPanelBorder}`,
+                boxShadow: contentCardShadow,
+              }}
+            >
+              <MarkdownText
+                source={combinedMarkdown}
+                primaryColor={isDarkFramedBlend ? contentPanelText : undefined}
+                mutedColor={isDarkFramedBlend ? '#6d5f69' : undefined}
+              />
             </div>
 
             <textarea
@@ -326,6 +369,12 @@ export const CellCoachModal = ({
               lang="uk"
               autoCapitalize="sentences"
               spellCheck
+              style={{
+                background: textareaBackground,
+                color: textareaText,
+                border: `1px solid ${textareaBorder}`,
+                boxShadow: isDarkFramedBlend ? 'inset 0 1px 0 rgba(255,255,255,0.72)' : undefined,
+              }}
             />
             {validationError && (
               <p className="text-sm text-amber-700">{validationError}</p>
@@ -337,6 +386,7 @@ export const CellCoachModal = ({
                 type="button"
                 onClick={handleSave}
                 disabled={readOnly && text.trim().length === 0}
+                style={primaryButtonStyle}
                 whileTap={buttonTapScale}
                 whileHover={buttonHoverScale}
               >
@@ -345,18 +395,27 @@ export const CellCoachModal = ({
               {!readOnly && (
                 <motion.button
                   className="lila-secondary-button px-4 py-3 text-sm font-medium"
-                  type="button"
-                  onClick={onSkip}
-                  whileTap={buttonTapScale}
-                  whileHover={buttonHoverScale}
-                >
+                type="button"
+                onClick={onSkip}
+                style={
+                  isDarkFramedBlend
+                    ? {
+                        background: 'rgba(255,255,255,0.92)',
+                        color: contentPanelText,
+                        border: `1px solid ${contentPanelBorder}`,
+                      }
+                    : undefined
+                }
+                whileTap={buttonTapScale}
+                whileHover={buttonHoverScale}
+              >
                   Пропустити
                 </motion.button>
               )}
             </div>
 
             {!readOnly && (
-              <p className="text-sm leading-6 text-[var(--lila-text-muted)]">
+              <p className="text-sm leading-6" style={{ color: contentPanelMuted }}>
                 Це нормально. Ви зможете повернутися до цієї клітини в «Мій шлях».
               </p>
             )}

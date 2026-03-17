@@ -3,6 +3,8 @@ import { Fragment, type ReactNode } from 'react';
 interface MarkdownTextProps {
   source: string;
   className?: string;
+  primaryColor?: string;
+  mutedColor?: string;
 }
 
 const parseInline = (text: string): ReactNode[] => {
@@ -52,25 +54,25 @@ const parseInline = (text: string): ReactNode[] => {
   return nodes;
 };
 
-const paragraphFrom = (lines: string[], key: string) => {
+const paragraphFrom = (lines: string[], key: string, mutedColor?: string) => {
   if (lines.length === 0) {
     return null;
   }
 
   return (
-    <p key={key} className="text-sm leading-6 text-[var(--lila-text-muted)]">
+    <p key={key} className="text-sm leading-6" style={{ color: mutedColor ?? 'var(--lila-text-muted)' }}>
       {parseInline(lines.join(' '))}
     </p>
   );
 };
 
-const listFrom = (lines: string[], key: string) => {
+const listFrom = (lines: string[], key: string, mutedColor?: string) => {
   if (lines.length === 0) {
     return null;
   }
 
   return (
-    <ul key={key} className="list-disc space-y-1 pl-5 text-sm leading-6 text-[var(--lila-text-muted)]">
+    <ul key={key} className="list-disc space-y-1 pl-5 text-sm leading-6" style={{ color: mutedColor ?? 'var(--lila-text-muted)' }}>
       {lines.map((line, index) => (
         <li key={`${key}-${index}`}>{parseInline(line)}</li>
       ))}
@@ -78,14 +80,14 @@ const listFrom = (lines: string[], key: string) => {
   );
 };
 
-export const MarkdownText = ({ source, className }: MarkdownTextProps) => {
+export const MarkdownText = ({ source, className, primaryColor, mutedColor }: MarkdownTextProps) => {
   const lines = source.replace(/\r\n/g, '\n').split('\n');
   const blocks: ReactNode[] = [];
   let paragraphLines: string[] = [];
   let listLines: string[] = [];
 
   const flushParagraph = () => {
-    const paragraph = paragraphFrom(paragraphLines, `p-${blocks.length}`);
+    const paragraph = paragraphFrom(paragraphLines, `p-${blocks.length}`, mutedColor);
     if (paragraph) {
       blocks.push(paragraph);
     }
@@ -93,7 +95,7 @@ export const MarkdownText = ({ source, className }: MarkdownTextProps) => {
   };
 
   const flushList = () => {
-    const list = listFrom(listLines, `list-${blocks.length}`);
+    const list = listFrom(listLines, `list-${blocks.length}`, mutedColor);
     if (list) {
       blocks.push(list);
     }
@@ -116,7 +118,7 @@ export const MarkdownText = ({ source, className }: MarkdownTextProps) => {
       const heading = headingMatch[2];
       if (level === 1) {
         blocks.push(
-          <h1 key={`h1-${lineIndex}`} className="text-xl font-semibold tracking-tight text-[var(--lila-text-primary)]">
+          <h1 key={`h1-${lineIndex}`} className="text-xl font-semibold tracking-tight" style={{ color: primaryColor ?? 'var(--lila-text-primary)' }}>
             {parseInline(heading)}
           </h1>,
         );
@@ -124,14 +126,14 @@ export const MarkdownText = ({ source, className }: MarkdownTextProps) => {
       }
       if (level === 2) {
         blocks.push(
-          <h2 key={`h2-${lineIndex}`} className="text-lg font-semibold tracking-tight text-[var(--lila-text-primary)]">
+          <h2 key={`h2-${lineIndex}`} className="text-lg font-semibold tracking-tight" style={{ color: primaryColor ?? 'var(--lila-text-primary)' }}>
             {parseInline(heading)}
           </h2>,
         );
         return;
       }
       blocks.push(
-        <h3 key={`h3-${lineIndex}`} className="text-sm font-semibold uppercase tracking-wide text-[var(--lila-text-primary)]">
+        <h3 key={`h3-${lineIndex}`} className="text-sm font-semibold uppercase tracking-wide" style={{ color: primaryColor ?? 'var(--lila-text-primary)' }}>
           {parseInline(heading)}
         </h3>,
       );

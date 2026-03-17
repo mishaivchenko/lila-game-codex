@@ -2,6 +2,8 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CellCoachModal } from './CellCoachModal';
 import { DEFAULT_CARD_LOADING_SETTINGS } from '../lib/animations/modalSettings';
+import { BoardThemeContext, defaultBoardThemeContextValue } from '../theme/BoardThemeContext';
+import { COSMIC_DARK_THEME } from '../theme';
 
 vi.mock('../content/cardAssets', () => ({
   getCardImagePath: () => '/placeholder-card.svg',
@@ -55,6 +57,42 @@ describe('CellCoachModal image layout', () => {
 
     const modalShell = screen.getByTestId('cell-coach-modal-shell');
     expect(modalShell.className).toContain('sm:max-w-[1180px]');
+  });
+
+  it('keeps dark-theme card content readable with light content surfaces', () => {
+    render(
+      <BoardThemeContext.Provider
+        value={{
+          ...defaultBoardThemeContextValue,
+          themeId: COSMIC_DARK_THEME.id,
+          theme: COSMIC_DARK_THEME,
+          tokenColorValue: COSMIC_DARK_THEME.token.defaultColor,
+        }}
+      >
+        <CellCoachModal
+          cellNumber={5}
+          depth="standard"
+          cellContent={{
+            title: 'Cell',
+            shortText: 'short',
+            fullText: 'full',
+            questions: ['q1'],
+          }}
+          onSave={() => {}}
+          onSkip={() => {}}
+          onClose={() => {}}
+        />
+      </BoardThemeContext.Provider>,
+    );
+
+    const textarea = screen.getByPlaceholderText("Напишіть 1-2 чесні речення. Не обов'язково ідеально.");
+    const textareaStyle = textarea.getAttribute('style') ?? '';
+    expect(textareaStyle).toContain('background: rgba(255, 255, 255, 0.98)');
+    expect(textareaStyle).toContain('color: rgb(50, 39, 63)');
+
+    const contentCard = screen.getByText('Питання для зупинки').closest('.lila-list-card');
+    const contentCardStyle = contentCard?.getAttribute('style') ?? '';
+    expect(contentCardStyle).toContain('linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 240, 232, 0.98))');
   });
 
   it('shows per-cell text from Lila master content map', () => {

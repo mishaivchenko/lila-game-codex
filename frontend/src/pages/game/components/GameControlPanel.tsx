@@ -30,13 +30,13 @@ export const GameControlPanel = ({
   onOpenFinishConfirm,
   onOpenAnimationSettings,
 }: GameControlPanelProps) => (
-  <section className="flex h-full min-h-0 flex-col gap-3">
-    <div className="lila-paper-card p-4">
-      <div className="flex items-center gap-3">
-        <Dice value={lastMove?.dice} />
+  <section className="flex h-full min-h-0 flex-col gap-2">
+    <div className="lila-paper-card p-3">
+      <div className="flex items-center gap-2.5">
+        <Dice value={lastMove?.dice} compact />
         <div className="min-w-0">
           <p className="lila-utility-label">Next Action</p>
-          <p className="mt-1 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">
+          <p className="mt-1 text-sm font-semibold leading-5 text-[var(--lila-text-primary)]">
             {isSimpleMultiplayer ? 'Черговий хід гравця' : 'Ваш наступний крок'}
           </p>
         </div>
@@ -54,7 +54,7 @@ export const GameControlPanel = ({
         onClick={onRoll}
         type="button"
         disabled={turnState !== 'idle'}
-        className="lila-primary-button mt-4 w-full px-4 py-4 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-70"
+        className="lila-primary-button mt-3 w-full px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-70"
         whileTap={buttonTapScale}
         whileHover={buttonHoverScale}
       >
@@ -62,34 +62,27 @@ export const GameControlPanel = ({
       </motion.button>
     </div>
 
-    <div className="lila-list-card p-4">
+    <div className="lila-list-card p-3">
       <div className="space-y-2">
-        <div>
-          <p className="lila-utility-label">Quick Actions</p>
-          <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)]">Усе другорядне лишається компактно поруч.</p>
-        </div>
-
+        <p className="lila-utility-label">Quick Actions</p>
         <div className="grid gap-2">
-          <Link
-            className="lila-secondary-button flex items-center justify-center px-4 py-3 text-sm font-medium"
-            to="/history"
-          >
+          <Link className="lila-secondary-button flex items-center justify-center px-3 py-2.5 text-sm font-medium" to="/history">
             Мій шлях
           </Link>
           <button
             type="button"
             onClick={onOpenAnimationSettings}
-            className="lila-secondary-button w-full px-4 py-3 text-sm font-medium"
+            className="lila-secondary-button w-full px-3 py-2.5 text-sm font-medium"
           >
-            Налаштування руху
+            Рух
           </button>
           <button
             type="button"
             onClick={onOpenFinishConfirm}
             disabled={turnState !== 'idle'}
-            className="lila-secondary-button w-full px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+            className="lila-secondary-button w-full px-3 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Завершити подорож
+            Завершити
           </button>
         </div>
       </div>

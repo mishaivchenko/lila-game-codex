@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TelegramAppShell } from './TelegramAppShell';
 
 const runtimeModeMock = vi.fn((_pathname?: string) => true);
@@ -29,8 +29,13 @@ vi.mock('./useTelegramSessionSync', () => ({
 }));
 
 describe('TelegramAppShell', () => {
+  beforeEach(() => {
+    vi.stubGlobal('scrollTo', vi.fn());
+  });
+
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
   it('uses app-height fallback strategy class for telegram mode root', () => {
     runtimeModeMock.mockReturnValue(true);
@@ -60,5 +65,20 @@ describe('TelegramAppShell', () => {
     );
 
     expect(screen.getAllByText('Ініціалізуємо Telegram Mini App...').length).toBeGreaterThan(0);
+  });
+
+  it('resets page scroll position on route render to preserve one-screen shells', () => {
+    runtimeModeMock.mockReturnValue(true);
+    const scrollSpy = vi.mocked(window.scrollTo);
+
+    render(
+      <MemoryRouter initialEntries={['/settings']}>
+        <TelegramAppShell>
+          <div>content</div>
+        </TelegramAppShell>
+      </MemoryRouter>,
+    );
+
+    expect(scrollSpy).toHaveBeenCalledWith(0, 0);
   });
 });

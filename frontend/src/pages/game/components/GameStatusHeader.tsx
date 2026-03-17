@@ -28,15 +28,15 @@ export const GameStatusHeader = ({
   isDeepEntryPending,
   entryHint,
 }: GameStatusHeaderProps) => (
-  <header className="mb-1 flex flex-col gap-2 px-1 pb-1 sm:mb-2 sm:gap-3">
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.08em] text-[var(--lila-text-muted)] sm:text-xs">
+  <header className="mb-0.5 flex flex-col gap-1 px-0.5 pb-0.5 sm:gap-2">
+    <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] uppercase tracking-[0.12em] text-[var(--lila-text-muted)] sm:text-[11px]">
           <span className="hidden sm:inline">Current Focus</span>
           <span>{isSimpleMultiplayer ? `Хід: ${activeSimplePlayerName ?? 'Учасник'}` : 'Ваш хід'}</span>
           <span>Клітина {safeCurrentCell}</span>
         </div>
-        <h1 className="mt-1 text-[clamp(1.15rem,2vw,2.2rem)] font-black uppercase tracking-[-0.05em] text-[var(--lila-text-primary)] sm:mt-2">
+        <h1 className="mt-1 text-[clamp(1.05rem,1.55vw,1.85rem)] font-black uppercase tracking-[-0.05em] text-[var(--lila-text-primary)] sm:mt-1.5">
           {currentChakra?.name ?? 'Шлях триває'}
         </h1>
       </div>
@@ -44,7 +44,7 @@ export const GameStatusHeader = ({
         type="button"
         onClick={onToggleHintInfo}
         aria-label="Підказка про змій і стріли"
-        className="self-start rounded-full border border-[var(--lila-border-soft)] bg-white/70 px-2.5 py-1 text-xs text-[var(--lila-text-muted)] transition hover:bg-[var(--lila-surface-muted)] sm:px-3 sm:py-1.5"
+        className="self-start rounded-full border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/72 px-2 py-1 text-[11px] text-[var(--lila-text-muted)] transition hover:bg-[var(--lila-surface-muted)] sm:px-2.5"
       >
         ?
       </button>
@@ -55,7 +55,7 @@ export const GameStatusHeader = ({
         {simplePlayers.map((player, index) => (
           <span
             key={player.id}
-            className={`inline-flex max-w-full items-start gap-2 rounded-[20px] border px-3 py-2 text-xs ${
+            className={`inline-flex max-w-full items-start gap-2 rounded-[18px] border px-2.5 py-1.5 text-[11px] ${
               index === activeSimplePlayerIndex
                 ? 'border-[var(--lila-accent)] bg-[linear-gradient(180deg,rgba(236,229,248,0.9),rgba(255,255,255,0.7))] text-[var(--lila-text-primary)] shadow-[0_12px_28px_rgba(90,72,135,0.14)]'
                 : 'border-[var(--lila-border-soft)] bg-white/85 text-[var(--lila-text-primary)]'
@@ -75,13 +75,17 @@ export const GameStatusHeader = ({
     )}
 
     {isDeepEntryPending && (
-      <p className="rounded-[20px] bg-amber-50 px-4 py-3 text-xs text-amber-800 sm:text-sm">
+      <p className="rounded-[16px] bg-[var(--lila-warning-bg)] px-3 py-2 text-[11px] text-[var(--lila-warning-text)] sm:text-xs">
         Щоб увійти в глибоку гру, потрібно викинути 6.
       </p>
     )}
-    {entryHint && <p className="rounded-[20px] bg-[#f4e6dc] px-4 py-3 text-xs text-[#6f4a3a] sm:text-sm">{entryHint}</p>}
+    {entryHint && (
+      <p className="rounded-[16px] bg-[var(--lila-warning-bg)] px-3 py-2 text-[11px] text-[var(--lila-warning-text)] sm:text-xs">
+        {entryHint}
+      </p>
+    )}
     {showHintInfo && (
-      <p className="rounded-[20px] border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-4 py-3 text-xs text-[var(--lila-text-primary)] sm:text-sm">
+      <p className="rounded-[16px] border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-3 py-2 text-[11px] text-[var(--lila-text-primary)] sm:text-xs">
         Змії — це уроки. Стріли — це ресурси.
       </p>
     )}

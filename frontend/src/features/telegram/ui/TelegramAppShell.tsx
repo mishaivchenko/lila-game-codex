@@ -73,6 +73,15 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
     return () => window.clearTimeout(timer);
   }, [fullscreenRequested, requestFullScreen, telegramMode]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [location.pathname]);
+
   const bootstrapState = resolveAppBootstrapState(authState.status, authState.appStatus, Boolean(authState.token));
 
   const shellClassName = telegramMode
