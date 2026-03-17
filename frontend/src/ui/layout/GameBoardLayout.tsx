@@ -25,10 +25,10 @@ export const GameBoardLayout = ({
     >
       <div className="lila-canva-frame min-h-0">
         <div
-          className="grid min-h-0 flex-1 gap-3 grid-rows-[auto_minmax(0,1fr)_auto] min-[1400px]:grid-cols-[minmax(0,1.62fr)_320px] min-[1400px]:grid-rows-[auto_minmax(0,1fr)]"
+          className="grid min-h-0 flex-1 gap-3 grid-rows-[auto_minmax(0,1fr)_auto] min-[1180px]:grid-cols-[minmax(0,1.24fr)_304px] min-[1180px]:grid-rows-[auto_minmax(0,1fr)]"
           data-testid="game-board-layout-grid"
         >
-          <section className="min-[1400px]:col-span-2">
+          <section className="min-[1180px]:col-span-2">
             {header}
           </section>
 
@@ -44,7 +44,7 @@ export const GameBoardLayout = ({
           </section>
 
           <section
-            className="lila-canva-sidebar min-h-0 max-h-[26vh] overflow-hidden px-3 py-3 sm:max-h-[30vh] sm:px-4 min-[1400px]:max-h-none min-[1400px]:overflow-y-auto"
+            className="lila-canva-sidebar min-h-0 max-h-[26vh] overflow-hidden px-3 py-3 sm:max-h-[30vh] sm:px-4 min-[1180px]:max-h-none min-[1180px]:overflow-y-auto"
             style={{
               background: theme.layout.floatingControlsBackground,
               border: `1px solid ${theme.layout.floatingControlsBorder}`,
@@ -54,7 +54,7 @@ export const GameBoardLayout = ({
             {controls}
           </section>
           {sideContent && (
-            <section className="min-h-0 min-[1400px]:col-span-2">
+            <section className="min-h-0 min-[1180px]:col-span-2">
               {sideContent}
             </section>
           )}

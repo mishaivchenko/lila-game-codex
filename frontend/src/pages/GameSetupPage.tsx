@@ -10,10 +10,10 @@ export const GameSetupPage = () => {
         <CanvaPageTopBar backHref="/" />
 
         <div
-          className="grid min-h-0 flex-1 gap-4 pt-4 grid-rows-[auto_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)] xl:grid-rows-1"
+          className="grid min-h-0 flex-1 gap-2 pt-2 grid-rows-[auto_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)] xl:grid-rows-1 xl:gap-4 xl:pt-4"
           data-testid="setup-shell-layout"
         >
-          <section className="lila-canva-sidebar relative min-h-0 px-4 py-4 text-left sm:px-5">
+          <section className="lila-canva-sidebar relative min-h-0 px-4 py-3 text-left sm:px-5 sm:py-4">
             <BrandLogo
               alt="SoulVio Ліла"
               className="pointer-events-none absolute -right-8 top-4 hidden h-32 w-32 opacity-[var(--lila-brand-mark-opacity)] xl:block"
@@ -24,7 +24,7 @@ export const GameSetupPage = () => {
               <h1 className="mt-2 text-[clamp(2rem,4vw,3.6rem)] font-black uppercase tracking-[-0.05em] text-[var(--lila-text-primary)]">
                 Старт гри
               </h1>
-              <p className="mt-3 max-w-[32rem] text-sm leading-6 text-[var(--lila-text-muted)]">
+              <p className="mt-3 hidden max-w-[32rem] text-sm leading-6 text-[var(--lila-text-muted)] sm:block">
                 Залишаємо лише потрібне: формат входу, гравці, тема й старт без зайвого шуму.
               </p>
 

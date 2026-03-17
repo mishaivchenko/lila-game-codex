@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameContext } from '../../context/GameContext';
+import { CompactPanelModal } from '../CompactPanelModal';
 import { MarkdownText } from '../MarkdownText';
 import type { DiceMode } from '../../domain/types';
 import { createRepositories } from '../../repositories';
@@ -83,6 +84,7 @@ export const JourneySetupHub = () => {
   const [activeTab, setActiveTab] = useState<TabId>('simple');
   const [diceMode, setDiceMode] = useState<DiceMode>('classic');
   const [showQuickGuide, setShowQuickGuide] = useState(false);
+  const [showPlayersEditor, setShowPlayersEditor] = useState(false);
 
   const [players, setPlayers] = useState<PlayerDraft[]>([createPlayer(0)]);
   const [simpleError, setSimpleError] = useState<string | undefined>(undefined);
@@ -171,9 +173,91 @@ export const JourneySetupHub = () => {
     navigate('/game');
   };
 
+  const playerCards = (
+    <div className="space-y-3">
+      {players.map((player, index) => (
+        <article key={player.id} className="lila-list-card p-4 sm:p-5">
+          <div className="grid gap-4 xl:grid-cols-[120px_minmax(0,1fr)_208px]">
+            <div>
+              <p className="lila-utility-label">Player {index + 1}</p>
+              <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">
+                {player.name.trim() || `Учасник ${index + 1}`}
+              </p>
+              <p className="mt-2 text-sm leading-5 text-[var(--lila-text-muted)]">Короткий профіль.</p>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="block text-sm font-medium text-[var(--lila-text-primary)]">
+                Імʼя
+                <input
+                  value={player.name}
+                  onChange={(event) => updatePlayer(player.id, { name: event.target.value })}
+                  className="lila-field mt-2 px-3 py-3 text-sm text-[var(--lila-text-primary)]"
+                />
+              </label>
+
+              <label className="block text-sm font-medium text-[var(--lila-text-primary)] md:col-span-2">
+                Мій запит
+                <textarea
+                  value={player.request}
+                  onChange={(event) => updatePlayer(player.id, { request: event.target.value })}
+                  className="lila-textarea mt-2 min-h-20 px-3 py-3 text-sm leading-6 text-[var(--lila-text-primary)]"
+                />
+              </label>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-[var(--lila-text-primary)]">Колір фішки</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {colors.map((color) => (
+                  <button
+                    key={color.id}
+                    type="button"
+                    onClick={() => updatePlayer(player.id, { color: color.id })}
+                    className={`h-9 w-9 rounded-full border-2 transition ${
+                      color.className
+                    } ${
+                      player.color === color.id
+                        ? 'scale-110 border-[var(--lila-accent)] shadow-[0_10px_20px_rgba(90,72,135,0.18)]'
+                        : 'border-white/80'
+                    }`}
+                    aria-label={color.id}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+
+  const playerEditorContent = (
+    <>
+      {playerCards}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={addPlayer}
+          disabled={players.length >= 4}
+          className="lila-secondary-button px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Додати учасника
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowPlayersEditor(false)}
+          className="lila-primary-button px-4 py-3 text-sm font-semibold"
+        >
+          Готово
+        </button>
+      </div>
+    </>
+  );
+
   return (
-    <section className="lila-panel flex h-full min-h-0 flex-col overflow-hidden p-4 sm:p-5" data-testid="journey-setup-hub">
-      <div className="flex flex-col gap-3 border-b border-[var(--lila-border-soft)]/70 pb-4">
+    <section className="lila-panel flex h-full min-h-0 flex-col overflow-hidden p-3 sm:p-5" data-testid="journey-setup-hub">
+      <div className="flex flex-col gap-2 border-b border-[var(--lila-border-soft)]/70 pb-3 sm:gap-3 sm:pb-4">
         <div className="flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="lila-utility-label">Journey Studio</p>
@@ -215,9 +299,15 @@ export const JourneySetupHub = () => {
       </div>
 
       {activeTab === 'simple' && (
-        <div className="mt-5 flex min-h-0 flex-1 flex-col gap-4">
+        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3 sm:mt-5 sm:gap-4">
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="flex flex-wrap gap-2 sm:hidden">
+              <span className="lila-badge">До 4 учасників</span>
+              <span className="lila-badge">Формат: {diceMode}</span>
+              <span className="lila-badge">Один екран</span>
+            </div>
+
+            <div className="hidden gap-3 sm:grid sm:grid-cols-3">
               <article className="lila-list-card p-3.5">
                 <p className="lila-utility-label">Rhythm</p>
                 <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">До 4 учасників</p>
@@ -246,7 +336,7 @@ export const JourneySetupHub = () => {
             </aside>
           </div>
 
-          <div className="xl:hidden">
+          <div className="hidden sm:block xl:hidden">
             <button
               type="button"
               onClick={() => setShowQuickGuide((prev) => !prev)}
@@ -264,74 +354,51 @@ export const JourneySetupHub = () => {
             </div>
           )}
 
-          <div className="lila-scroll-pane -mr-1 flex min-h-0 flex-1 flex-col gap-3 pr-1">
-            {players.map((player, index) => (
-              <article key={player.id} className="lila-list-card p-4 sm:p-5">
-                <div className="grid gap-4 xl:grid-cols-[120px_minmax(0,1fr)_208px]">
-                  <div>
-                    <p className="lila-utility-label">Player {index + 1}</p>
-                    <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">
-                      {player.name.trim() || `Учасник ${index + 1}`}
-                    </p>
-                    <p className="mt-2 text-sm leading-5 text-[var(--lila-text-muted)]">Короткий профіль.</p>
-                  </div>
-
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <label className="block text-sm font-medium text-[var(--lila-text-primary)]">
-                      Імʼя
-                      <input
-                        value={player.name}
-                        onChange={(event) => updatePlayer(player.id, { name: event.target.value })}
-                        className="lila-field mt-2 px-3 py-3 text-sm text-[var(--lila-text-primary)]"
-                      />
-                    </label>
-
-                    <label className="block text-sm font-medium text-[var(--lila-text-primary)] sm:col-span-2">
-                      Мій запит
-                      <textarea
-                        value={player.request}
-                        onChange={(event) => updatePlayer(player.id, { request: event.target.value })}
-                        className="lila-textarea mt-2 min-h-20 px-3 py-3 text-sm leading-6 text-[var(--lila-text-primary)]"
-                      />
-                    </label>
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium text-[var(--lila-text-primary)]">Колір фішки</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {colors.map((color) => (
-                        <button
-                          key={color.id}
-                          type="button"
-                          onClick={() => updatePlayer(player.id, { color: color.id })}
-                          className={`h-9 w-9 rounded-full border-2 transition ${
-                            color.className
-                          } ${
-                            player.color === color.id
-                              ? 'scale-110 border-[var(--lila-accent)] shadow-[0_10px_20px_rgba(90,72,135,0.18)]'
-                              : 'border-white/80'
-                          }`}
-                          aria-label={color.id}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </article>
-            ))}
+          <div className="hidden min-h-0 flex-1 xl:flex">
+            <div className="lila-scroll-pane -mr-1 flex min-h-0 flex-1 flex-col gap-3 pr-1">
+              {playerCards}
+            </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+          <div className="xl:hidden lila-list-card p-3.5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="lila-utility-label">Учасники</p>
+                <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">
+                  {players.length} {players.length === 1 ? 'гравець' : players.length < 5 ? 'гравці' : 'гравців'}
+                </p>
+                <p className="mt-1 text-sm leading-5 text-[var(--lila-text-muted)]">
+                  {players.map((player, index) => player.name.trim() || `Учасник ${index + 1}`).join(', ')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPlayersEditor(true)}
+                className="lila-secondary-button px-3 py-2 text-sm font-medium"
+              >
+                Редагувати
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-3">
             {simpleError && (
-              <p className="rounded-[20px] bg-[var(--lila-danger-bg)] px-4 py-3 text-sm text-[var(--lila-danger-text)] sm:col-span-3">
+              <p className="col-span-2 rounded-[20px] bg-[var(--lila-danger-bg)] px-4 py-3 text-sm text-[var(--lila-danger-text)] sm:col-span-3">
                 {simpleError}
               </p>
             )}
             <button
               type="button"
+              onClick={() => setShowPlayersEditor(true)}
+              className="lila-secondary-button w-full px-4 py-2 text-sm font-medium xl:hidden"
+            >
+              Учасники
+            </button>
+            <button
+              type="button"
               onClick={addPlayer}
               disabled={players.length >= 4}
-              className="lila-secondary-button w-full px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40"
+              className="hidden lila-secondary-button w-full px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40 xl:block"
             >
               Додати учасника
             </button>
@@ -341,7 +408,7 @@ export const JourneySetupHub = () => {
               onClick={() => {
                 void startSimpleGame();
               }}
-              className="lila-primary-button w-full px-5 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              className="lila-primary-button w-full px-5 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               Почати гру
             </button>
@@ -415,6 +482,17 @@ export const JourneySetupHub = () => {
           </div>
         </div>
       )}
+
+      <div className="xl:hidden">
+        <CompactPanelModal
+          open={showPlayersEditor}
+          eyebrow="Гравці"
+          title="Редактор учасників"
+          onClose={() => setShowPlayersEditor(false)}
+        >
+          {playerEditorContent}
+        </CompactPanelModal>
+      </div>
     </section>
   );
 };

@@ -22,10 +22,17 @@ describe('GameSetupPage', () => {
 
     expect(screen.getByRole('main').className).toContain('lila-page-shell');
     expect(screen.getByTestId('setup-shell-layout').className).toContain('grid-rows-[auto_minmax(0,1fr)]');
-    expect(screen.getByRole('button', { name: 'Показати підказки' })).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Учасники' })).not.toBeNull();
     const user = userEvent.setup();
-    const requestField = screen.getAllByLabelText('Мій запит')[0];
+    await user.click(screen.getByRole('button', { name: 'Учасники' }));
+    expect(screen.getByText('Редактор учасників')).not.toBeNull();
+
+    const requestField = screen.getAllByLabelText('Мій запит').at(-1);
+    if (!requestField) {
+      throw new Error('Expected request field in player editor modal');
+    }
     await user.type(requestField, 'Хочу зрозуміти свої емоції');
+    await user.click(screen.getByRole('button', { name: 'Готово' }));
     await user.click(screen.getByText('Почати гру'));
 
     expect(await screen.findByText('GAME_PAGE')).not.toBeNull();

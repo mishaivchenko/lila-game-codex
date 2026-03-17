@@ -673,7 +673,7 @@ export const GamePage = () => {
         )}
         controls={(
           <>
-            <div className="min-[1400px]:hidden">
+            <div className="min-[1180px]:hidden">
               <GameControlDock
                 lastMove={lastMove}
                 boardMaxCell={board.maxCell}
@@ -686,7 +686,7 @@ export const GamePage = () => {
                 onOpenAnimationSettings={() => setShowAnimationSettings(true)}
               />
             </div>
-            <div className="hidden h-full min-[1400px]:block">
+            <div className="hidden h-full min-[1180px]:block">
               <GameControlPanel
                 lastMove={lastMove}
                 boardMaxCell={board.maxCell}
