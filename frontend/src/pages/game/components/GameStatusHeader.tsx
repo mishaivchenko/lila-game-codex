@@ -29,7 +29,7 @@ export const GameStatusHeader = ({
   isDeepEntryPending,
   entryHint,
 }: GameStatusHeaderProps) => (
-  <header className="lila-panel mb-3 p-4 sm:p-5">
+  <header className="lila-poster-panel mb-3 p-4 sm:p-5">
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
       <div className="min-w-0">
         <p className="lila-utility-label">Current Focus</p>
@@ -38,7 +38,9 @@ export const GameStatusHeader = ({
             ? `Хід: ${activeSimplePlayerName ?? 'Учасник'} · клітина ${safeCurrentCell}`
             : `Ви зараз на клітині ${safeCurrentCell}`}
         </p>
-        <h1 className="mt-2 text-3xl font-semibold text-[var(--lila-text-primary)]">{currentChakra?.name ?? 'Шлях триває'}</h1>
+        <h1 className="mt-2 text-[clamp(2rem,3vw,3.4rem)] font-black tracking-[-0.055em] text-[var(--lila-text-primary)]">
+          {currentChakra?.name ?? 'Шлях триває'}
+        </h1>
       </div>
       <button
         type="button"
@@ -50,6 +52,8 @@ export const GameStatusHeader = ({
       </button>
     </div>
 
+    <div className="lila-editorial-divider mt-4" />
+
     {currentChakra && <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--lila-text-muted)]">{currentChakra.description}</p>}
 
     {isSimpleMultiplayer && (
@@ -59,7 +63,7 @@ export const GameStatusHeader = ({
             key={player.id}
             className={`inline-flex max-w-full items-start gap-2 rounded-[20px] border px-3 py-2 text-xs ${
               index === activeSimplePlayerIndex
-                ? 'border-[var(--lila-accent)] bg-[var(--lila-accent-soft)] text-[var(--lila-text-primary)] shadow-[0_12px_28px_rgba(90,72,135,0.14)]'
+                ? 'border-[var(--lila-accent)] bg-[linear-gradient(180deg,rgba(236,229,248,0.9),rgba(255,255,255,0.7))] text-[var(--lila-text-primary)] shadow-[0_12px_28px_rgba(90,72,135,0.14)]'
                 : 'border-[var(--lila-border-soft)] bg-white/85 text-[var(--lila-text-primary)]'
             }`}
           >

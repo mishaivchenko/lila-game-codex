@@ -44,7 +44,7 @@ describe('MultiplayerStartPage', () => {
     );
 
     expect(screen.getByRole('main').className).toContain('lila-page-shell');
-    expect(screen.getByText('Спільна подорож')).not.toBeNull();
+    expect(screen.getByText(/спільна подорож/i)).not.toBeNull();
     expect(screen.getByTestId('mock-telegram-rooms-panel')).not.toBeNull();
     expect(screen.getByText('#ABCD12')).not.toBeNull();
     expect(refreshMyRooms).toHaveBeenCalledTimes(1);

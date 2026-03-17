@@ -31,7 +31,7 @@ export const GameControlPanel = ({
   onOpenAnimationSettings,
 }: GameControlPanelProps) => (
   <section className="flex h-full min-h-0 flex-col gap-3">
-    <div className="lila-list-card flex items-center justify-between gap-3 p-4">
+    <div className="lila-paper-card flex items-center justify-between gap-3 p-4">
       <div className="flex items-center gap-3">
         <Dice value={lastMove?.dice} />
         <div>
@@ -53,14 +53,19 @@ export const GameControlPanel = ({
       </p>
     )}
 
-    <div className="lila-panel-muted flex flex-1 min-h-0 flex-col justify-between p-4">
+    <div className="lila-poster-panel flex flex-1 min-h-0 flex-col justify-between p-4">
       <div className="space-y-3">
         <div>
           <p className="lila-utility-label">Control Panel</p>
+          <p className="mt-2 text-lg font-semibold text-[var(--lila-text-primary)]">
+            Хід і головні дії залишаються поруч із дошкою
+          </p>
           <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
-            Кубик і головні дії залишаються в пріоритеті, без зайвих сайдбарів і без зменшення фокусу на board.
+            Більш виразна desktop-композиція, але та сама interaction rhythm: кидок, пауза, історія, без шуму навколо board.
           </p>
         </div>
+
+        <div className="lila-editorial-divider" />
 
         <motion.button
           onClick={onRoll}
