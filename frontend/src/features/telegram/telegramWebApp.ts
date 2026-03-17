@@ -35,6 +35,7 @@ export interface TelegramWebAppHapticFeedback {
 export type TelegramWebAppEvent =
   | 'themeChanged'
   | 'viewportChanged'
+  | 'fullscreenChanged'
   | 'mainButtonClicked'
   | 'backButtonClicked';
 

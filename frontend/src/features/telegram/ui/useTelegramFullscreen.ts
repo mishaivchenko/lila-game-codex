@@ -4,7 +4,7 @@ import { getTelegramWebApp } from '../telegramWebApp';
 export const useTelegramFullscreen = () => {
   const resolveCurrentFullscreen = () => {
     const webApp = getTelegramWebApp();
-    return Boolean(webApp?.isExpanded || webApp?.isFullscreen || document.fullscreenElement);
+    return Boolean(webApp?.isFullscreen || document.fullscreenElement);
   };
   const [fullscreenRequested, setFullscreenRequested] = useState(() => {
     return resolveCurrentFullscreen();
@@ -12,8 +12,13 @@ export const useTelegramFullscreen = () => {
 
   const requestFullScreen = useCallback(async () => {
     const webApp = getTelegramWebApp();
-    webApp?.requestFullscreen?.();
     webApp?.expand();
+
+    try {
+      await Promise.resolve(webApp?.requestFullscreen?.());
+    } catch {
+      // Fall through to browser fullscreen fallback when Telegram runtime rejects the request.
+    }
 
     if (document.fullscreenElement) {
       setFullscreenRequested(true);
@@ -37,6 +42,9 @@ export const useTelegramFullscreen = () => {
       // Keep UI usable even if browser denies fullscreen request.
     } finally {
       setFullscreenRequested(resolveCurrentFullscreen());
+      window.setTimeout(() => {
+        setFullscreenRequested(resolveCurrentFullscreen());
+      }, 180);
     }
   }, []);
 
@@ -46,10 +54,12 @@ export const useTelegramFullscreen = () => {
       setFullscreenRequested(resolveCurrentFullscreen());
     };
     webApp?.onEvent?.('viewportChanged', syncState);
+    webApp?.onEvent?.('fullscreenChanged', syncState);
     document.addEventListener('fullscreenchange', syncState);
     syncState();
     return () => {
       webApp?.offEvent?.('viewportChanged', syncState);
+      webApp?.offEvent?.('fullscreenChanged', syncState);
       document.removeEventListener('fullscreenchange', syncState);
     };
   }, []);
