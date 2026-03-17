@@ -35,7 +35,7 @@ export const GameBoardLayout = ({
           </section>
 
           <section
-            className="lila-poster-panel relative flex min-h-0 min-w-0 pb-[8.35rem] sm:pb-[9rem] min-[1180px]:pb-0"
+            className="lila-poster-panel relative flex min-h-0 min-w-0 items-center justify-center pb-[8.35rem] sm:pb-[9rem] min-[1180px]:pb-0"
             style={{ padding: `${theme.layout.boardPanelPaddingPx}px` }}
           >
             <BrandLogo

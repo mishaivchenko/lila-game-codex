@@ -243,9 +243,10 @@ export const COSMIC_DARK_THEME: BoardTheme = {
   visualAssetTheme: 'minimal',
   boardBackground: {
     ...DEFAULT_SPIRITUAL_THEME.boardBackground,
-    canvasShellBackground: 'rgba(25, 28, 40, 0.76)',
-    canvasShellShadow: 'inset 0 1px 8px rgba(12, 14, 25, 0.38)',
-    boardImageFilter: 'saturate(1.08) contrast(1.06) brightness(0.9) hue-rotate(-8deg)',
+    canvasShellBackground: 'rgba(243, 236, 228, 0.94)',
+    canvasShellShadow: '0 18px 40px rgba(7, 10, 19, 0.28), inset 0 0 0 1px rgba(255,255,255,0.18)',
+    canvasFrameBackground: '#f4ede6',
+    boardImageFilter: 'saturate(1.04) contrast(1.12) brightness(1.05)',
     boardPanelBackground: '#1f2331',
     boardPanelText: '#ece7df',
     transitionHintArrowBackground: '#2f3549',

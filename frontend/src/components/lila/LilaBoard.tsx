@@ -46,7 +46,7 @@ export const LilaBoard = ({
   const { theme } = useBoardTheme();
   return (
     <section
-      className="flex h-full min-h-0 flex-col rounded-3xl p-0 shadow-inner"
+      className="flex h-full min-h-0 w-full flex-col rounded-3xl p-0 shadow-inner"
       style={{
         background: theme.boardBackground.boardPanelBackground,
         color: theme.boardBackground.boardPanelText,
