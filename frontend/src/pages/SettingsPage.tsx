@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
+import { BrandLogo } from '../components/BrandLogo';
 import { AppearanceCustomizationPanel } from '../components/AppearanceCustomizationPanel';
-import { CanvaBirdAccent } from '../components/CanvaBirdAccent';
 import { CanvaPageTopBar } from '../components/CanvaPageTopBar';
 import { createRepositories } from '../repositories';
 
@@ -32,7 +32,10 @@ export const SettingsPage = () => {
         <CanvaPageTopBar backHref="/game" backLabel="До гри" />
 
         <div className="relative mt-5 px-2 sm:px-4">
-          <CanvaBirdAccent className="pointer-events-none absolute -right-10 top-0 hidden h-40 w-48 text-[color:rgba(179,168,216,0.34)] lg:block" />
+          <BrandLogo
+            alt="SoulVio Ліла"
+            className="pointer-events-none absolute -right-10 top-0 hidden h-40 w-40 opacity-[var(--lila-brand-mark-opacity)] lg:block"
+          />
           <p className="lila-utility-label">Settings</p>
           <h1 className="lila-canva-stage-title mt-2">Налаштування подорожі</h1>
           <p className="mt-3 text-sm text-[var(--lila-text-muted)]">Глобальні параметри зберігаються локально в IndexedDB.</p>

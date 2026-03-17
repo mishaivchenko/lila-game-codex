@@ -1,5 +1,5 @@
+import { BrandLogo } from '../components/BrandLogo';
 import { AppearanceCustomizationPanel } from '../components/AppearanceCustomizationPanel';
-import { CanvaBirdAccent } from '../components/CanvaBirdAccent';
 import { CanvaPageTopBar } from '../components/CanvaPageTopBar';
 import { JourneySetupHub } from '../components/journey/JourneySetupHub';
 
@@ -9,9 +9,12 @@ export const GameSetupPage = () => {
       <div className="lila-canva-frame min-h-0 flex-1">
         <CanvaPageTopBar backHref="/" />
 
-        <div className="grid min-h-0 flex-1 gap-4 pt-5 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+        <div className="grid min-h-0 flex-1 gap-4 pt-5 min-[1460px]:grid-cols-[340px_minmax(0,1fr)]">
           <section className="relative min-h-0 px-2 text-center sm:px-4 lg:text-left">
-            <CanvaBirdAccent className="pointer-events-none absolute -left-10 top-24 hidden h-44 w-52 text-[color:rgba(179,168,216,0.42)] lg:block" />
+            <BrandLogo
+              alt="SoulVio Ліла"
+              className="pointer-events-none absolute -left-10 top-20 hidden h-40 w-40 opacity-[var(--lila-brand-mark-opacity)] lg:block"
+            />
 
             <div className="mx-auto max-w-[760px] lg:mx-0">
               <h1 className="lila-canva-stage-title mt-2">Створи свою реальність на цю гру</h1>
@@ -34,11 +37,11 @@ export const GameSetupPage = () => {
                 </div>
               </div>
 
-              <AppearanceCustomizationPanel className="mt-6" defaultExpanded title="Кастомізуйте гру перед запуском" />
+              <AppearanceCustomizationPanel className="mt-6" defaultExpanded={false} title="Кастомізуйте гру перед запуском" />
             </div>
           </section>
 
-          <div className="lila-scroll-pane pr-1">
+          <div className="min-h-0 pr-1">
             <JourneySetupHub />
           </div>
         </div>

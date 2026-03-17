@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { BrandLogo } from '../components/BrandLogo';
 import { CellCoachModal } from '../components/CellCoachModal';
-import { CanvaBirdAccent } from '../components/CanvaBirdAccent';
 import { CanvaPageTopBar } from '../components/CanvaPageTopBar';
 import { BOARD_DEFINITIONS } from '../content/boards';
 import { useGameContext } from '../context/GameContext';
@@ -67,7 +67,10 @@ export const HistoryPage = () => {
       <section className="min-h-0">
         <CanvaPageTopBar backHref="/game" backLabel="До гри" />
         <div className="relative mt-5 min-h-0">
-          <CanvaBirdAccent className="pointer-events-none absolute -right-10 top-0 hidden h-40 w-48 text-[color:rgba(179,168,216,0.34)] lg:block" />
+          <BrandLogo
+            alt="SoulVio Ліла"
+            className="pointer-events-none absolute -right-10 top-0 hidden h-40 w-40 opacity-[var(--lila-brand-mark-opacity)] lg:block"
+          />
           <div className="px-2 sm:px-4">
             <p className="lila-utility-label">Journey Archive</p>
             <h1 className="lila-canva-stage-title mt-2">Мій шлях</h1>

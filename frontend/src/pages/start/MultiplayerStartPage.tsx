@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CanvaBirdAccent } from '../../components/CanvaBirdAccent';
+import { BrandLogo } from '../../components/BrandLogo';
 import { CanvaPageTopBar } from '../../components/CanvaPageTopBar';
 import { TelegramRoomsPanel, useTelegramAuth } from '../../features/telegram';
 import { useTelegramRooms } from '../../features/telegram/rooms/TelegramRoomsContext';
@@ -37,11 +37,14 @@ export const MultiplayerStartPage = () => {
       <div className="lila-canva-frame min-h-0 flex-1">
         <CanvaPageTopBar backHref="/" />
 
-        <div className="grid min-h-0 flex-1 gap-4 pt-5 xl:grid-cols-[minmax(0,1fr)_390px]">
+        <div className="grid min-h-0 flex-1 gap-4 pt-5 min-[1460px]:grid-cols-[minmax(0,1fr)_360px]">
           <section className="relative min-h-0 px-2 text-center sm:px-4">
-            <CanvaBirdAccent className="pointer-events-none absolute -right-10 top-20 hidden h-44 w-52 text-[color:rgba(179,168,216,0.4)] lg:block" />
+            <BrandLogo
+              alt="SoulVio Ліла"
+              className="pointer-events-none absolute -right-16 top-12 hidden h-48 w-48 opacity-[var(--lila-brand-mark-opacity)] lg:block"
+            />
 
-            <div className="mx-auto max-w-[760px]">
+            <div className="mx-auto max-w-[720px]">
               <h1 className="lila-canva-stage-title mt-2">Твій кабінет провідника</h1>
               <p className="lila-canva-stage-copy mx-auto mt-4 max-w-[640px]">
                 Це спільна подорож для ведучого і гравців: ти тут, щоб підсвітити іншим їхні тіні та допомогти зруйнувати ілюзії,
@@ -59,7 +62,7 @@ export const MultiplayerStartPage = () => {
                 </div>
 
                 <div className="lila-canva-stage-panel px-4 py-4 sm:px-5">
-                  <div className="lila-scroll-pane max-h-[40vh] pr-1">
+                  <div className="lila-scroll-pane max-h-[38vh] pr-1">
                     <TelegramRoomsPanel
                       defaultFlow="host"
                       initialRoomCode={initialRoomCode}
@@ -71,7 +74,7 @@ export const MultiplayerStartPage = () => {
             </div>
           </section>
 
-          <section className="lila-canva-sidebar min-h-0 px-5 py-5 sm:px-6">
+          <section className="lila-canva-sidebar min-h-0 px-5 py-5 sm:px-6 min-[1460px]:overflow-y-auto">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="lila-utility-label">Активні ігри</p>
@@ -101,7 +104,7 @@ export const MultiplayerStartPage = () => {
 
             <div className="lila-editorial-divider mt-4" />
 
-            <div className="lila-scroll-pane mt-4 pr-1">
+            <div className="lila-scroll-pane mt-4 max-h-[32vh] pr-1 min-[1460px]:max-h-none">
               {!isTelegramMode ? (
                 <p className="text-sm text-[var(--lila-text-muted)]">Для multiplayer відкрийте застосунок у Telegram Mini App.</p>
               ) : pagedRooms.length === 0 ? (

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CanvaBirdAccent } from '../../components/CanvaBirdAccent';
+import { BrandLogo } from '../../components/BrandLogo';
 import { CanvaPageTopBar } from '../../components/CanvaPageTopBar';
 import type { GameSession } from '../../domain/types';
 import { useGameContext } from '../../context/GameContext';
@@ -48,12 +48,18 @@ export const SinglePlayerStartPage = () => {
       <div className="lila-canva-frame min-h-0 flex-1">
         <CanvaPageTopBar backHref="/" />
 
-        <div className="grid min-h-0 flex-1 gap-4 pt-5 xl:grid-cols-[minmax(0,0.96fr)_400px]">
+        <div className="grid min-h-0 flex-1 gap-4 pt-5 min-[1460px]:grid-cols-[minmax(0,0.98fr)_360px]">
           <section className="relative flex min-h-0 flex-col items-center px-2 text-center sm:px-4">
-            <CanvaBirdAccent className="pointer-events-none absolute -left-10 top-24 hidden h-44 w-52 text-[color:rgba(179,168,216,0.45)] lg:block" />
-            <CanvaBirdAccent className="pointer-events-none absolute -right-10 bottom-6 hidden h-48 w-56 text-[color:rgba(179,168,216,0.34)] lg:block" />
+            <BrandLogo
+              alt="SoulVio Ліла"
+              className="pointer-events-none absolute -left-14 top-24 hidden h-44 w-44 opacity-[var(--lila-brand-mark-opacity)] md:block"
+            />
+            <BrandLogo
+              alt="SoulVio Ліла"
+              className="pointer-events-none absolute -right-16 bottom-4 hidden h-52 w-52 opacity-[var(--lila-brand-mark-opacity)] lg:block"
+            />
 
-            <div className="w-full max-w-[760px]">
+            <div className="w-full max-w-[720px]">
               <h1 className="lila-canva-stage-title mt-2">Твоя особиста подорож</h1>
 
               <div className="mt-7 space-y-4">
@@ -95,7 +101,7 @@ export const SinglePlayerStartPage = () => {
             </div>
           </section>
 
-          <section className="lila-canva-sidebar min-h-0 px-5 py-5 sm:px-6">
+          <section className="lila-canva-sidebar min-h-0 px-5 py-5 sm:px-6 min-[1460px]:overflow-y-auto">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="lila-utility-label">Активна гра</p>
@@ -125,7 +131,7 @@ export const SinglePlayerStartPage = () => {
 
             <div className="lila-editorial-divider mt-4" />
 
-            <div className="lila-scroll-pane mt-4 pr-1">
+            <div className="lila-scroll-pane mt-4 max-h-[32vh] pr-1 min-[1460px]:max-h-none">
               {loading ? (
                 <p className="text-sm text-[var(--lila-text-muted)]">Завантаження локальної історії...</p>
               ) : pagedSessions.length === 0 ? (

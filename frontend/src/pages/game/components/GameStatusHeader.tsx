@@ -38,7 +38,7 @@ export const GameStatusHeader = ({
             ? `Хід: ${activeSimplePlayerName ?? 'Учасник'} · клітина ${safeCurrentCell}`
             : `Ви зараз на клітині ${safeCurrentCell}`}
         </p>
-        <h1 className="mt-3 text-[clamp(2rem,3vw,3.4rem)] font-black uppercase tracking-[-0.055em] text-[var(--lila-text-primary)]">
+        <h1 className="mt-2 text-[clamp(1.55rem,2.6vw,3rem)] font-black uppercase tracking-[-0.05em] text-[var(--lila-text-primary)]">
           {currentChakra?.name ?? 'Шлях триває'}
         </h1>
       </div>
@@ -54,7 +54,7 @@ export const GameStatusHeader = ({
 
     <div className="lila-editorial-divider mt-4" />
 
-    {currentChakra && <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--lila-text-muted)]">{currentChakra.description}</p>}
+    {currentChakra && <p className="mt-3 hidden max-w-3xl text-sm leading-6 text-[var(--lila-text-muted)] md:block">{currentChakra.description}</p>}
 
     {isSimpleMultiplayer && (
       <div className="mt-4 flex flex-wrap gap-2" data-testid="simple-players-strip">

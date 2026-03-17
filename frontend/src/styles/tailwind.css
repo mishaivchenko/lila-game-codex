@@ -44,6 +44,16 @@
   --lila-shell-glow-a: rgba(218, 209, 242, 0.2);
   --lila-shell-glow-b: rgba(246, 235, 244, 0.26);
   --lila-shell-glow-c: rgba(233, 227, 245, 0.3);
+  --lila-canva-topline: rgba(109, 88, 162, 0.18);
+  --lila-canva-topline-strong: rgba(109, 88, 162, 0.28);
+  --lila-canva-panel-bg: rgba(255, 255, 255, 0.78);
+  --lila-canva-panel-bg-soft: rgba(243, 237, 249, 0.9);
+  --lila-canva-panel-bg-strong: rgba(255, 255, 255, 0.92);
+  --lila-canva-plate-bg: rgba(240, 233, 249, 0.88);
+  --lila-canva-plate-bg-strong: rgba(250, 247, 253, 0.96);
+  --lila-canva-panel-border: rgba(109, 88, 162, 0.12);
+  --lila-canva-soft-shadow: 0 14px 34px rgba(112, 97, 173, 0.08);
+  --lila-brand-mark-opacity: 0.16;
   color: var(--lila-text-primary);
   background-color: var(--lila-bg-main);
   --tg-bg-color: var(--lila-bg-main);
@@ -131,6 +141,32 @@ body,
 
 :root[data-tg-mode='true'] .tma-shell main {
   min-height: auto;
+}
+
+:root[data-lila-theme='cosmic-dark'],
+:root[data-lila-theme='telegram-auto'][data-tg-color-scheme='dark'] {
+  --lila-canva-topline: rgba(135, 150, 191, 0.22);
+  --lila-canva-topline-strong: rgba(167, 182, 228, 0.34);
+  --lila-canva-panel-bg: rgba(31, 36, 52, 0.9);
+  --lila-canva-panel-bg-soft: rgba(38, 44, 64, 0.92);
+  --lila-canva-panel-bg-strong: rgba(44, 50, 72, 0.96);
+  --lila-canva-plate-bg: rgba(53, 62, 90, 0.92);
+  --lila-canva-plate-bg-strong: rgba(42, 49, 71, 0.96);
+  --lila-canva-panel-border: rgba(112, 126, 164, 0.48);
+  --lila-canva-soft-shadow: 0 18px 34px rgba(8, 11, 18, 0.34);
+  --lila-brand-mark-opacity: 0.22;
+}
+
+:root[data-lila-theme='minimal-cream'] {
+  --lila-canva-topline: rgba(159, 116, 88, 0.18);
+  --lila-canva-topline-strong: rgba(159, 116, 88, 0.26);
+  --lila-canva-panel-bg: rgba(255, 249, 241, 0.84);
+  --lila-canva-panel-bg-soft: rgba(245, 236, 224, 0.9);
+  --lila-canva-panel-bg-strong: rgba(255, 252, 247, 0.94);
+  --lila-canva-plate-bg: rgba(243, 229, 210, 0.88);
+  --lila-canva-plate-bg-strong: rgba(255, 249, 241, 0.96);
+  --lila-canva-panel-border: rgba(159, 116, 88, 0.16);
+  --lila-canva-soft-shadow: 0 14px 28px rgba(120, 95, 76, 0.08);
 }
 
 :root[data-lila-theme] .text-stone-900,
@@ -308,16 +344,16 @@ textarea::placeholder {
 .lila-panel,
 .lila-panel-muted {
   border: 1px solid var(--lila-border-soft);
-  box-shadow: var(--lila-shadow-panel);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
+  box-shadow: var(--lila-canva-soft-shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .lila-panel {
   border-radius: var(--lila-radius-panel);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.82)),
-    linear-gradient(150deg, rgba(233, 224, 247, 0.36), rgba(255, 255, 255, 0));
+    linear-gradient(180deg, var(--lila-canva-panel-bg), var(--lila-canva-panel-bg-soft)),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0));
 }
 
 .lila-panel::before,
@@ -335,9 +371,9 @@ textarea::placeholder {
 .lila-panel-muted {
   border-radius: var(--lila-radius-card);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(247, 241, 252, 0.7)),
+    linear-gradient(180deg, var(--lila-canva-panel-bg), var(--lila-canva-panel-bg-soft)),
     linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0));
-  box-shadow: var(--lila-shadow-soft);
+  box-shadow: var(--lila-canva-soft-shadow);
 }
 
 .lila-utility-label {
@@ -380,7 +416,7 @@ textarea::placeholder {
 .lila-editorial-divider {
   height: 1px;
   width: 100%;
-  background: linear-gradient(90deg, rgba(109, 88, 162, 0.18), rgba(109, 88, 162, 0.08), rgba(109, 88, 162, 0.18));
+  background: linear-gradient(90deg, var(--lila-canva-topline), rgba(109, 88, 162, 0.06), var(--lila-canva-topline));
 }
 
 .lila-canva-topbar {
@@ -390,7 +426,7 @@ textarea::placeholder {
   justify-content: space-between;
   gap: 0.85rem;
   padding-bottom: 0.7rem;
-  border-bottom: 1px solid rgba(109, 88, 162, 0.18);
+  border-bottom: 1px solid var(--lila-canva-topline);
 }
 
 .lila-canva-topbar-items {
@@ -431,8 +467,9 @@ textarea::placeholder {
 .lila-canva-stage-panel {
   position: relative;
   border-radius: 24px;
-  border: 1px solid rgba(109, 88, 162, 0.08);
-  background: linear-gradient(180deg, rgba(239, 232, 249, 0.44), rgba(255, 255, 255, 0.36));
+  border: 1px solid var(--lila-canva-panel-border);
+  background: linear-gradient(180deg, var(--lila-canva-panel-bg-soft), var(--lila-canva-panel-bg));
+  box-shadow: var(--lila-canva-soft-shadow);
 }
 
 .lila-canva-stage-panel::before {
@@ -455,18 +492,18 @@ textarea::placeholder {
 
 .lila-canva-sidebar {
   position: relative;
-  border: 1px solid rgba(109, 88, 162, 0.08);
+  border: 1px solid var(--lila-canva-panel-border);
   border-radius: 24px;
-  background: linear-gradient(180deg, rgba(239, 232, 249, 0.46), rgba(255, 255, 255, 0.44));
-  box-shadow: 0 10px 24px rgba(112, 97, 173, 0.05);
+  background: linear-gradient(180deg, var(--lila-canva-panel-bg), var(--lila-canva-panel-bg-soft));
+  box-shadow: var(--lila-canva-soft-shadow);
 }
 
 .lila-poster-panel {
   position: relative;
-  border: 1px solid rgba(109, 88, 162, 0.08);
+  border: 1px solid var(--lila-canva-panel-border);
   border-radius: 24px;
-  background: linear-gradient(180deg, rgba(239, 232, 249, 0.42), rgba(255, 255, 255, 0.4));
-  box-shadow: 0 12px 28px rgba(112, 97, 173, 0.05);
+  background: linear-gradient(180deg, var(--lila-canva-panel-bg), var(--lila-canva-panel-bg-soft));
+  box-shadow: var(--lila-canva-soft-shadow);
 }
 
 .lila-poster-panel::before {
@@ -487,12 +524,12 @@ textarea::placeholder {
   overflow: hidden;
   display: grid;
   gap: 0.65rem;
-  border: 1px solid rgba(109, 88, 162, 0.08);
+  border: 1px solid var(--lila-canva-panel-border);
   border-radius: 20px;
   padding: 1.15rem 1.2rem;
   text-align: left;
-  background: linear-gradient(180deg, rgba(239, 232, 249, 0.56), rgba(255, 255, 255, 0.4));
-  box-shadow: 0 8px 20px rgba(112, 97, 173, 0.04);
+  background: linear-gradient(180deg, var(--lila-canva-plate-bg), var(--lila-canva-plate-bg-strong));
+  box-shadow: var(--lila-canva-soft-shadow);
   transition:
     transform 220ms ease,
     border-color 220ms ease,
@@ -509,8 +546,8 @@ textarea::placeholder {
 
 .lila-canva-action:hover {
   transform: translateY(-1px);
-  border-color: rgba(109, 88, 162, 0.16);
-  box-shadow: 0 12px 26px rgba(112, 97, 173, 0.07);
+  border-color: var(--lila-canva-topline-strong);
+  box-shadow: 0 12px 28px rgba(112, 97, 173, 0.12);
 }
 
 .lila-canva-stat-grid {
@@ -527,10 +564,10 @@ textarea::placeholder {
 .lila-paper-card {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(109, 88, 162, 0.08);
+  border: 1px solid var(--lila-canva-panel-border);
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(239, 232, 249, 0.42), rgba(255, 255, 255, 0.34));
-  box-shadow: 0 8px 18px rgba(112, 97, 173, 0.04);
+  background: linear-gradient(180deg, var(--lila-canva-panel-bg-soft), var(--lila-canva-panel-bg));
+  box-shadow: var(--lila-canva-soft-shadow);
 }
 
 .lila-paper-card::before {
@@ -555,35 +592,35 @@ textarea::placeholder {
 }
 
 .lila-primary-button {
-  border: 1px solid rgba(109, 88, 162, 0.1);
-  background: linear-gradient(180deg, rgba(239, 232, 249, 0.9), rgba(234, 226, 246, 0.82));
+  border: 1px solid var(--lila-canva-panel-border);
+  background: linear-gradient(180deg, var(--lila-canva-plate-bg), var(--lila-canva-plate-bg-strong));
   color: var(--lila-text-primary);
   box-shadow: var(--lila-shadow-button);
 }
 
 .lila-primary-button:hover {
   transform: translateY(-1px);
-  background: linear-gradient(180deg, rgba(236, 228, 248, 0.98), rgba(232, 223, 245, 0.9));
+  background: linear-gradient(180deg, var(--lila-canva-plate-bg-strong), var(--lila-canva-plate-bg));
 }
 
 .lila-secondary-button {
   border: 1px solid var(--lila-btn-secondary-border);
-  background: rgba(255, 255, 255, 0.64);
+  background: var(--lila-canva-panel-bg-strong);
   color: var(--lila-btn-secondary-text);
-  box-shadow: 0 8px 18px rgba(112, 97, 173, 0.04);
+  box-shadow: var(--lila-canva-soft-shadow);
 }
 
 .lila-secondary-button:hover {
   transform: translateY(-1px);
   border-color: var(--lila-border-strong);
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--lila-canva-panel-bg-soft);
 }
 
 .lila-action-card {
   border-radius: var(--lila-radius-card);
-  border: 1px solid var(--lila-border-soft);
-  background: linear-gradient(180deg, rgba(239, 232, 249, 0.46), rgba(255, 255, 255, 0.36));
-  box-shadow: var(--lila-shadow-soft);
+  border: 1px solid var(--lila-canva-panel-border);
+  background: linear-gradient(180deg, var(--lila-canva-panel-bg-soft), var(--lila-canva-panel-bg));
+  box-shadow: var(--lila-canva-soft-shadow);
   transition:
     transform 220ms ease,
     border-color 220ms ease,
@@ -599,9 +636,9 @@ textarea::placeholder {
 
 .lila-list-card {
   border-radius: 18px;
-  border: 1px solid rgba(109, 88, 162, 0.08);
-  background: linear-gradient(180deg, rgba(239, 232, 249, 0.42), rgba(255, 255, 255, 0.34));
-  box-shadow: 0 8px 18px rgba(112, 97, 173, 0.04);
+  border: 1px solid var(--lila-canva-panel-border);
+  background: linear-gradient(180deg, var(--lila-canva-panel-bg-soft), var(--lila-canva-panel-bg));
+  box-shadow: var(--lila-canva-soft-shadow);
 }
 
 .lila-badge {
@@ -610,7 +647,7 @@ textarea::placeholder {
   gap: 0.35rem;
   border-radius: var(--lila-radius-pill);
   border: 1px solid var(--lila-chip-border);
-  background: rgba(239, 232, 249, 0.54);
+  background: var(--lila-canva-panel-bg-soft);
   padding: 0.38rem 0.7rem;
   font-size: 0.72rem;
   color: var(--lila-chip-text);
@@ -619,10 +656,10 @@ textarea::placeholder {
 .lila-segmented {
   display: grid;
   gap: 0.5rem;
-  border: 1px solid rgba(128, 108, 174, 0.1);
+  border: 1px solid var(--lila-canva-panel-border);
   border-radius: 999px;
   padding: 0.35rem;
-  background: rgba(239, 232, 249, 0.34);
+  background: var(--lila-canva-panel-bg);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 }
@@ -640,7 +677,7 @@ textarea::placeholder {
 }
 
 .lila-segmented-button[data-active='true'] {
-  background: linear-gradient(180deg, rgba(239, 232, 249, 0.94), rgba(245, 240, 251, 0.9));
+  background: linear-gradient(180deg, var(--lila-canva-plate-bg), var(--lila-canva-plate-bg-strong));
   color: var(--lila-text-primary);
   box-shadow: 0 6px 16px rgba(112, 97, 173, 0.07);
 }

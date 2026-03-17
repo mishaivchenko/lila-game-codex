@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CanvaBirdAccent } from '../../components/CanvaBirdAccent';
+import { BrandLogo } from '../../components/BrandLogo';
 import { CanvaPageTopBar } from '../../components/CanvaPageTopBar';
 import { useTelegramAuth } from '../../features/telegram';
 import { playCardOpen } from '../../features/telegram/telegramHaptics';
@@ -88,7 +88,10 @@ export const StartPage = () => {
           <CanvaPageTopBar />
 
           <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center px-2 pb-4 pt-6 text-center sm:px-4">
-            <CanvaBirdAccent className="h-20 w-20 text-[color:rgba(112,97,173,0.7)] sm:h-24 sm:w-24" />
+            <BrandLogo
+              alt="SoulVio Ліла"
+              className="h-28 w-28 opacity-95 drop-shadow-[0_10px_22px_rgba(98,85,154,0.18)] sm:h-32 sm:w-32"
+            />
 
             <div className="mx-auto mt-6 max-w-[860px]">
               <p className="text-sm text-[var(--lila-text-muted)]">Вітаємо в SoulVio Ліла</p>

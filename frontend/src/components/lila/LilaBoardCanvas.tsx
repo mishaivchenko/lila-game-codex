@@ -502,14 +502,14 @@ export const LilaBoardCanvas = ({
 
   return (
     <div
-      className="relative w-full rounded-3xl p-0"
+      className="relative flex h-full min-h-0 w-full items-center justify-center rounded-3xl p-0"
       style={{
         background: theme.boardBackground.canvasShellBackground,
         boxShadow: theme.boardBackground.canvasShellShadow,
       }}
     >
       <div
-        className="relative w-full overflow-hidden rounded-2xl"
+        className="relative overflow-hidden rounded-2xl"
         data-testid="lila-board-canvas"
         onPointerUp={handleBoardPointerUp}
         onPointerDown={handleBoardPointerDown}
@@ -518,6 +518,10 @@ export const LilaBoardCanvas = ({
         onContextMenu={(event) => event.preventDefault()}
         style={{
           aspectRatio,
+          height: '100%',
+          width: 'auto',
+          maxWidth: '100%',
+          maxHeight: '100%',
           background: theme.boardBackground.canvasFrameBackground,
           touchAction: 'none',
           userSelect: 'none',

@@ -36,12 +36,12 @@ export const GameControlPanel = ({
         <Dice value={lastMove?.dice} />
         <div>
           <p className="lila-utility-label">Next Action</p>
-          <p className="mt-1 text-base font-semibold text-[var(--lila-text-primary)]">
+          <p className="mt-1 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">
             {isSimpleMultiplayer ? 'Гравці ходять по черзі' : 'Ваш спокійний наступний крок'}
           </p>
         </div>
       </div>
-      <div className="max-w-[180px] text-right text-xs leading-5 text-[var(--lila-text-muted)]">
+      <div className="hidden max-w-[180px] text-right text-xs leading-5 text-[var(--lila-text-muted)] sm:block">
         <p>{isSimpleMultiplayer ? 'Ритм гри лишається послідовним.' : 'Можна зробити паузу будь-коли.'}</p>
         {error && <p className="mt-1 text-[var(--lila-danger-text)]">{error}</p>}
       </div>
@@ -57,10 +57,10 @@ export const GameControlPanel = ({
       <div className="space-y-3">
         <div>
           <p className="lila-utility-label">Control Panel</p>
-          <p className="mt-2 text-lg font-semibold text-[var(--lila-text-primary)]">
+          <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)] sm:text-lg">
             Хід і головні дії залишаються поруч із дошкою
           </p>
-          <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
+          <p className="mt-2 hidden text-sm leading-6 text-[var(--lila-text-muted)] sm:block">
             Більш виразна desktop-композиція, але та сама interaction rhythm: кидок, пауза, історія, без шуму навколо board.
           </p>
         </div>

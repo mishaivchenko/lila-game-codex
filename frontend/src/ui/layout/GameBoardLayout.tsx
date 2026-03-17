@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CanvaBirdAccent } from '../../components/CanvaBirdAccent';
+import { BrandLogo } from '../../components/BrandLogo';
 import { useBoardTheme } from '../../theme';
 
 interface GameBoardLayoutProps {
@@ -24,21 +24,24 @@ export const GameBoardLayout = ({
       style={{ maxWidth: `${theme.layout.pageMaxWidthPx}px` }}
     >
       <div className="lila-canva-frame min-h-0">
-        <div className="grid min-h-0 gap-4 xl:grid-cols-[minmax(0,1.7fr)_380px] xl:grid-rows-[auto_minmax(0,1fr)]">
-          <section className="xl:col-span-2">
+        <div className="grid min-h-0 gap-3 min-[1400px]:grid-cols-[minmax(0,1.62fr)_320px] min-[1400px]:grid-rows-[auto_minmax(0,1fr)]">
+          <section className="min-[1400px]:col-span-2">
             {header}
           </section>
 
           <section
-            className="lila-poster-panel min-h-[48vh] min-w-0 sm:min-h-[56vh] xl:min-h-0"
+            className="lila-poster-panel flex min-h-[42vh] min-w-0 sm:min-h-[50vh] min-[1400px]:min-h-0"
             style={{ padding: `${theme.layout.boardPanelPaddingPx}px` }}
           >
-            <CanvaBirdAccent className="pointer-events-none absolute -right-10 bottom-0 hidden h-40 w-48 text-[color:rgba(179,168,216,0.24)] md:block" />
+            <BrandLogo
+              alt="SoulVio Ліла"
+              className="pointer-events-none absolute -right-12 bottom-2 hidden h-40 w-40 opacity-[var(--lila-brand-mark-opacity)] md:block"
+            />
             {board}
           </section>
 
           <section
-            className="lila-canva-sidebar min-h-0 px-3 py-3 sm:px-4 xl:overflow-y-auto"
+            className="lila-canva-sidebar min-h-0 px-3 py-3 sm:px-4 min-[1400px]:overflow-y-auto"
             style={{
               background: theme.layout.floatingControlsBackground,
               border: `1px solid ${theme.layout.floatingControlsBorder}`,
@@ -48,7 +51,7 @@ export const GameBoardLayout = ({
             {controls}
           </section>
           {sideContent && (
-            <section className="min-h-0 xl:col-span-2">
+            <section className="min-h-0 min-[1400px]:col-span-2">
               {sideContent}
             </section>
           )}
