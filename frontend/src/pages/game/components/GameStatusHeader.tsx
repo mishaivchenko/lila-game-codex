@@ -29,16 +29,16 @@ export const GameStatusHeader = ({
   isDeepEntryPending,
   entryHint,
 }: GameStatusHeaderProps) => (
-  <header className="lila-poster-panel mb-3 p-4 sm:p-5">
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+  <header className="lila-poster-panel mb-2 p-3 sm:mb-3 sm:p-5">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
       <div className="min-w-0">
-        <p className="lila-utility-label">Current Focus</p>
-        <p className="mt-2 text-sm uppercase tracking-[0.08em] text-[var(--lila-text-muted)]">
+        <p className="hidden lila-utility-label sm:block">Current Focus</p>
+        <p className="text-xs uppercase tracking-[0.08em] text-[var(--lila-text-muted)] sm:mt-2 sm:text-sm">
           {isSimpleMultiplayer
             ? `Хід: ${activeSimplePlayerName ?? 'Учасник'} · клітина ${safeCurrentCell}`
             : `Ви зараз на клітині ${safeCurrentCell}`}
         </p>
-        <h1 className="mt-2 text-[clamp(1.55rem,2.6vw,3rem)] font-black uppercase tracking-[-0.05em] text-[var(--lila-text-primary)]">
+        <h1 className="mt-1 text-[clamp(1.25rem,2.4vw,3rem)] font-black uppercase tracking-[-0.05em] text-[var(--lila-text-primary)] sm:mt-2">
           {currentChakra?.name ?? 'Шлях триває'}
         </h1>
       </div>
@@ -46,13 +46,13 @@ export const GameStatusHeader = ({
         type="button"
         onClick={onToggleHintInfo}
         aria-label="Підказка про змій і стріли"
-        className="self-start rounded-full border border-[var(--lila-border-soft)] bg-white/70 px-3 py-1.5 text-xs text-[var(--lila-text-muted)] transition hover:bg-[var(--lila-surface-muted)]"
+        className="self-start rounded-full border border-[var(--lila-border-soft)] bg-white/70 px-2.5 py-1 text-xs text-[var(--lila-text-muted)] transition hover:bg-[var(--lila-surface-muted)] sm:px-3 sm:py-1.5"
       >
         ?
       </button>
     </div>
 
-    <div className="lila-editorial-divider mt-4" />
+    <div className="lila-editorial-divider mt-3 sm:mt-4" />
 
     {currentChakra && <p className="mt-3 hidden max-w-3xl text-sm leading-6 text-[var(--lila-text-muted)] md:block">{currentChakra.description}</p>}
 
@@ -91,7 +91,7 @@ export const GameStatusHeader = ({
         Змії — це уроки. Стріли — це ресурси.
       </p>
     )}
-    <div className="mt-4">
+    <div className="mt-3 hidden sm:block sm:mt-4">
       <ChakraNotification text={`Ви увійшли в ${currentChakra?.name ?? 'новий рівень'}.`} />
     </div>
   </header>

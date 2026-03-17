@@ -27,15 +27,19 @@ describe('GameBoardLayout', () => {
         header={<div>HEADER</div>}
         board={<div>BOARD</div>}
         controls={<div>CONTROLS</div>}
+        mobileControls={<div>MOBILE_CONTROLS</div>}
       />,
     );
 
     const layout = screen.getByTestId('game-board-layout');
+    const frame = layout.firstElementChild as HTMLElement | null;
     const layoutGrid = screen.getByTestId('game-board-layout-grid');
     expect(layout.className).toContain('lila-page-shell');
-    expect(layoutGrid.className).toContain('grid-rows-[auto_minmax(0,1fr)_auto]');
+    expect(frame?.className).toContain('flex-1');
+    expect(layoutGrid.className).toContain('grid-rows-[auto_minmax(0,1fr)]');
     expect(layout.getAttribute('style')).toContain('1480px');
     expect(screen.getByText('BOARD')).not.toBeNull();
     expect(screen.getByText('CONTROLS')).not.toBeNull();
+    expect(screen.getByTestId('game-mobile-controls-overlay')).not.toBeNull();
   });
 });

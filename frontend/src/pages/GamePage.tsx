@@ -671,36 +671,32 @@ export const GamePage = () => {
             holdTokenSync={turnState !== 'idle'}
           />
         )}
+        mobileControls={(
+          <GameControlDock
+            lastMove={lastMove}
+            boardMaxCell={board.maxCell}
+            isSimpleMultiplayer={isSimpleMultiplayer}
+            turnState={turnState}
+            lastMoveType={lastMoveType}
+            lastMovePresentation={lastMovePresentation}
+            onRoll={() => triggerDiceRoll()}
+            onOpenFinishConfirm={() => setShowFinishConfirm(true)}
+            onOpenAnimationSettings={() => setShowAnimationSettings(true)}
+          />
+        )}
         controls={(
-          <>
-            <div className="min-[1180px]:hidden">
-              <GameControlDock
-                lastMove={lastMove}
-                boardMaxCell={board.maxCell}
-                isSimpleMultiplayer={isSimpleMultiplayer}
-                turnState={turnState}
-                lastMoveType={lastMoveType}
-                lastMovePresentation={lastMovePresentation}
-                onRoll={() => triggerDiceRoll()}
-                onOpenFinishConfirm={() => setShowFinishConfirm(true)}
-                onOpenAnimationSettings={() => setShowAnimationSettings(true)}
-              />
-            </div>
-            <div className="hidden h-full min-[1180px]:block">
-              <GameControlPanel
-                lastMove={lastMove}
-                boardMaxCell={board.maxCell}
-                isSimpleMultiplayer={isSimpleMultiplayer}
-                error={error}
-                turnState={turnState}
-                lastMoveType={lastMoveType}
-                lastMovePresentation={lastMovePresentation}
-                onRoll={() => triggerDiceRoll()}
-                onOpenFinishConfirm={() => setShowFinishConfirm(true)}
-                onOpenAnimationSettings={() => setShowAnimationSettings(true)}
-              />
-            </div>
-          </>
+          <GameControlPanel
+            lastMove={lastMove}
+            boardMaxCell={board.maxCell}
+            isSimpleMultiplayer={isSimpleMultiplayer}
+            error={error}
+            turnState={turnState}
+            lastMoveType={lastMoveType}
+            lastMovePresentation={lastMovePresentation}
+            onRoll={() => triggerDiceRoll()}
+            onOpenFinishConfirm={() => setShowFinishConfirm(true)}
+            onOpenAnimationSettings={() => setShowAnimationSettings(true)}
+          />
         )}
         sideContent={undefined}
       />
