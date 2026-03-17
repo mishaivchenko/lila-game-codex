@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { CellCoachModal } from '../components/CellCoachModal';
-import { CanvaWingAccent } from '../components/CanvaWingAccent';
+import { CanvaBirdAccent } from '../components/CanvaBirdAccent';
+import { CanvaPageTopBar } from '../components/CanvaPageTopBar';
 import { BOARD_DEFINITIONS } from '../content/boards';
 import { useGameContext } from '../context/GameContext';
 import { formatMovePathWithEntry, getMovePresentation, resolveMoveType } from '../lib/lila/historyFormat';
@@ -64,14 +64,14 @@ export const HistoryPage = () => {
 
   return (
     <main className="lila-page-shell">
-      <section className="lila-panel min-h-0 px-5 py-5 sm:px-6">
-        <CanvaWingAccent className="pointer-events-none absolute -right-10 top-0 hidden h-32 w-48 text-[color:rgba(90,72,135,0.18)] md:block" />
-        <div className="flex items-center justify-between gap-3">
-          <div>
+      <section className="min-h-0">
+        <CanvaPageTopBar backHref="/game" backLabel="До гри" />
+        <div className="relative mt-5 min-h-0">
+          <CanvaBirdAccent className="pointer-events-none absolute -right-10 top-0 hidden h-40 w-48 text-[color:rgba(179,168,216,0.34)] lg:block" />
+          <div className="px-2 sm:px-4">
             <p className="lila-utility-label">Journey Archive</p>
-            <h1 className="mt-3 text-3xl font-black tracking-[-0.04em] text-[var(--lila-text-primary)]">Мій шлях</h1>
+            <h1 className="lila-canva-stage-title mt-2">Мій шлях</h1>
           </div>
-          <Link to="/game" className="lila-secondary-button px-4 py-2 text-sm font-medium">До гри</Link>
         </div>
 
         {multiplayerPayload && (

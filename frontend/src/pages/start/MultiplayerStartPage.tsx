@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { CanvaWingAccent } from '../../components/CanvaWingAccent';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { CanvaBirdAccent } from '../../components/CanvaBirdAccent';
+import { CanvaPageTopBar } from '../../components/CanvaPageTopBar';
 import { TelegramRoomsPanel, useTelegramAuth } from '../../features/telegram';
 import { useTelegramRooms } from '../../features/telegram/rooms/TelegramRoomsContext';
 
@@ -33,58 +34,50 @@ export const MultiplayerStartPage = () => {
 
   return (
     <main className="lila-page-shell">
-      <div className="lila-canva-frame min-h-0">
-        <div className="grid min-h-0 gap-4 lg:grid-cols-[minmax(0,1.08fr)_390px]">
-          <section className="lila-poster-panel min-h-0 px-5 py-5 sm:px-6">
-            <CanvaWingAccent className="pointer-events-none absolute -right-8 top-2 hidden h-36 w-56 text-[color:rgba(90,72,135,0.18)] md:block" />
+      <div className="lila-canva-frame min-h-0 flex-1">
+        <CanvaPageTopBar backHref="/" />
 
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="lila-utility-label">Shared Journey</p>
-                <h1 className="lila-poster-title mt-4 max-w-3xl">Спільна подорож для ведучого і гравців</h1>
-                <p className="lila-poster-copy mt-4 max-w-2xl">
-                  Desktop-подача ближча до Canva-макета: великий hero-блок, окрема poster-зона для multiplayer narrative і чиста
-                  панель room-entry. На мобільному це все стискається без втрати читабельності.
-                </p>
+        <div className="grid min-h-0 flex-1 gap-4 pt-5 xl:grid-cols-[minmax(0,1fr)_390px]">
+          <section className="relative min-h-0 px-2 text-center sm:px-4">
+            <CanvaBirdAccent className="pointer-events-none absolute -right-10 top-20 hidden h-44 w-52 text-[color:rgba(179,168,216,0.4)] lg:block" />
+
+            <div className="mx-auto max-w-[760px]">
+              <h1 className="lila-canva-stage-title mt-2">Твій кабінет провідника</h1>
+              <p className="lila-canva-stage-copy mx-auto mt-4 max-w-[640px]">
+                Це спільна подорож для ведучого і гравців: ти тут, щоб підсвітити іншим їхні тіні та допомогти зруйнувати ілюзії,
+                не втрачаючи спокійного ритму гри.
+              </p>
+
+              <div className="mt-7 space-y-4">
+                <div className="lila-canva-action px-5 py-5 text-center">
+                  <p className="text-[1.22rem] font-black uppercase tracking-[-0.04em] text-[var(--lila-text-primary)]">
+                    Створити нову гру
+                  </p>
+                  <p className="text-sm leading-6 text-[var(--lila-text-muted)]">
+                    Відкрий простір для нової групи. Згенеруй код доступу та запроси учасників.
+                  </p>
+                </div>
+
+                <div className="lila-canva-stage-panel px-4 py-4 sm:px-5">
+                  <div className="lila-scroll-pane max-h-[40vh] pr-1">
+                    <TelegramRoomsPanel
+                      defaultFlow="host"
+                      initialRoomCode={initialRoomCode}
+                      initialRoomId={initialRoomId}
+                    />
+                  </div>
+                </div>
               </div>
-              <Link to="/" className="lila-secondary-button px-4 py-2 text-sm font-medium">Назад</Link>
-            </div>
-
-            <div className="lila-editorial-divider mt-5" />
-
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              <div className="lila-paper-card px-4 py-4">
-                <p className="lila-utility-label">Host-led</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-primary)]">Ведучий тримає контекст і ритм групи.</p>
-              </div>
-              <div className="lila-paper-card px-4 py-4">
-                <p className="lila-utility-label">Own Dice</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-primary)]">Кожен гравець зберігає свій власний кидок.</p>
-              </div>
-              <div className="lila-paper-card px-4 py-4">
-                <p className="lila-utility-label">Focused</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-primary)]">Ніякого зайвого шуму навколо основного сценарію входу.</p>
-              </div>
-            </div>
-
-            <div className="mt-6 rounded-[30px] border border-[var(--lila-border-soft)] bg-[linear-gradient(180deg,rgba(236,229,248,0.78),rgba(255,255,255,0.5))] px-5 py-4 text-sm leading-6 text-[var(--lila-text-primary)]">
-              HOST ROOM ONLINE: ведучий керує ритмом групи, а кожен гравець кидає власний кубик.
-            </div>
-
-            <div className="lila-scroll-pane mt-5 pr-1">
-              <TelegramRoomsPanel
-                defaultFlow="host"
-                initialRoomCode={initialRoomCode}
-                initialRoomId={initialRoomId}
-              />
             </div>
           </section>
 
           <section className="lila-canva-sidebar min-h-0 px-5 py-5 sm:px-6">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="lila-utility-label">Recent Rooms</p>
-                <h2 className="mt-2 text-xl font-semibold text-[var(--lila-text-primary)]">Минулі кімнати</h2>
+                <p className="lila-utility-label">Активні ігри</p>
+                <h2 className="mt-2 text-xl font-black uppercase tracking-[-0.04em] text-[var(--lila-text-primary)]">
+                  Минулі кімнати
+                </h2>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -116,7 +109,7 @@ export const MultiplayerStartPage = () => {
               ) : (
                 <ul className="space-y-3">
                   {pagedRooms.map((snapshot) => (
-                    <li key={snapshot.room.id} className="lila-paper-card px-4 py-4">
+                    <li key={snapshot.room.id} className="lila-list-card px-4 py-4">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-[var(--lila-text-primary)]">#{snapshot.room.code}</p>

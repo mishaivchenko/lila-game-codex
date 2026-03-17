@@ -7,7 +7,7 @@ import { getMovePresentation } from '../lib/lila/historyFormat';
 import { getNoteValidationError } from '../lib/lila/noteValidation';
 import { MarkdownText } from './MarkdownText';
 import { useOverlayLock } from '../hooks/useOverlayLock';
-import { CanvaWingAccent } from './CanvaWingAccent';
+import { CanvaBirdAccent } from './CanvaBirdAccent';
 import {
   buttonHoverScale,
   buttonTapScale,
@@ -218,7 +218,7 @@ export const CellCoachModal = ({
               background: theme.modal.imagePaneBackground,
             }}
           >
-            <CanvaWingAccent className="pointer-events-none absolute -right-16 top-2 h-36 w-52 text-[rgba(100,84,151,0.18)]" />
+            <CanvaBirdAccent className="pointer-events-none absolute -right-16 top-2 h-40 w-52 text-[rgba(179,168,216,0.28)]" />
             <div className="relative z-[1] mb-3 flex items-center justify-between gap-3">
               <div>
                 <p className="lila-utility-label">Reflection Card</p>

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { CanvaBirdAccent } from '../../components/CanvaBirdAccent';
+import { CanvaPageTopBar } from '../../components/CanvaPageTopBar';
 import type { GameSession } from '../../domain/types';
-import { CanvaWingAccent } from '../../components/CanvaWingAccent';
 import { useGameContext } from '../../context/GameContext';
 import { createRepositories } from '../../repositories';
 
@@ -44,53 +45,30 @@ export const SinglePlayerStartPage = () => {
 
   return (
     <main className="lila-page-shell">
-      <div className="lila-canva-frame min-h-0">
-        <div className="grid min-h-0 gap-4 lg:grid-cols-[minmax(0,1.06fr)_380px]">
-          <section className="lila-poster-panel flex min-h-0 flex-col px-5 py-5 sm:px-6">
-            <CanvaWingAccent className="pointer-events-none absolute -right-6 top-2 hidden h-36 w-56 text-[color:rgba(90,72,135,0.18)] md:block" />
+      <div className="lila-canva-frame min-h-0 flex-1">
+        <CanvaPageTopBar backHref="/" />
 
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="lila-utility-label">Single Player</p>
-                <h1 className="lila-poster-title mt-4 max-w-3xl">Одиночна гра для особистого ритму</h1>
-                <p className="lila-poster-copy mt-4 max-w-2xl">
-                  Спокійний локальний режим із poster-like композицією: великий геройський вступ, чіткі primary actions і архів
-                  сесій збоку, без зайвої тісноти на desktop.
-                </p>
-              </div>
-              <Link to="/" className="lila-secondary-button px-4 py-2 text-sm font-medium">Назад</Link>
-            </div>
+        <div className="grid min-h-0 flex-1 gap-4 pt-5 xl:grid-cols-[minmax(0,0.96fr)_400px]">
+          <section className="relative flex min-h-0 flex-col items-center px-2 text-center sm:px-4">
+            <CanvaBirdAccent className="pointer-events-none absolute -left-10 top-24 hidden h-44 w-52 text-[color:rgba(179,168,216,0.45)] lg:block" />
+            <CanvaBirdAccent className="pointer-events-none absolute -right-10 bottom-6 hidden h-48 w-56 text-[color:rgba(179,168,216,0.34)] lg:block" />
 
-            <div className="lila-editorial-divider mt-5" />
+            <div className="w-full max-w-[760px]">
+              <h1 className="lila-canva-stage-title mt-2">Твоя особиста подорож</h1>
 
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              <div className="lila-paper-card px-4 py-4">
-                <p className="lila-utility-label">Mobile-safe</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-primary)]">Основні CTA зверху і доступні з першого екрана.</p>
-              </div>
-              <div className="lila-paper-card px-4 py-4">
-                <p className="lila-utility-label">Resume</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-primary)]">Повернення до поточної сесії залишається одним тапом.</p>
-              </div>
-              <div className="lila-paper-card px-4 py-4">
-                <p className="lila-utility-label">Archive</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-primary)]">Минулі ігри живуть поруч, але не душать стартовий сценарій.</p>
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px]">
-              <div className="lila-canva-actions">
-                {activeSession && (
-                  <div className="lila-canva-action">
-                    <p className="lila-utility-label">Resume Ready</p>
-                    <p className="text-2xl font-black tracking-[-0.05em] text-[var(--lila-text-primary)]">
-                      Поточна сесія: клітина {activeSession.currentCell}
-                    </p>
-                    <p className="text-sm leading-6 text-[var(--lila-text-muted)]">
-                      Повернення займе один тап, без нового налаштування шляху.
-                    </p>
-                  </div>
-                )}
+              <div className="mt-7 space-y-4">
+                <button
+                  type="button"
+                  onClick={() => navigate('/setup')}
+                  className="lila-canva-action w-full px-5 py-5 text-center"
+                >
+                  <p className="text-[1.28rem] font-black uppercase tracking-[-0.04em] text-[var(--lila-text-primary)]">
+                    Почати нову гру
+                  </p>
+                  <p className="text-sm leading-6 text-[var(--lila-text-muted)]">
+                    Кожен новий запит - це крок до своєї справжності.
+                  </p>
+                </button>
 
                 <button
                   type="button"
@@ -98,39 +76,32 @@ export const SinglePlayerStartPage = () => {
                     void resumeLastSession().then(() => navigate('/game'));
                   }}
                   disabled={!activeSession}
-                  className="lila-primary-button px-4 py-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  className="lila-canva-action w-full px-5 py-5 text-center disabled:cursor-not-allowed disabled:opacity-55"
                 >
-                  Продовжити гру
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate('/setup')}
-                  className="lila-secondary-button px-4 py-4 text-sm font-medium"
-                >
-                  Почати нову гру
+                  <p className="text-[1.28rem] font-black uppercase tracking-[-0.04em] text-[var(--lila-text-primary)]">
+                    Продовжити розмову із собою
+                  </p>
+                  <p className="text-sm leading-6 text-[var(--lila-text-muted)]">
+                    {activeSession
+                      ? `Зупинилися на важливому усвідомленні. Готова йти далі з клітини ${activeSession.currentCell}.`
+                      : 'Коли зʼявиться активна сесія, вона відкриється тут одним тапом.'}
+                  </p>
                 </button>
               </div>
 
-              <div className="lila-canva-sidebar flex flex-col justify-between p-4">
-                <div>
-                  <p className="lila-utility-label">Design Note</p>
-                  <p className="mt-3 text-lg font-semibold text-[var(--lila-text-primary)]">Desktop без втрати mobile-first feel</p>
-                  <p className="mt-3 text-sm leading-6 text-[var(--lila-text-muted)]">
-                    На великих екранах макет дихає шириною, а на мобільному все просто стекається в зрозумілий один-column flow.
-                  </p>
-                </div>
-                <div className="lila-paper-card mt-4 px-4 py-4 text-sm leading-6 text-[var(--lila-text-muted)]">
-                  Тут немає page-level scroll у сценарії старту: довгі списки живуть в окремій панелі архіву.
-                </div>
-              </div>
+              <p className="mx-auto mt-5 max-w-[560px] text-sm leading-6 text-[var(--lila-text-muted)]">
+                На desktop архів залишається поруч, а на mobile усе складається в той самий спокійний one-screen flow.
+              </p>
             </div>
           </section>
 
           <section className="lila-canva-sidebar min-h-0 px-5 py-5 sm:px-6">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="lila-utility-label">Session Archive</p>
-                <h2 className="mt-2 text-xl font-semibold text-[var(--lila-text-primary)]">Минулі ігри</h2>
+                <p className="lila-utility-label">Активна гра</p>
+                <h2 className="mt-2 text-xl font-black uppercase tracking-[-0.04em] text-[var(--lila-text-primary)]">
+                  Історія сесій
+                </h2>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -164,10 +135,10 @@ export const SinglePlayerStartPage = () => {
                   {pagedSessions.map((session) => {
                     const isFinished = session.finished || session.sessionStatus === 'completed';
                     return (
-                      <li key={session.id} className="lila-paper-card px-4 py-4">
+                      <li key={session.id} className="lila-list-card px-4 py-4">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-sm font-semibold text-[var(--lila-text-primary)]">
-                            {session.boardType === 'full' ? 'Повна дошка' : 'Коротка дошка'} · Клітина {session.currentCell}
+                            {session.boardType === 'full' ? 'Повна гра' : 'Коротка гра'} | клітинка {session.currentCell}
                           </p>
                           <span
                             className={`rounded-full px-2.5 py-1 text-xs ${isFinished ? 'bg-[var(--lila-success-bg)] text-[var(--lila-success-text)]' : 'bg-[var(--lila-warning-bg)] text-[var(--lila-warning-text)]'}`}
@@ -176,8 +147,6 @@ export const SinglePlayerStartPage = () => {
                           </span>
                         </div>
                         <p className="mt-2 text-xs text-[var(--lila-text-muted)]">
-                          Оновлено:
-                          {' '}
                           {new Date(session.updatedAt).toLocaleString('uk-UA', {
                             day: '2-digit',
                             month: '2-digit',

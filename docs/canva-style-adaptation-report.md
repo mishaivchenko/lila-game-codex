@@ -4,23 +4,23 @@
 
 - Palette: airy off-white and blush backgrounds, pale lilac surfaces, deep violet/plum accents, muted lavender neutrals.
 - Typography: bold high-contrast sans headlines, lighter supportive sans copy, small uppercase utility labels.
-- Layout: centered hero blocks, calm card stacks, generous but controlled spacing, soft framed panels instead of hard boxes.
-- Decorative motifs: translucent wing/bird-like ornaments, diffused glow shapes, soft tinted panel overlays.
+- Layout: centered hero blocks, thin top navigation line, calm stacked CTA plates, generous whitespace, and flat translucent surfaces instead of heavy desktop cards.
+- Decorative motifs: large swallow/bird marks, diffused pastel overlays, soft tinted panel plates.
 - Motion cues: fade-up reveals, soft panel presence, gentle sheen/loading movement, lightweight premium transitions.
 
 ## Applied To The App
 
 - Added a Canva-derived token layer in `frontend/src/styles/tailwind.css` and aligned board theme values in `frontend/src/theme/boardTheme.ts`.
-- Introduced reusable shell/panel/button/input/list-card classes plus a reusable decorative SVG accent in `frontend/src/components/CanvaWingAccent.tsx`.
-- Restyled splash/start/setup, single-player, multiplayer, history, settings, route-error, main game shell, card modal, final screen, Telegram room entry panel, and supporting dialogs.
-- Expanded the desktop game shell so the board remains central and larger instead of living inside a narrow mobile frame.
+- Introduced reusable Canva page chrome and bird motifs in `frontend/src/components/CanvaPageTopBar.tsx` and `frontend/src/components/CanvaBirdAccent.tsx`.
+- Restyled splash/start/setup, single-player, multiplayer, history, settings, main game shell, and card modal around the real Canva patterns: thin top line, centered headline, pale-lilac CTA plates, and large decorative bird marks.
+- Expanded the desktop game shell so the board remains central and larger instead of living inside a narrow mobile frame, while keeping the new lighter surface language.
 - Kept motion calm and lightweight with soft overlays, sheen loading, and panel-driven transitions.
 
 ## Adapted Instead Of Copied
 
 - Canva’s poster-like whitespace was compressed into one-screen app shells to preserve the Telegram Mini App rhythm.
-- Large Canva hero compositions were translated into compact headers, info cards, and action panels.
-- Decorative wing motifs were added to shell surfaces and modal headers, but intentionally kept away from the active board area.
+- Large Canva hero compositions were translated into centered one-screen stages that still fit Telegram and small phones without page scrolling.
+- Decorative bird motifs were added to shell surfaces and modal headers, but intentionally kept away from the active board area.
 - Long explanatory content was kept inside internal scroll panes and modal bodies rather than page-level scrolling.
 - The board, dice, card-open sequence, host/player flows, and session logic were not rewritten.
 

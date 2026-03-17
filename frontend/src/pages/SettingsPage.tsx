@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { AppearanceCustomizationPanel } from '../components/AppearanceCustomizationPanel';
-import { CanvaWingAccent } from '../components/CanvaWingAccent';
+import { CanvaBirdAccent } from '../components/CanvaBirdAccent';
+import { CanvaPageTopBar } from '../components/CanvaPageTopBar';
 import { createRepositories } from '../repositories';
 
 const repositories = createRepositories();
@@ -28,17 +28,14 @@ export const SettingsPage = () => {
 
   return (
     <main className="lila-page-shell lila-page-shell--center">
-      <div className="lila-panel mx-auto w-full max-w-3xl px-5 py-5 sm:px-6">
-        <CanvaWingAccent className="pointer-events-none absolute -right-10 top-0 hidden h-32 w-48 text-[color:rgba(90,72,135,0.18)] md:block" />
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="lila-utility-label">Settings</p>
-            <h1 className="mt-3 text-3xl font-black tracking-[-0.04em] text-[var(--lila-text-primary)]">Налаштування подорожі</h1>
-            <p className="mt-3 text-sm text-[var(--lila-text-muted)]">Глобальні параметри зберігаються локально в IndexedDB.</p>
-          </div>
-          <Link className="lila-secondary-button px-4 py-2 text-sm font-medium" to="/game">
-            До гри
-          </Link>
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
+        <CanvaPageTopBar backHref="/game" backLabel="До гри" />
+
+        <div className="relative mt-5 px-2 sm:px-4">
+          <CanvaBirdAccent className="pointer-events-none absolute -right-10 top-0 hidden h-40 w-48 text-[color:rgba(179,168,216,0.34)] lg:block" />
+          <p className="lila-utility-label">Settings</p>
+          <h1 className="lila-canva-stage-title mt-2">Налаштування подорожі</h1>
+          <p className="mt-3 text-sm text-[var(--lila-text-muted)]">Глобальні параметри зберігаються локально в IndexedDB.</p>
         </div>
 
         <div className="mt-6 grid gap-3 text-sm text-[var(--lila-text-primary)] sm:grid-cols-2">

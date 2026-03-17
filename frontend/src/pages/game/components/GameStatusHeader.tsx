@@ -33,12 +33,12 @@ export const GameStatusHeader = ({
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
       <div className="min-w-0">
         <p className="lila-utility-label">Current Focus</p>
-        <p className="mt-2 text-lg font-semibold text-[var(--lila-text-primary)]">
+        <p className="mt-2 text-sm uppercase tracking-[0.08em] text-[var(--lila-text-muted)]">
           {isSimpleMultiplayer
             ? `Хід: ${activeSimplePlayerName ?? 'Учасник'} · клітина ${safeCurrentCell}`
             : `Ви зараз на клітині ${safeCurrentCell}`}
         </p>
-        <h1 className="mt-2 text-[clamp(2rem,3vw,3.4rem)] font-black tracking-[-0.055em] text-[var(--lila-text-primary)]">
+        <h1 className="mt-3 text-[clamp(2rem,3vw,3.4rem)] font-black uppercase tracking-[-0.055em] text-[var(--lila-text-primary)]">
           {currentChakra?.name ?? 'Шлях триває'}
         </h1>
       </div>

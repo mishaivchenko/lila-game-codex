@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CanvaWingAccent } from '../../components/CanvaWingAccent';
+import { CanvaBirdAccent } from '../../components/CanvaBirdAccent';
 import { useBoardTheme } from '../../theme';
 
 interface GameBoardLayoutProps {
@@ -33,7 +33,7 @@ export const GameBoardLayout = ({
             className="lila-poster-panel min-h-[48vh] min-w-0 sm:min-h-[56vh] xl:min-h-0"
             style={{ padding: `${theme.layout.boardPanelPaddingPx}px` }}
           >
-            <CanvaWingAccent className="pointer-events-none absolute -right-10 top-0 hidden h-32 w-48 text-[color:rgba(90,72,135,0.16)] md:block" />
+            <CanvaBirdAccent className="pointer-events-none absolute -right-10 bottom-0 hidden h-40 w-48 text-[color:rgba(179,168,216,0.24)] md:block" />
             {board}
           </section>
 
