@@ -82,6 +82,7 @@ export const JourneySetupHub = () => {
   const { startNewSession, loading } = useGameContext();
   const [activeTab, setActiveTab] = useState<TabId>('simple');
   const [diceMode, setDiceMode] = useState<DiceMode>('classic');
+  const [showQuickGuide, setShowQuickGuide] = useState(false);
 
   const [players, setPlayers] = useState<PlayerDraft[]>([createPlayer(0)]);
   const [simpleError, setSimpleError] = useState<string | undefined>(undefined);
@@ -171,18 +172,17 @@ export const JourneySetupHub = () => {
   };
 
   return (
-    <section className="lila-panel mt-5 flex min-h-0 flex-col overflow-hidden p-4 sm:p-5" data-testid="journey-setup-hub">
+    <section className="lila-panel flex h-full min-h-0 flex-col overflow-hidden p-4 sm:p-5" data-testid="journey-setup-hub">
       <div className="flex flex-col gap-3 border-b border-[var(--lila-border-soft)]/70 pb-4">
         <div className="flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="lila-utility-label">Journey Studio</p>
-            <h2 className="mt-2 text-[clamp(1.8rem,3vw,3rem)] font-black tracking-[-0.05em] text-[var(--lila-text-primary)]">
+            <h2 className="mt-2 text-[clamp(1.7rem,3vw,2.8rem)] font-black tracking-[-0.05em] text-[var(--lila-text-primary)]">
               Оберіть формат входу
             </h2>
           </div>
-          <p className="max-w-[38rem] text-sm leading-6 text-[var(--lila-text-muted)]">
-            Простий старт для групи вже готовий. Глибоку гру залишаємо м’яко заблокованою, а правила тримаємо поруч без
-            перевантаження екрана.
+          <p className="hidden max-w-[34rem] text-sm leading-6 text-[var(--lila-text-muted)] xl:block">
+            Простий старт уже готовий. Глибоку гру й правила відкриваємо без перевантаження головного екрана.
           </p>
         </div>
 
@@ -216,31 +216,28 @@ export const JourneySetupHub = () => {
 
       {activeTab === 'simple' && (
         <div className="mt-5 flex min-h-0 flex-1 flex-col gap-4">
-          <div className="grid gap-3 min-[1500px]:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_280px]">
             <div className="grid gap-3 sm:grid-cols-3">
-              <article className="lila-list-card p-4">
+              <article className="lila-list-card p-3.5">
                 <p className="lila-utility-label">Rhythm</p>
-                <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">До 4 учасників</p>
-                <p className="mt-2 text-sm leading-5 text-[var(--lila-text-muted)]">Імена, запити та кольори зібрані в одному потоці.</p>
+                <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">До 4 учасників</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--lila-text-muted)]">Один компактний потік.</p>
               </article>
-              <article className="lila-list-card p-4">
+              <article className="lila-list-card p-3.5">
                 <p className="lila-utility-label">Dice Mode</p>
-                <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Поточний формат: {diceMode}</p>
-                <p className="mt-2 text-sm leading-5 text-[var(--lila-text-muted)]">Режим кидка підтягується з налаштувань теми.</p>
+                <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">Формат: {diceMode}</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--lila-text-muted)]">Без додаткових кроків.</p>
               </article>
-              <article className="lila-list-card p-4">
+              <article className="lila-list-card p-3.5">
                 <p className="lila-utility-label">Focus</p>
-                <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Один екран, одна точка входу</p>
-                <p className="mt-2 text-sm leading-5 text-[var(--lila-text-muted)]">Деталі лишаються всередині карток і модалок.</p>
+                <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">Один екран</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--lila-text-muted)]">Деталі у картках і модалках.</p>
               </article>
             </div>
 
-            <aside className="lila-panel-muted flex flex-col gap-3 p-4">
+            <aside className="hidden xl:flex lila-panel-muted flex-col gap-3 p-4">
               <p className="lila-utility-label">Before You Start</p>
               <h3 className="text-lg font-semibold text-[var(--lila-text-primary)]">М’який груповий вхід</h3>
-              <p className="text-sm leading-5 text-[var(--lila-text-muted)]">
-                Додайте тільки тих учасників, хто вже готовий сформулювати ім’я або запит.
-              </p>
               <div className="lila-list-card space-y-2 p-4 text-sm leading-5 text-[var(--lila-text-muted)]">
                 <p>1. Заповніть активних учасників.</p>
                 <p>2. Зафіксуйте колір фішки для читабельності ходу.</p>
@@ -249,16 +246,34 @@ export const JourneySetupHub = () => {
             </aside>
           </div>
 
+          <div className="xl:hidden">
+            <button
+              type="button"
+              onClick={() => setShowQuickGuide((prev) => !prev)}
+              className="lila-secondary-button w-full px-4 py-3 text-sm font-medium"
+            >
+              {showQuickGuide ? 'Сховати підказки' : 'Показати підказки'}
+            </button>
+          </div>
+
+          {showQuickGuide && (
+            <div className="xl:hidden lila-panel-muted space-y-2 p-4 text-sm leading-5 text-[var(--lila-text-muted)]">
+              <p>1. Додайте тільки активних учасників.</p>
+              <p>2. Закріпіть колір фішки для кожного.</p>
+              <p>3. Усе довге залишаємо у внутрішніх панелях, не на сторінці.</p>
+            </div>
+          )}
+
           <div className="lila-scroll-pane -mr-1 flex min-h-0 flex-1 flex-col gap-3 pr-1">
             {players.map((player, index) => (
               <article key={player.id} className="lila-list-card p-4 sm:p-5">
-                <div className="grid gap-4 xl:grid-cols-[132px_minmax(0,1fr)_220px]">
+                <div className="grid gap-4 xl:grid-cols-[120px_minmax(0,1fr)_208px]">
                   <div>
                     <p className="lila-utility-label">Player {index + 1}</p>
                     <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">
                       {player.name.trim() || `Учасник ${index + 1}`}
                     </p>
-                    <p className="mt-2 text-sm leading-5 text-[var(--lila-text-muted)]">Стисла картка без зайвих кроків.</p>
+                    <p className="mt-2 text-sm leading-5 text-[var(--lila-text-muted)]">Короткий профіль.</p>
                   </div>
 
                   <div className="grid gap-3 md:grid-cols-2">
@@ -276,7 +291,7 @@ export const JourneySetupHub = () => {
                       <textarea
                         value={player.request}
                         onChange={(event) => updatePlayer(player.id, { request: event.target.value })}
-                        className="lila-textarea mt-2 min-h-24 px-3 py-3 text-sm leading-6 text-[var(--lila-text-primary)]"
+                        className="lila-textarea mt-2 min-h-20 px-3 py-3 text-sm leading-6 text-[var(--lila-text-primary)]"
                       />
                     </label>
                   </div>

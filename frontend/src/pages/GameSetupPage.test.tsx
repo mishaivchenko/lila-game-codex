@@ -21,6 +21,8 @@ describe('GameSetupPage', () => {
     );
 
     expect(screen.getByRole('main').className).toContain('lila-page-shell');
+    expect(screen.getByTestId('setup-shell-layout').className).toContain('grid-rows-[auto_minmax(0,1fr)]');
+    expect(screen.getByRole('button', { name: 'Показати підказки' })).not.toBeNull();
     const user = userEvent.setup();
     const requestField = screen.getAllByLabelText('Мій запит')[0];
     await user.type(requestField, 'Хочу зрозуміти свої емоції');

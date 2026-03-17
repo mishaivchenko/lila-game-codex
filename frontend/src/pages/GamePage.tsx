@@ -23,6 +23,7 @@ import { FinishSessionDialog } from './game/components/FinishSessionDialog';
 import { DeepRequestDialog } from './game/components/DeepRequestDialog';
 import { GameStatusHeader } from './game/components/GameStatusHeader';
 import { GameControlPanel } from './game/components/GameControlPanel';
+import { GameControlDock } from './game/components/GameControlDock';
 import { useSimpleMultiplayer } from './game/useSimpleMultiplayer';
 import { useStartCardAutoOpen } from './game/useStartCardAutoOpen';
 import { useBoardTheme } from '../theme';
@@ -671,18 +672,35 @@ export const GamePage = () => {
           />
         )}
         controls={(
-          <GameControlPanel
-            lastMove={lastMove}
-            boardMaxCell={board.maxCell}
-            isSimpleMultiplayer={isSimpleMultiplayer}
-            error={error}
-            turnState={turnState}
-            lastMoveType={lastMoveType}
-            lastMovePresentation={lastMovePresentation}
-            onRoll={() => triggerDiceRoll()}
-            onOpenFinishConfirm={() => setShowFinishConfirm(true)}
-            onOpenAnimationSettings={() => setShowAnimationSettings(true)}
-          />
+          <>
+            <div className="min-[1400px]:hidden">
+              <GameControlDock
+                lastMove={lastMove}
+                boardMaxCell={board.maxCell}
+                isSimpleMultiplayer={isSimpleMultiplayer}
+                turnState={turnState}
+                lastMoveType={lastMoveType}
+                lastMovePresentation={lastMovePresentation}
+                onRoll={() => triggerDiceRoll()}
+                onOpenFinishConfirm={() => setShowFinishConfirm(true)}
+                onOpenAnimationSettings={() => setShowAnimationSettings(true)}
+              />
+            </div>
+            <div className="hidden h-full min-[1400px]:block">
+              <GameControlPanel
+                lastMove={lastMove}
+                boardMaxCell={board.maxCell}
+                isSimpleMultiplayer={isSimpleMultiplayer}
+                error={error}
+                turnState={turnState}
+                lastMoveType={lastMoveType}
+                lastMovePresentation={lastMovePresentation}
+                onRoll={() => triggerDiceRoll()}
+                onOpenFinishConfirm={() => setShowFinishConfirm(true)}
+                onOpenAnimationSettings={() => setShowAnimationSettings(true)}
+              />
+            </div>
+          </>
         )}
         sideContent={undefined}
       />

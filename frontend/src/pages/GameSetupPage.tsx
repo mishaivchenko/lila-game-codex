@@ -9,39 +9,36 @@ export const GameSetupPage = () => {
       <div className="lila-canva-frame min-h-0 flex-1">
         <CanvaPageTopBar backHref="/" />
 
-        <div className="grid min-h-0 flex-1 gap-4 pt-5 min-[1460px]:grid-cols-[340px_minmax(0,1fr)]">
-          <section className="relative min-h-0 px-2 text-center sm:px-4 lg:text-left">
+        <div
+          className="grid min-h-0 flex-1 gap-4 pt-4 grid-rows-[auto_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)] xl:grid-rows-1"
+          data-testid="setup-shell-layout"
+        >
+          <section className="lila-canva-sidebar relative min-h-0 px-4 py-4 text-left sm:px-5">
             <BrandLogo
               alt="SoulVio Ліла"
-              className="pointer-events-none absolute -left-10 top-20 hidden h-40 w-40 opacity-[var(--lila-brand-mark-opacity)] lg:block"
+              className="pointer-events-none absolute -right-8 top-4 hidden h-32 w-32 opacity-[var(--lila-brand-mark-opacity)] xl:block"
             />
 
-            <div className="mx-auto max-w-[760px] lg:mx-0">
-              <h1 className="lila-canva-stage-title mt-2">Створи свою реальність на цю гру</h1>
-              <p className="lila-canva-stage-copy mt-4 max-w-[620px] lg:max-w-[640px]">
-                Підготуй тему, вигляд і глибину проходження так, щоб mobile лишився зручним, а desktop не виглядав затиснутим.
+            <div className="mx-auto max-w-[760px] xl:mx-0">
+              <p className="lila-utility-label">Journey Studio</p>
+              <h1 className="mt-2 text-[clamp(2rem,4vw,3.6rem)] font-black uppercase tracking-[-0.05em] text-[var(--lila-text-primary)]">
+                Старт гри
+              </h1>
+              <p className="mt-3 max-w-[32rem] text-sm leading-6 text-[var(--lila-text-muted)]">
+                Залишаємо лише потрібне: формат входу, гравці, тема й старт без зайвого шуму.
               </p>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                <div className="lila-canva-action px-4 py-4 text-center sm:text-left">
-                  <p className="text-base font-black uppercase tracking-[-0.04em] text-[var(--lila-text-primary)]">Проста гра</p>
-                  <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">Експрес-діагностика твого стану.</p>
-                </div>
-                <div className="lila-canva-action px-4 py-4 text-center sm:text-left">
-                  <p className="text-base font-black uppercase tracking-[-0.04em] text-[var(--lila-text-primary)]">Глибока гра</p>
-                  <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">Глибока робота з підсвідомістю.</p>
-                </div>
-                <div className="lila-canva-action px-4 py-4 text-center sm:text-left">
-                  <p className="text-base font-black uppercase tracking-[-0.04em] text-[var(--lila-text-primary)]">Питання дня</p>
-                  <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">Швидкий вхід у практику без перевантаження.</p>
-                </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="lila-badge">Проста гра</span>
+                <span className="lila-badge">До 4 учасників</span>
+                <span className="lila-badge">Один екран</span>
               </div>
 
-              <AppearanceCustomizationPanel className="mt-6" defaultExpanded={false} title="Кастомізуйте гру перед запуском" />
+              <AppearanceCustomizationPanel className="mt-4" defaultExpanded={false} title="Тема та вигляд" />
             </div>
           </section>
 
-          <div className="min-h-0 pr-1">
+          <div className="min-h-0 xl:pr-1">
             <JourneySetupHub />
           </div>
         </div>

@@ -31,7 +31,9 @@ describe('GameBoardLayout', () => {
     );
 
     const layout = screen.getByTestId('game-board-layout');
+    const layoutGrid = screen.getByTestId('game-board-layout-grid');
     expect(layout.className).toContain('lila-page-shell');
+    expect(layoutGrid.className).toContain('grid-rows-[auto_minmax(0,1fr)_auto]');
     expect(layout.getAttribute('style')).toContain('1480px');
     expect(screen.getByText('BOARD')).not.toBeNull();
     expect(screen.getByText('CONTROLS')).not.toBeNull();

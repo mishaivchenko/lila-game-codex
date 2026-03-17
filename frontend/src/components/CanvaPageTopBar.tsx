@@ -34,13 +34,17 @@ export const CanvaPageTopBar = ({
       ) : null}
     </div>
     <div className="lila-canva-topbar-items">
-      {items.map((item) => (
+      {items.map((item, index) => (
         item.to ? (
-          <Link key={`${item.label}-${item.to}`} className="lila-canva-topbar-link" to={item.to}>
+          <Link
+            key={`${item.label}-${item.to}`}
+            className={`lila-canva-topbar-link ${index > 1 ? 'hidden sm:inline' : ''}`.trim()}
+            to={item.to}
+          >
             {item.label}
           </Link>
         ) : (
-          <span key={item.label} className="lila-canva-topbar-link">
+          <span key={item.label} className={`lila-canva-topbar-link ${index > 1 ? 'hidden sm:inline' : ''}`.trim()}>
             {item.label}
           </span>
         )
