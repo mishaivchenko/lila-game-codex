@@ -96,17 +96,11 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
   };
 
   return (
-    <section className="lila-panel-muted p-4 sm:p-5" data-testid="telegram-rooms-panel">
+    <section className="lila-panel-muted flex h-full min-h-0 flex-col p-4 sm:p-5" data-testid="telegram-rooms-panel">
       <div className="flex flex-col gap-3 border-b border-[var(--lila-border-soft)]/70 pb-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="lila-utility-label">Host Room Online</p>
-            <h3 className="mt-2 text-xl font-semibold text-[var(--lila-text-primary)]">Спільна подорож</h3>
-          </div>
-          <p className="max-w-md text-sm leading-6 text-[var(--lila-text-muted)]">
-            Хост тримає простір, але кожен гравець зберігає власний ритм і власний кубик. Весь flow лишається компактним і
-            Telegram-friendly.
-          </p>
+        <div>
+          <p className="lila-utility-label">Online Room</p>
+          <h3 className="mt-2 text-xl font-semibold text-[var(--lila-text-primary)]">Оберіть роль</h3>
         </div>
 
         {backendUnavailable && (
@@ -150,10 +144,8 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
             <div className="lila-list-card space-y-4 p-4">
               <div>
                 <p className="lila-utility-label">Host Flow</p>
-                <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Запустіть кімнату для групи</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
-                  Після створення кімнати Codex-застилений shell не змінює host/player logic, pause flow або порядок ходів.
-                </p>
+                <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Створіть кімнату</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">Поділіться кодом і відкрийте хід для групи.</p>
               </div>
               <button
                 type="button"
@@ -167,7 +159,7 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
                 disabled={status !== 'authenticated' || isLoading || backendUnavailable}
                 className="lila-primary-button w-full px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Створити Host Room
+                Створити кімнату
               </button>
             </div>
           ) : (
@@ -186,9 +178,6 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
             <div>
               <p className="lila-utility-label">Join Room</p>
               <p className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Увійти за кодом кімнати</p>
-              <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
-                Короткий код залишається головною точкою входу, але тепер живе всередині спокійної Canva-like surface.
-              </p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <input

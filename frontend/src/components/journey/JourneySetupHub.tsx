@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameContext } from '../../context/GameContext';
 import { CompactPanelModal } from '../CompactPanelModal';
@@ -100,6 +100,11 @@ export const JourneySetupHub = () => {
       cancelled = true;
     };
   }, []);
+
+  const playerSummary = useMemo(
+    () => players.map((player, index) => player.name.trim() || `Учасник ${index + 1}`).join(', '),
+    [players],
+  );
 
   const updatePlayer = (id: string, patch: Partial<PlayerDraft>) => {
     setPlayers((prev) => prev.map((player) => (player.id === id ? { ...player, ...patch } : player)));
@@ -300,59 +305,29 @@ export const JourneySetupHub = () => {
 
       {activeTab === 'simple' && (
         <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3 sm:mt-5 sm:gap-4">
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="flex flex-wrap gap-2 sm:hidden">
-              <span className="lila-badge">До 4 учасників</span>
-              <span className="lila-badge">Формат: {diceMode}</span>
-              <span className="lila-badge">Один екран</span>
-            </div>
-
-            <div className="hidden gap-3 sm:grid sm:grid-cols-3">
-              <article className="lila-list-card p-3.5">
-                <p className="lila-utility-label">Rhythm</p>
-                <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">До 4 учасників</p>
-                <p className="mt-1 text-xs leading-5 text-[var(--lila-text-muted)]">Один компактний потік.</p>
-              </article>
-              <article className="lila-list-card p-3.5">
-                <p className="lila-utility-label">Dice Mode</p>
-                <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">Формат: {diceMode}</p>
-                <p className="mt-1 text-xs leading-5 text-[var(--lila-text-muted)]">Без додаткових кроків.</p>
-              </article>
-              <article className="lila-list-card p-3.5">
-                <p className="lila-utility-label">Focus</p>
-                <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">Один екран</p>
-                <p className="mt-1 text-xs leading-5 text-[var(--lila-text-muted)]">Деталі у картках і модалках.</p>
-              </article>
-            </div>
-
-            <aside className="hidden xl:flex lila-panel-muted flex-col gap-3 p-4">
-              <p className="lila-utility-label">Before You Start</p>
-              <h3 className="text-lg font-semibold text-[var(--lila-text-primary)]">М’який груповий вхід</h3>
-              <div className="lila-list-card space-y-2 p-4 text-sm leading-5 text-[var(--lila-text-muted)]">
-                <p>1. Заповніть активних учасників.</p>
-                <p>2. Зафіксуйте колір фішки для читабельності ходу.</p>
-                <p>3. Запустіть гру, не торкаючись логіки board/session.</p>
-              </div>
-            </aside>
+          <div className="flex flex-wrap gap-2">
+            <span className="lila-badge">До 4 учасників</span>
+            <span className="lila-badge">Формат: {diceMode}</span>
+            <span className="lila-badge">Один екран</span>
           </div>
 
-          <div className="hidden sm:block xl:hidden">
-            <button
-              type="button"
-              onClick={() => setShowQuickGuide((prev) => !prev)}
-              className="lila-secondary-button w-full px-4 py-3 text-sm font-medium"
-            >
-              {showQuickGuide ? 'Сховати підказки' : 'Показати підказки'}
-            </button>
+          <div className="hidden gap-3 xl:grid xl:grid-cols-3">
+            <article className="lila-list-card p-3.5">
+              <p className="lila-utility-label">Rhythm</p>
+              <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">Спокійний старт</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--lila-text-muted)]">Головне лишаємо на одному екрані.</p>
+            </article>
+            <article className="lila-list-card p-3.5">
+              <p className="lila-utility-label">Dice Mode</p>
+              <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">Формат: {diceMode}</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--lila-text-muted)]">Можна змінити у вигляді гри.</p>
+            </article>
+            <article className="lila-list-card p-3.5">
+              <p className="lila-utility-label">Focus</p>
+              <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">Поле та картки</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--lila-text-muted)]">Довге ховаємо у внутрішні модалки.</p>
+            </article>
           </div>
-
-          {showQuickGuide && (
-            <div className="xl:hidden lila-panel-muted space-y-2 p-4 text-sm leading-5 text-[var(--lila-text-muted)]">
-              <p>1. Додайте тільки активних учасників.</p>
-              <p>2. Закріпіть колір фішки для кожного.</p>
-              <p>3. Усе довге залишаємо у внутрішніх панелях, не на сторінці.</p>
-            </div>
-          )}
 
           <div className="hidden min-h-0 flex-1 xl:flex">
             <div className="lila-scroll-pane -mr-1 flex min-h-0 flex-1 flex-col gap-3 pr-1">
@@ -368,7 +343,7 @@ export const JourneySetupHub = () => {
                   {players.length} {players.length === 1 ? 'гравець' : players.length < 5 ? 'гравці' : 'гравців'}
                 </p>
                 <p className="mt-1 text-sm leading-5 text-[var(--lila-text-muted)]">
-                  {players.map((player, index) => player.name.trim() || `Учасник ${index + 1}`).join(', ')}
+                  {playerSummary}
                 </p>
               </div>
               <button
@@ -381,18 +356,25 @@ export const JourneySetupHub = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-3">
+          <div className="grid grid-cols-3 gap-2.5 xl:grid-cols-[auto_auto_minmax(0,1fr)] xl:gap-3">
             {simpleError && (
-              <p className="col-span-2 rounded-[20px] bg-[var(--lila-danger-bg)] px-4 py-3 text-sm text-[var(--lila-danger-text)] sm:col-span-3">
+              <p className="col-span-3 rounded-[20px] bg-[var(--lila-danger-bg)] px-4 py-3 text-sm text-[var(--lila-danger-text)]">
                 {simpleError}
               </p>
             )}
             <button
               type="button"
               onClick={() => setShowPlayersEditor(true)}
-              className="lila-secondary-button w-full px-4 py-2 text-sm font-medium xl:hidden"
+              className="lila-secondary-button w-full px-3 py-2.5 text-sm font-medium xl:hidden"
             >
               Учасники
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowQuickGuide(true)}
+              className="lila-secondary-button w-full px-3 py-2.5 text-sm font-medium"
+            >
+              Поради
             </button>
             <button
               type="button"
@@ -408,7 +390,7 @@ export const JourneySetupHub = () => {
               onClick={() => {
                 void startSimpleGame();
               }}
-              className="lila-primary-button w-full px-5 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              className="lila-primary-button col-span-1 w-full px-4 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 xl:justify-self-end"
             >
               Почати гру
             </button>
@@ -493,6 +475,19 @@ export const JourneySetupHub = () => {
           {playerEditorContent}
         </CompactPanelModal>
       </div>
+
+      <CompactPanelModal
+        open={showQuickGuide}
+        eyebrow="Simple Flow"
+        title="Короткі підказки"
+        onClose={() => setShowQuickGuide(false)}
+      >
+        <div className="space-y-3 text-sm leading-6 text-[var(--lila-text-muted)]">
+          <p>1. Додайте тільки тих учасників, які справді починають гру зараз.</p>
+          <p>2. Залиште короткі імена та один простий запит, решту можна уточнити в картках.</p>
+          <p>3. Якщо потрібно більше деталей, відкривайте модалки, а не перевантажуйте головний екран.</p>
+        </div>
+      </CompactPanelModal>
     </section>
   );
 };

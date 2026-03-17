@@ -1,4 +1,3 @@
-import { ChakraNotification } from '../../../components/ChakraNotification';
 import type { ChakraInfo } from '../../../domain/types';
 import type { SimplePlayerState } from '../gamePageTypes';
 
@@ -29,16 +28,15 @@ export const GameStatusHeader = ({
   isDeepEntryPending,
   entryHint,
 }: GameStatusHeaderProps) => (
-  <header className="lila-poster-panel mb-2 p-3 sm:mb-3 sm:p-5">
+  <header className="mb-1 flex flex-col gap-2 px-1 pb-1 sm:mb-2 sm:gap-3">
     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
       <div className="min-w-0">
-        <p className="hidden lila-utility-label sm:block">Current Focus</p>
-        <p className="text-xs uppercase tracking-[0.08em] text-[var(--lila-text-muted)] sm:mt-2 sm:text-sm">
-          {isSimpleMultiplayer
-            ? `Хід: ${activeSimplePlayerName ?? 'Учасник'} · клітина ${safeCurrentCell}`
-            : `Ви зараз на клітині ${safeCurrentCell}`}
-        </p>
-        <h1 className="mt-1 text-[clamp(1.25rem,2.4vw,3rem)] font-black uppercase tracking-[-0.05em] text-[var(--lila-text-primary)] sm:mt-2">
+        <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.08em] text-[var(--lila-text-muted)] sm:text-xs">
+          <span className="hidden sm:inline">Current Focus</span>
+          <span>{isSimpleMultiplayer ? `Хід: ${activeSimplePlayerName ?? 'Учасник'}` : 'Ваш хід'}</span>
+          <span>Клітина {safeCurrentCell}</span>
+        </div>
+        <h1 className="mt-1 text-[clamp(1.15rem,2vw,2.2rem)] font-black uppercase tracking-[-0.05em] text-[var(--lila-text-primary)] sm:mt-2">
           {currentChakra?.name ?? 'Шлях триває'}
         </h1>
       </div>
@@ -52,12 +50,8 @@ export const GameStatusHeader = ({
       </button>
     </div>
 
-    <div className="lila-editorial-divider mt-3 sm:mt-4" />
-
-    {currentChakra && <p className="mt-3 hidden max-w-3xl text-sm leading-6 text-[var(--lila-text-muted)] md:block">{currentChakra.description}</p>}
-
     {isSimpleMultiplayer && (
-      <div className="mt-4 flex flex-wrap gap-2" data-testid="simple-players-strip">
+      <div className="flex flex-wrap gap-2" data-testid="simple-players-strip">
         {simplePlayers.map((player, index) => (
           <span
             key={player.id}
@@ -81,18 +75,15 @@ export const GameStatusHeader = ({
     )}
 
     {isDeepEntryPending && (
-      <p className="mt-4 rounded-[20px] bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      <p className="rounded-[20px] bg-amber-50 px-4 py-3 text-xs text-amber-800 sm:text-sm">
         Щоб увійти в глибоку гру, потрібно викинути 6.
       </p>
     )}
-    {entryHint && <p className="mt-3 rounded-[20px] bg-[#f4e6dc] px-4 py-3 text-sm text-[#6f4a3a]">{entryHint}</p>}
+    {entryHint && <p className="rounded-[20px] bg-[#f4e6dc] px-4 py-3 text-xs text-[#6f4a3a] sm:text-sm">{entryHint}</p>}
     {showHintInfo && (
-      <p className="mt-3 rounded-[20px] border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-4 py-3 text-sm text-[var(--lila-text-primary)]">
+      <p className="rounded-[20px] border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-4 py-3 text-xs text-[var(--lila-text-primary)] sm:text-sm">
         Змії — це уроки. Стріли — це ресурси.
       </p>
     )}
-    <div className="mt-3 hidden sm:block sm:mt-4">
-      <ChakraNotification text={`Ви увійшли в ${currentChakra?.name ?? 'новий рівень'}.`} />
-    </div>
   </header>
 );

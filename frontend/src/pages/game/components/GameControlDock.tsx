@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { Dice } from '../../../components/Dice';
 import type { GameMove } from '../../../domain/types';
 import { formatMovePathWithEntry, type MovePresentation } from '../../../lib/lila/historyFormat';
@@ -11,8 +10,7 @@ interface GameControlDockProps {
   lastMoveType: 'normal' | 'snake' | 'ladder';
   lastMovePresentation: MovePresentation;
   onRoll: () => void;
-  onOpenFinishConfirm: () => void;
-  onOpenAnimationSettings: () => void;
+  onOpenUtilityMenu: () => void;
 }
 
 export const GameControlDock = ({
@@ -23,11 +21,10 @@ export const GameControlDock = ({
   lastMoveType,
   lastMovePresentation,
   onRoll,
-  onOpenFinishConfirm,
-  onOpenAnimationSettings,
+  onOpenUtilityMenu,
 }: GameControlDockProps) => (
   <section className="flex h-full min-h-0 flex-col gap-2">
-    <div className="lila-panel-muted flex items-center gap-3 px-3 py-3">
+    <div className="lila-panel-muted flex items-center gap-2 px-3 py-2.5">
       <Dice value={lastMove?.dice} />
       <div className="min-w-0 flex-1">
         <p className="lila-utility-label">Хід</p>
@@ -43,6 +40,13 @@ export const GameControlDock = ({
       >
         Кинути
       </button>
+      <button
+        type="button"
+        onClick={onOpenUtilityMenu}
+        className="lila-secondary-button shrink-0 px-3 py-3 text-sm font-medium"
+      >
+        Меню
+      </button>
     </div>
 
     {lastMove && lastMoveType !== 'normal' && (
@@ -50,26 +54,5 @@ export const GameControlDock = ({
         {lastMovePresentation.icon} {lastMovePresentation.label} · {formatMovePathWithEntry(lastMove, boardMaxCell)}
       </p>
     )}
-
-    <div className="grid grid-cols-3 gap-2 text-xs">
-      <button
-        type="button"
-        onClick={onOpenFinishConfirm}
-        disabled={turnState !== 'idle'}
-        className="lila-secondary-button px-3 py-2.5 font-medium disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        Фініш
-      </button>
-      <button
-        type="button"
-        onClick={onOpenAnimationSettings}
-        className="lila-secondary-button px-3 py-2.5 font-medium"
-      >
-        Рух
-      </button>
-      <Link className="lila-secondary-button flex items-center justify-center px-3 py-2.5 font-medium" to="/history">
-        Шлях
-      </Link>
-    </div>
   </section>
 );

@@ -106,35 +106,26 @@ export const MultiplayerStartPage = () => {
           className="grid min-h-0 flex-1 gap-4 pt-4 grid-rows-[auto_minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_360px] xl:grid-rows-1"
           data-testid="multiplayer-start-layout"
         >
-          <section className="relative min-h-0 px-2 text-center sm:px-4">
+          <section className="relative min-h-0 px-2 sm:px-4">
             <BrandLogo
               alt="SoulVio Ліла"
               className="pointer-events-none absolute -right-16 top-12 hidden h-48 w-48 opacity-[var(--lila-brand-mark-opacity)] lg:block"
             />
 
-            <div className="mx-auto max-w-[720px]">
-              <h1 className="lila-canva-stage-title mt-2">Твій кабінет провідника</h1>
-              <p className="lila-canva-stage-copy mx-auto mt-4 max-w-[560px]">
-                Простір для ведучого: створити кімнату, зібрати гравців і не втратити спокійний ритм гри.
-              </p>
+            <div className="mx-auto flex h-full max-w-[720px] min-h-0 flex-col">
+              <div className="text-center">
+                <h1 className="lila-canva-stage-title mt-2">Онлайн гра</h1>
+                <p className="lila-canva-stage-copy mx-auto mt-3 max-w-[560px]">
+                  Виберіть роль і зайдіть у кімнату без зайвих кроків на екрані.
+                </p>
+              </div>
 
-              <div className="mt-6 space-y-3">
-                <div className="lila-canva-action px-5 py-4 text-center">
-                  <p className="text-[1.22rem] font-black uppercase tracking-[-0.04em] text-[var(--lila-text-primary)]">
-                    Створити нову гру
-                  </p>
-                  <p className="mt-2 text-sm leading-5 text-[var(--lila-text-muted)]">Відкрий простір для нової групи.</p>
-                </div>
-
-                <div className="lila-canva-stage-panel px-4 py-4 sm:px-5">
-                  <div className="lila-scroll-pane max-h-[34vh] pr-1 sm:max-h-[38vh]">
-                    <TelegramRoomsPanel
-                      defaultFlow="host"
-                      initialRoomCode={initialRoomCode}
-                      initialRoomId={initialRoomId}
-                    />
-                  </div>
-                </div>
+              <div className="mt-5 min-h-0 flex-1">
+                <TelegramRoomsPanel
+                  defaultFlow="host"
+                  initialRoomCode={initialRoomCode}
+                  initialRoomId={initialRoomId}
+                />
               </div>
 
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2 xl:hidden">

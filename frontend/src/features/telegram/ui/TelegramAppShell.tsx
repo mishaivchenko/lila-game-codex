@@ -76,8 +76,8 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
   const bootstrapState = resolveAppBootstrapState(authState.status, authState.appStatus, Boolean(authState.token));
 
   const shellClassName = telegramMode
-    ? 'tma-shell mx-auto min-h-[var(--app-height,100dvh)] w-full max-w-[1600px] px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+12px)] sm:px-4'
-    : 'mx-auto min-h-[var(--app-height,100dvh)] w-full';
+    ? 'tma-shell mx-auto flex h-[var(--app-height,100dvh)] min-h-[var(--app-height,100dvh)] w-full max-w-[1600px] flex-col overflow-hidden px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+12px)] sm:px-4'
+    : 'mx-auto flex h-[var(--app-height,100dvh)] min-h-[var(--app-height,100dvh)] w-full flex-col overflow-hidden';
 
   return (
     <TelegramAuthProvider value={authState}>
@@ -136,14 +136,16 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
             </div>
           )}
 
-          {authState.isTelegramMode && authState.status === 'error' ? (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
-              <h2 className="text-sm font-semibold">Помилка авторизації</h2>
-              <p className="mt-1 text-sm">{authState.error}</p>
-            </div>
-          ) : (
-            children
-          )}
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {authState.isTelegramMode && authState.status === 'error' ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
+                <h2 className="text-sm font-semibold">Помилка авторизації</h2>
+                <p className="mt-1 text-sm">{authState.error}</p>
+              </div>
+            ) : (
+              children
+            )}
+          </div>
         </div>
       </TelegramRoomsProvider>
     </TelegramAuthProvider>

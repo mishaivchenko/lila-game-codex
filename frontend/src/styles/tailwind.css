@@ -139,8 +139,10 @@ body,
   overflow-x: hidden;
 }
 
-:root[data-tg-mode='true'] .tma-shell main {
-  min-height: auto;
+:root[data-tg-mode='true'] .tma-shell .lila-page-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
 }
 
 :root[data-lila-theme='cosmic-dark'],

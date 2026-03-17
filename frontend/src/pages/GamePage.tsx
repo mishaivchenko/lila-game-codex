@@ -5,6 +5,7 @@ import { LilaBoard, type LilaTransition } from '../components/lila/LilaBoard';
 import { Dice3D } from '../components/dice3d/Dice3D';
 import { AnimationSettingsModal } from '../components/AnimationSettingsModal';
 import { CellCoachModal } from '../components/CellCoachModal';
+import { CompactPanelModal } from '../components/CompactPanelModal';
 import { FinalScreen } from '../components/FinalScreen';
 import { computeNextPosition, resolveEffectiveDiceMode, rollDiceByMode, type DiceRollResult } from '../domain/gameEngine';
 import type { ChakraInfo, GameMove } from '../domain/types';
@@ -69,6 +70,7 @@ export const GamePage = () => {
   const [turnState, setTurnState] = useState<TurnState>('idle');
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showAnimationSettings, setShowAnimationSettings] = useState(false);
+  const [showMobileUtilityMenu, setShowMobileUtilityMenu] = useState(false);
   const [animationTimings, setAnimationTimings] = useState(DEFAULT_ANIMATION_TIMINGS);
   const [animationMove, setAnimationMove] = useState<LilaTransition | undefined>();
   const [activeModalCell, setActiveModalCell] = useState<number | undefined>(undefined);
@@ -680,8 +682,7 @@ export const GamePage = () => {
             lastMoveType={lastMoveType}
             lastMovePresentation={lastMovePresentation}
             onRoll={() => triggerDiceRoll()}
-            onOpenFinishConfirm={() => setShowFinishConfirm(true)}
-            onOpenAnimationSettings={() => setShowAnimationSettings(true)}
+            onOpenUtilityMenu={() => setShowMobileUtilityMenu(true)}
           />
         )}
         controls={(
@@ -743,6 +744,49 @@ export const GamePage = () => {
           onClose={() => setShowAnimationSettings(false)}
         />
       </AnimatePresence>
+
+      <CompactPanelModal
+        open={showMobileUtilityMenu}
+        eyebrow="Game Actions"
+        title="Дії біля поля"
+        onClose={() => setShowMobileUtilityMenu(false)}
+      >
+        <div className="space-y-3">
+          {lastMove && lastMoveType !== 'normal' && (
+            <p className={`rounded-[18px] px-3 py-3 text-sm font-medium ${lastMovePresentation.badgeClassName}`}>
+              {lastMovePresentation.icon} {lastMovePresentation.label} · {formatMovePathWithEntry(lastMove, board.maxCell)}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setShowMobileUtilityMenu(false);
+              setShowAnimationSettings(true);
+            }}
+            className="lila-secondary-button w-full px-4 py-3 text-sm font-medium"
+          >
+            Налаштування руху
+          </button>
+          <Link
+            className="lila-secondary-button flex w-full items-center justify-center px-4 py-3 text-sm font-medium"
+            to="/history"
+            onClick={() => setShowMobileUtilityMenu(false)}
+          >
+            Мій шлях
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setShowMobileUtilityMenu(false);
+              setShowFinishConfirm(true);
+            }}
+            disabled={turnState !== 'idle'}
+            className="lila-secondary-button w-full px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Завершити подорож
+          </button>
+        </div>
+      </CompactPanelModal>
 
       <Dice3D
         rollToken={diceRollToken}

@@ -46,11 +46,8 @@ export const LilaBoard = ({
   const { theme } = useBoardTheme();
   return (
     <section
-      className="flex h-full min-h-0 w-full flex-col rounded-3xl p-0 shadow-inner"
-      style={{
-        background: theme.boardBackground.boardPanelBackground,
-        color: theme.boardBackground.boardPanelText,
-      }}
+      className="relative flex h-full min-h-0 w-full items-center justify-center"
+      style={{ color: theme.boardBackground.boardPanelText }}
     >
       <LilaBoardCanvas
         boardType={board.id}
@@ -68,7 +65,7 @@ export const LilaBoard = ({
 
       {animationMove?.type && (
         <motion.div
-          className="mx-2 mb-2 mt-2 rounded-full px-3 py-1 text-center text-[11px] font-medium"
+          className="pointer-events-none absolute bottom-2 left-1/2 z-[1] -translate-x-1/2 rounded-full px-3 py-1 text-center text-[11px] font-medium"
           style={{
             background:
               animationMove.type === 'arrow'

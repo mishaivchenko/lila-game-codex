@@ -83,7 +83,9 @@ export const LilaBoardCanvas = ({
     panY: 0,
   }));
   const [viewportSize, setViewportSize] = useState({ width: 100, height: 100 });
+  const [hostSize, setHostSize] = useState({ width: 100, height: 100 });
   const timersRef = useRef<number[]>([]);
+  const hostRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const followModeRef = useRef(false);
   const cameraSnapshotRef = useRef(cameraState);
@@ -185,6 +187,28 @@ export const LilaBoardCanvas = ({
     return () => {
       isActive = false;
       window.cancelAnimationFrame(frameId);
+    };
+  }, []);
+
+  useEffect(() => {
+    const element = hostRef.current;
+    if (!element) {
+      return;
+    }
+
+    const updateHostSize = () => {
+      const rect = element.getBoundingClientRect();
+      setHostSize({ width: rect.width, height: rect.height });
+    };
+
+    updateHostSize();
+    if (typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+    const observer = new ResizeObserver(updateHostSize);
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
     };
   }, []);
 
@@ -366,6 +390,7 @@ export const LilaBoardCanvas = ({
     ...token,
     position: mapCellToBoardPosition(boardType, token.cell),
   }));
+  const squareSize = Math.max(0, Math.min(hostSize.width, hostSize.height));
 
   const toggleManualZoomAt = (worldPoint: { x: number; y: number }) => {
     const camera = cameraEngineRef.current;
@@ -502,14 +527,11 @@ export const LilaBoardCanvas = ({
 
   return (
     <div
-      className="relative flex h-full min-h-0 w-full items-center justify-center rounded-3xl p-0"
-      style={{
-        background: theme.boardBackground.canvasShellBackground,
-        boxShadow: theme.boardBackground.canvasShellShadow,
-      }}
+      className="relative flex h-full min-h-0 w-full items-center justify-center p-0"
+      ref={hostRef}
     >
       <div
-        className="relative overflow-hidden rounded-2xl"
+        className="relative overflow-hidden"
         data-testid="lila-board-canvas"
         onPointerUp={handleBoardPointerUp}
         onPointerDown={handleBoardPointerDown}
@@ -518,11 +540,11 @@ export const LilaBoardCanvas = ({
         onContextMenu={(event) => event.preventDefault()}
         style={{
           aspectRatio,
-          height: '100%',
-          width: 'auto',
+          height: squareSize > 0 ? `${squareSize}px` : '100%',
+          width: squareSize > 0 ? `${squareSize}px` : '100%',
           maxWidth: '100%',
           maxHeight: '100%',
-          background: theme.boardBackground.canvasFrameBackground,
+          background: 'transparent',
           touchAction: 'none',
           userSelect: 'none',
           WebkitUserSelect: 'none',

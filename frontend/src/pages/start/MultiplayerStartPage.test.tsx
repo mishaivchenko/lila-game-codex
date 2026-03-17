@@ -46,9 +46,10 @@ describe('MultiplayerStartPage', () => {
 
     expect(screen.getByRole('main').className).toContain('lila-page-shell');
     expect(screen.getByTestId('multiplayer-start-layout').className).toContain('grid-rows-[auto_minmax(0,1fr)]');
-    expect(screen.getByText('Твій кабінет провідника')).not.toBeNull();
+    expect(screen.getByText('Онлайн гра')).not.toBeNull();
     expect(screen.getByTestId('mock-telegram-rooms-panel')).not.toBeNull();
     expect(screen.getByText('#ABCD12')).not.toBeNull();
+    expect(screen.queryByText('Створити нову гру')).toBeNull();
     expect(refreshMyRooms).toHaveBeenCalledTimes(1);
 
     const user = userEvent.setup();

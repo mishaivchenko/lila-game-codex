@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { BrandLogo } from '../../components/BrandLogo';
 import { useBoardTheme } from '../../theme';
 
 interface GameBoardLayoutProps {
@@ -27,7 +26,7 @@ export const GameBoardLayout = ({
     >
       <div className="lila-canva-frame min-h-0 flex-1 overflow-hidden">
         <div
-          className="grid min-h-0 flex-1 gap-3 overflow-hidden grid-rows-[auto_minmax(0,1fr)] min-[1180px]:grid-cols-[minmax(0,1.24fr)_304px] min-[1180px]:grid-rows-[auto_minmax(0,1fr)]"
+          className="grid min-h-0 flex-1 gap-2 overflow-hidden grid-rows-[auto_minmax(0,1fr)] min-[1180px]:grid-cols-[minmax(0,1fr)_268px] min-[1180px]:grid-rows-[auto_minmax(0,1fr)]"
           data-testid="game-board-layout-grid"
         >
           <section className="min-[1180px]:col-span-2">
@@ -35,13 +34,9 @@ export const GameBoardLayout = ({
           </section>
 
           <section
-            className="lila-poster-panel relative flex min-h-0 min-w-0 items-center justify-center pb-[8.35rem] sm:pb-[9rem] min-[1180px]:pb-0"
+            className="relative flex min-h-0 min-w-0 items-start justify-center overflow-hidden pb-[5rem] sm:pb-[5.6rem] min-[1180px]:items-center min-[1180px]:pb-0"
             style={{ padding: `${theme.layout.boardPanelPaddingPx}px` }}
           >
-            <BrandLogo
-              alt="SoulVio Ліла"
-              className="pointer-events-none absolute -right-12 bottom-2 hidden h-40 w-40 opacity-[var(--lila-brand-mark-opacity)] md:block"
-            />
             {board}
             {mobileControls ? (
               <div className="absolute inset-x-2 bottom-2 z-10 min-[1180px]:hidden" data-testid="game-mobile-controls-overlay">
