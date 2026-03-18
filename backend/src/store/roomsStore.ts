@@ -44,7 +44,7 @@ const FULL_TRANSITIONS = {
     [55, 3],
     [61, 13],
     [63, 2],
-    [72, 51],
+    [67, 51],
   ]),
   arrows: new Map<number, number>([
     [10, 23],
