@@ -97,12 +97,7 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
 
   return (
     <section className="lila-panel-muted flex h-full min-h-0 flex-col p-4 sm:p-5" data-testid="telegram-rooms-panel">
-      <div className="flex flex-col gap-3 border-b border-[var(--lila-border-soft)]/70 pb-4">
-        <div>
-          <p className="lila-utility-label">Online Room</p>
-          <h3 className="mt-2 text-xl font-semibold text-[var(--lila-text-primary)]">Оберіть роль</h3>
-        </div>
-
+      <div className="flex flex-col gap-3 pb-1">
         {backendUnavailable && (
           <p className="rounded-[20px] border border-amber-300/70 bg-amber-50/90 px-4 py-3 text-sm leading-6 text-amber-900">
             Host Room потребує backend-синхронізації. Зараз сервер недоступний.
@@ -110,7 +105,7 @@ export const TelegramRoomsPanel = ({ defaultFlow = 'player', initialRoomCode, in
         )}
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <div className="mt-2 grid gap-3 sm:grid-cols-2" aria-label="Оберіть роль">
         {flowOptions.map((option) => {
           const active = selectedFlow === option.id;
           const disabled = amCurrentRoomHost && option.id === 'player';

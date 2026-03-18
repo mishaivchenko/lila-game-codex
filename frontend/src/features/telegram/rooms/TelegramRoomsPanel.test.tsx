@@ -37,7 +37,7 @@ describe('TelegramRoomsPanel', () => {
       },
     });
 
-    expect(screen.getByText('Оберіть роль')).not.toBeNull();
+    expect(screen.getByLabelText('Оберіть роль')).not.toBeNull();
     expect(screen.getByRole('button', { name: /я гравець/i })).not.toBeNull();
     expect(screen.getByRole('button', { name: /я ведучий/i })).not.toBeNull();
     expect(screen.getByRole('button', { name: 'Join' })).not.toBeNull();

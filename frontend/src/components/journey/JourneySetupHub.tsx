@@ -263,18 +263,6 @@ export const JourneySetupHub = () => {
   return (
     <section className="lila-panel flex h-full min-h-0 flex-col overflow-hidden p-3 sm:p-5" data-testid="journey-setup-hub">
       <div className="flex flex-col gap-2 border-b border-[var(--lila-border-soft)]/70 pb-3 sm:gap-3 sm:pb-4">
-        <div className="flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <p className="lila-utility-label">Journey Studio</p>
-            <h2 className="mt-2 text-[clamp(1.7rem,3vw,2.8rem)] font-black tracking-[-0.05em] text-[var(--lila-text-primary)]">
-              Оберіть формат входу
-            </h2>
-          </div>
-          <p className="hidden max-w-[34rem] text-sm leading-6 text-[var(--lila-text-muted)] xl:block">
-            Простий старт уже готовий. Глибоку гру й правила відкриваємо без перевантаження головного екрана.
-          </p>
-        </div>
-
         <div className="lila-segmented grid-cols-3 text-xs">
           <button
             type="button"
@@ -309,24 +297,6 @@ export const JourneySetupHub = () => {
             <span className="lila-badge">До 4 учасників</span>
             <span className="lila-badge">Формат: {diceMode}</span>
             <span className="lila-badge">Один екран</span>
-          </div>
-
-          <div className="hidden gap-3 xl:grid xl:grid-cols-3">
-            <article className="lila-list-card p-3.5">
-              <p className="lila-utility-label">Rhythm</p>
-              <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">Спокійний старт</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--lila-text-muted)]">Головне лишаємо на одному екрані.</p>
-            </article>
-            <article className="lila-list-card p-3.5">
-              <p className="lila-utility-label">Dice Mode</p>
-              <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">Формат: {diceMode}</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--lila-text-muted)]">Можна змінити у вигляді гри.</p>
-            </article>
-            <article className="lila-list-card p-3.5">
-              <p className="lila-utility-label">Focus</p>
-              <p className="mt-2 text-sm font-semibold text-[var(--lila-text-primary)] sm:text-base">Поле та картки</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--lila-text-muted)]">Довге ховаємо у внутрішні модалки.</p>
-            </article>
           </div>
 
           <div className="hidden min-h-0 flex-1 xl:flex">

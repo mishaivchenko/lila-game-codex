@@ -22,6 +22,7 @@ describe('GameSetupPage', () => {
 
     expect(screen.getByRole('main').className).toContain('lila-page-shell');
     expect(screen.getByTestId('setup-shell-layout').className).toContain('grid-rows-[auto_minmax(0,1fr)]');
+    expect(screen.queryByText('Оберіть формат входу')).toBeNull();
     expect(screen.getByRole('button', { name: 'Учасники' })).not.toBeNull();
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Учасники' }));

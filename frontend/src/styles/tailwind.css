@@ -148,6 +148,37 @@ body,
 
 :root[data-lila-theme='cosmic-dark'],
 :root[data-lila-theme='telegram-auto'][data-tg-color-scheme='dark'] {
+  --lila-bg-main: #141a27;
+  --lila-bg-start: #1f2739;
+  --lila-bg-end: #0f1520;
+  --lila-surface: #222c41;
+  --lila-surface-muted: #2b364d;
+  --lila-surface-strong: #32405a;
+  --lila-text-primary: #f4ede5;
+  --lila-text-muted: #d6cbbb;
+  --lila-text-soft: #aea6bb;
+  --lila-accent: #8cc9ec;
+  --lila-accent-hover: #6fb6dc;
+  --lila-accent-soft: #31445d;
+  --lila-accent-strong: #9dd7f7;
+  --lila-border-soft: #5d6986;
+  --lila-border-strong: #7482a0;
+  --lila-chip-bg: #2b364d;
+  --lila-chip-text: #f4ede5;
+  --lila-chip-border: #687593;
+  --lila-chip-active-bg: #3b4b6a;
+  --lila-chip-active-text: #f7efe6;
+  --lila-input-bg: #29344a;
+  --lila-input-border: #7080a0;
+  --lila-btn-secondary-bg: #2a354b;
+  --lila-btn-secondary-text: #f1e7da;
+  --lila-btn-secondary-border: #72819f;
+  --lila-danger-bg: #4c2e3a;
+  --lila-danger-text: #ffafbf;
+  --lila-warning-bg: #463945;
+  --lila-warning-text: #ffe0b2;
+  --lila-success-bg: #274951;
+  --lila-success-text: #b2f1e7;
   --lila-canva-topline: rgba(135, 150, 191, 0.22);
   --lila-canva-topline-strong: rgba(167, 182, 228, 0.34);
   --lila-canva-panel-bg: rgba(31, 36, 52, 0.9);
@@ -158,6 +189,7 @@ body,
   --lila-canva-panel-border: rgba(112, 126, 164, 0.48);
   --lila-canva-soft-shadow: 0 18px 34px rgba(8, 11, 18, 0.34);
   --lila-brand-mark-opacity: 0.22;
+  color-scheme: dark;
 }
 
 :root[data-lila-theme='minimal-cream'] {

@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { HostRoomPage } from './HostRoomPage';
@@ -94,7 +95,7 @@ vi.mock('./TelegramRoomsContext', () => ({
 }));
 
 describe('HostRoomPage', () => {
-  it('submits host-controlled player draft in host admin panel', () => {
+  it('submits host-controlled player draft from the compact players panel', async () => {
     render(
       <MemoryRouter initialEntries={['/host-room/room-1']}>
         <Routes>
@@ -103,9 +104,10 @@ describe('HostRoomPage', () => {
       </MemoryRouter>,
     );
 
-    const input = screen.getByPlaceholderText('Імʼя гравця');
-    fireEvent.change(input, { target: { value: 'Anna' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Додати' }));
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Учасники' }));
+    await user.type(screen.getByPlaceholderText('Імʼя гравця'), 'Anna');
+    await user.click(screen.getByRole('button', { name: 'Додати' }));
 
     expect(addHostControlledPlayerMock).toHaveBeenCalledWith('Anna');
   });
