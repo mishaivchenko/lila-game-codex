@@ -118,7 +118,6 @@ export const HostRoomPage = () => {
   const isCurrentUserHost = currentRoom?.room.hostUserId === user?.id;
   const allRoomPlayers = currentRoom?.players ?? [];
   const playerEntriesForTurn = allRoomPlayers.filter((player) => player.role === 'player');
-  const hostControlledPlayersForTurn = playerEntriesForTurn.filter((player) => player.controlMode === 'host');
   const currentTurnPlayerForTurn = allRoomPlayers.find((entry) => entry.userId === currentRoom?.gameState.currentTurnPlayerId);
   const movementSettings = useMemo(
     () => normalizeMovementSettings(DEFAULT_MOVEMENT_SETTINGS),
@@ -146,16 +145,17 @@ export const HostRoomPage = () => {
     if (!isCurrentUserHost) {
       return;
     }
-    const currentTurnHostControlled = currentTurnPlayerForTurn?.controlMode === 'host' ? currentTurnPlayerForTurn.userId : undefined;
-    const nextTarget = currentTurnHostControlled ?? hostControlledPlayersForTurn[0]?.userId;
+    const nextTarget = currentTurnPlayerForTurn?.role === 'player'
+      ? currentTurnPlayerForTurn.userId
+      : playerEntriesForTurn[0]?.userId;
     if (!nextTarget) {
       setHostRollTargetId(undefined);
       return;
     }
-    if (!hostRollTargetId || !hostControlledPlayersForTurn.some((player) => player.userId === hostRollTargetId)) {
+    if (!hostRollTargetId || !playerEntriesForTurn.some((player) => player.userId === hostRollTargetId)) {
       setHostRollTargetId(nextTarget);
     }
-  }, [currentTurnPlayerForTurn, hostControlledPlayersForTurn, hostRollTargetId, isCurrentUserHost]);
+  }, [currentTurnPlayerForTurn, hostRollTargetId, isCurrentUserHost, playerEntriesForTurn]);
 
   useEffect(() => {
     if (!isTelegramMode) {
@@ -641,7 +641,7 @@ export const HostRoomPage = () => {
     hostRollTargetId
       && currentRoom.room.status === 'in_progress'
       && currentTurnPlayer?.userId === hostRollTargetId
-      && currentTurnPlayer?.controlMode === 'host'
+      && currentTurnPlayer?.role === 'player'
       && !animationMove
       && !pendingMovePlan
       && !currentRoom.gameState.activeCard
@@ -1100,6 +1100,11 @@ export const HostRoomPage = () => {
   const lastDiceSummary = !lastDiceRoll
     ? 'Без кидків'
     : `${currentRoom.players.find((player) => player.userId === lastDiceRoll.playerId)?.displayName ?? 'Гравець'} · ${lastDiceRoll.diceValues.join(' + ')} = ${lastDiceRoll.dice}`;
+  const onlineRules = [
+    'Ведучий кидає за будь-якого гравця.',
+    'У черзі лише гравці, кожен чекає свого ходу.',
+    'Новий кидок тільки після закриття активної картки.',
+  ];
   const nextActionLabel = isCurrentUserHost
     ? (currentRoom.room.status === 'open'
       ? 'Почніть спільну сесію'
@@ -1128,7 +1133,7 @@ export const HostRoomPage = () => {
           onClick: () => void hostResumeGame(),
         };
       }
-      if (currentRoom.room.status === 'in_progress' && hostControlledPlayers.length > 0) {
+      if (currentRoom.room.status === 'in_progress' && playerEntries.length > 0) {
         return {
           label: isRolling ? 'Кидаємо…' : 'Кинути за гравця',
           shortLabel: isRolling ? 'Кидаємо…' : 'Кинути',
@@ -1167,7 +1172,7 @@ export const HostRoomPage = () => {
         </p>
       )}
 
-      <div className="lila-canva-topbar px-1.5 py-1.5">
+      <div className="lila-canva-topbar items-start px-1.5 py-1.5 sm:items-center">
         <div className="min-w-0 flex-1">
           <p className="lila-utility-label">Host Room</p>
           <h1 className="mt-1 text-[clamp(1.15rem,1.7vw,1.8rem)] font-black uppercase tracking-[-0.05em] text-[var(--lila-text-primary)]">
@@ -1175,7 +1180,7 @@ export const HostRoomPage = () => {
           </h1>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           <span className="lila-badge">Код {currentRoom.room.code}</span>
           <span className="lila-badge">{roomStatusLabel[currentRoom.room.status]}</span>
           <button
@@ -1195,12 +1200,23 @@ export const HostRoomPage = () => {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 px-0.5">
-        <span className="lila-badge">Хід: {currentTurnLabel}</span>
-        <span className="lila-badge">{lastDiceSummary}</span>
-        {activeCard ? (
-          <span className="lila-badge">Відкрита картка · {activeCard.cellNumber}</span>
-        ) : null}
+      <div className="grid gap-2 px-0.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+        <section className="lila-panel-muted min-w-0 p-3">
+          <p className="lila-utility-label">Правила online</p>
+          <div className="mt-2 space-y-1.5 text-xs leading-5 text-[var(--lila-text-primary)] sm:text-sm">
+            {onlineRules.map((rule) => (
+              <p key={rule}>{rule}</p>
+            ))}
+          </div>
+        </section>
+
+        <div className="flex flex-wrap gap-2 sm:max-w-[20rem] sm:justify-end">
+          <span className="lila-badge">Хід: {currentTurnLabel}</span>
+          <span className="lila-badge">{lastDiceSummary}</span>
+          {activeCard ? (
+            <span className="lila-badge">Відкрита картка · {activeCard.cellNumber}</span>
+          ) : null}
+        </div>
       </div>
     </header>
   );
@@ -1252,18 +1268,24 @@ export const HostRoomPage = () => {
           {currentRoom.room.status === 'finished' ? <span className="lila-badge">Сесію завершено</span> : null}
         </div>
 
-        {isCurrentUserHost && hostControlledPlayers.length > 0 && currentRoom.room.status === 'in_progress' && (
+        {isCurrentUserHost && playerEntries.length > 0 && currentRoom.room.status === 'in_progress' && (
           <select
             value={hostRollTargetId}
             onChange={(event) => setHostRollTargetId(event.target.value)}
             className="lila-select mt-3 px-3 py-3 text-sm text-[var(--lila-text-primary)]"
           >
-            {hostControlledPlayers.map((player) => (
+            {playerEntries.map((player) => (
               <option key={player.userId} value={player.userId}>
                 {player.displayName}
               </option>
             ))}
           </select>
+        )}
+
+        {isCurrentUserHost && playerEntries.length > 0 && currentRoom.room.status === 'in_progress' && (
+          <p className="mt-2 text-xs leading-5 text-[var(--lila-text-muted)]">
+            Ведучий може кинути за будь-якого гравця, але хід спрацює тільки коли цей гравець активний у черзі.
+          </p>
         )}
 
         {primaryAction ? (
@@ -1323,13 +1345,13 @@ export const HostRoomPage = () => {
 
   const mobileControls = (
     <section className="flex flex-col gap-1.5">
-      {isCurrentUserHost && hostControlledPlayers.length > 0 && currentRoom.room.status === 'in_progress' ? (
+      {isCurrentUserHost && playerEntries.length > 0 && currentRoom.room.status === 'in_progress' ? (
         <select
           value={hostRollTargetId}
           onChange={(event) => setHostRollTargetId(event.target.value)}
           className="lila-select px-3 py-2.5 text-sm text-[var(--lila-text-primary)]"
         >
-          {hostControlledPlayers.map((player) => (
+          {playerEntries.map((player) => (
             <option key={player.userId} value={player.userId}>
               {player.displayName}
             </option>

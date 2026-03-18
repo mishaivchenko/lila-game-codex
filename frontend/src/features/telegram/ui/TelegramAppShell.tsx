@@ -85,7 +85,7 @@ export const TelegramAppShell = ({ children }: TelegramAppShellProps) => {
   const bootstrapState = resolveAppBootstrapState(authState.status, authState.appStatus, Boolean(authState.token));
 
   const shellClassName = telegramMode
-    ? 'tma-shell mx-auto flex h-[var(--app-height,100dvh)] min-h-[var(--app-height,100dvh)] w-full max-w-[1600px] flex-col overflow-hidden px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+12px)] sm:px-4'
+    ? 'tma-shell mx-auto flex h-[var(--app-height,100dvh)] min-h-[var(--app-height,100dvh)] w-full max-w-[1600px] flex-col overflow-hidden px-3 sm:px-4'
     : 'mx-auto flex h-[var(--app-height,100dvh)] min-h-[var(--app-height,100dvh)] w-full flex-col overflow-hidden';
 
   return (
