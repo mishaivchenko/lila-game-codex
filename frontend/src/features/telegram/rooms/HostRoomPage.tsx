@@ -7,6 +7,7 @@ import { CellCoachModal } from '../../../components/CellCoachModal';
 import { CompactPanelModal } from '../../../components/CompactPanelModal';
 import { LilaBoard, type LilaTransition } from '../../../components/lila/LilaBoard';
 import { Dice3D } from '../../../components/dice3d/Dice3D';
+import { GameBoardLayout } from '../../../ui/layout/GameBoardLayout';
 import { useTelegramAuth } from '../auth/TelegramAuthContext';
 import { getTelegramWebApp } from '../telegramWebApp';
 import { BOT_USERNAME, CHANNEL_URL, buildRoomInviteByIdUrl, buildRoomInviteUrl } from '../telegramLinks';
@@ -123,6 +124,10 @@ export const HostRoomPage = () => {
     () => normalizeMovementSettings(DEFAULT_MOVEMENT_SETTINGS),
     [],
   );
+  const openUtilityPanel = useCallback((panel: UtilityPanelId) => {
+    setActiveUtilityPanel(panel);
+    setShowUtilityModal(true);
+  }, []);
   const clearCardRevealTimer = useCallback(() => {
     if (cardRevealTimerRef.current !== undefined) {
       window.clearTimeout(cardRevealTimerRef.current);
@@ -649,15 +654,7 @@ export const HostRoomPage = () => {
     ...(isCurrentUserHost ? [{ id: 'notes' as const, label: 'Нотатки' }] : []),
   ];
   const currentFocusTitle = currentCellContent?.title ?? `Клітина ${boardPrimaryTokenCell}`;
-  const currentFocusCopy = isCurrentUserHost
-    ? 'Поле лишається головним. Керування, invite та нотатки зібрані в одному utility rail.'
-    : 'Головний фокус лишається на полі. Другорядні дії зібрані в одному меню.';
-
-  const utilityTabsGridClassName = utilityTabs.length > 3
-    ? 'grid-cols-2'
-    : utilityTabs.length === 2
-      ? 'grid-cols-2'
-      : 'grid-cols-3';
+  const utilityTabsGridClassName = 'grid-cols-2';
   const utilityTabsNav = (
     <div className={`lila-segmented text-xs ${utilityTabsGridClassName}`}>
       {utilityTabs.map((tab) => (
@@ -826,16 +823,16 @@ export const HostRoomPage = () => {
       )}
 
       <section className="lila-list-card p-4">
-        <p className="lila-utility-label">Локальний вигляд</p>
+        <p className="lila-utility-label">Вигляд</p>
         <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
-          Один вхід у appearance studio без дублювання на сторінці.
+          Локальна тема та атмосфера для цього клієнта, без дублювання на головному полотні.
         </p>
         <button
           type="button"
           onClick={() => setShowAppearanceModal(true)}
           className="lila-secondary-button mt-3 w-full px-4 py-3 text-sm font-medium"
         >
-          Відкрити вигляд
+          Відкрити appearance studio
         </button>
       </section>
 
@@ -1099,289 +1096,285 @@ export const HostRoomPage = () => {
         ? historyPanelContent
         : notesPanelContent;
 
+  const currentTurnLabel = currentTurnPlayer?.displayName ?? '—';
+  const lastDiceSummary = !lastDiceRoll
+    ? 'Без кидків'
+    : `${currentRoom.players.find((player) => player.userId === lastDiceRoll.playerId)?.displayName ?? 'Гравець'} · ${lastDiceRoll.diceValues.join(' + ')} = ${lastDiceRoll.dice}`;
+  const nextActionLabel = isCurrentUserHost
+    ? (currentRoom.room.status === 'open'
+      ? 'Почніть спільну сесію'
+      : currentRoom.room.status === 'paused'
+        ? 'Поверніть гру в ритм'
+        : canRollHostTarget
+          ? `Кинути за ${currentTurnPlayer?.displayName ?? 'гравця'}`
+          : `Хід: ${currentTurnLabel}`)
+    : (isMyTurn ? 'Ваш хід' : `Хід: ${currentTurnLabel}`);
+
+  const primaryAction = (() => {
+    if (isCurrentUserHost) {
+      if (currentRoom.room.status === 'open') {
+        return {
+          label: 'Почати гру',
+          shortLabel: 'Почати',
+          disabled: false,
+          onClick: () => void hostStartGame(),
+        };
+      }
+      if (currentRoom.room.status === 'paused') {
+        return {
+          label: 'Продовжити гру',
+          shortLabel: 'Продовжити',
+          disabled: false,
+          onClick: () => void hostResumeGame(),
+        };
+      }
+      if (currentRoom.room.status === 'in_progress' && hostControlledPlayers.length > 0) {
+        return {
+          label: isRolling ? 'Кидаємо…' : 'Кинути за гравця',
+          shortLabel: isRolling ? 'Кидаємо…' : 'Кинути',
+          disabled: !hostRollTargetId || !canRollHostTarget || isRolling,
+          onClick: () => {
+            if (!hostRollTargetId || !canRollHostTarget) {
+              return;
+            }
+            setIsRolling(true);
+            void rollDice(hostRollTargetId).finally(() => setIsRolling(false));
+          },
+        };
+      }
+      return undefined;
+    }
+
+    return {
+      label: isRolling ? 'Кидаємо…' : 'Кинути кубик',
+      shortLabel: isRolling ? 'Кидаємо…' : 'Кинути',
+      disabled: !canRollCurrentPlayer || isRolling,
+      onClick: () => {
+        if (!canRollCurrentPlayer) {
+          return;
+        }
+        setIsRolling(true);
+        void rollDice().finally(() => setIsRolling(false));
+      },
+    };
+  })();
+
+  const boardHeader = (
+    <header className="space-y-1 px-0.5 pb-0.5">
+      {error && (
+        <p className="rounded-[18px] border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {error}
+        </p>
+      )}
+
+      <div className="lila-canva-topbar px-1.5 py-1.5">
+        <div className="min-w-0 flex-1">
+          <p className="lila-utility-label">Host Room</p>
+          <h1 className="mt-1 text-[clamp(1.15rem,1.7vw,1.8rem)] font-black uppercase tracking-[-0.05em] text-[var(--lila-text-primary)]">
+            {currentFocusTitle}
+          </h1>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <span className="lila-badge">Код {currentRoom.room.code}</span>
+          <span className="lila-badge">{roomStatusLabel[currentRoom.room.status]}</span>
+          <button
+            type="button"
+            onClick={() => openUtilityPanel('room')}
+            className="lila-secondary-button px-3 py-2 text-xs font-medium min-[1120px]:hidden"
+          >
+            Меню
+          </button>
+          <Link
+            to="/"
+            onClick={clearCurrentRoom}
+            className="lila-secondary-button px-3 py-2 text-xs font-medium"
+          >
+            Вийти
+          </Link>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 px-0.5">
+        <span className="lila-badge">Хід: {currentTurnLabel}</span>
+        <span className="lila-badge">{lastDiceSummary}</span>
+        {activeCard ? (
+          <span className="lila-badge">Відкрита картка · {activeCard.cellNumber}</span>
+        ) : null}
+      </div>
+    </header>
+  );
+
+  const boardStage = (
+    <div className="flex h-full w-full items-center justify-center">
+      <LilaBoard
+        board={board}
+        currentCell={boardPrimaryTokenCell}
+        otherTokens={boardOtherTokens}
+        tokenColor={primaryTokenPlayer?.tokenColor}
+        animationMove={animationMove}
+        animationTimings={DEFAULT_ANIMATION_TIMINGS}
+        movementSettings={movementSettings}
+        onMoveAnimationComplete={() => {
+          if (specialFlow?.phase === 'entry-animation') {
+            setAnimationMove(undefined);
+            setSpecialFlow((prev) => (prev ? { ...prev, phase: 'entry-card' } : prev));
+            scheduleCardReveal(ONLINE_CARD_TIMINGS_MS.beforeSpecialEntryCard);
+            return;
+          }
+          if (specialFlow?.phase === 'special-animation') {
+            setAnimationMove(undefined);
+            setSpecialFlow((prev) => (prev ? { ...prev, phase: 'target-card' } : prev));
+            scheduleCardReveal(ONLINE_CARD_TIMINGS_MS.beforeSpecialTargetCard);
+            return;
+          }
+          setAnimationMove(undefined);
+          setAnimatedPlayerId(undefined);
+          scheduleCardReveal(ONLINE_CARD_TIMINGS_MS.afterStepMove);
+        }}
+        onCellSelect={(cellNumber) => {
+          setPreviewCellNumber(cellNumber);
+        }}
+        holdTokenSync={holdBoardTokenSync}
+      />
+    </div>
+  );
+
+  const controlsPanel = (
+    <section className="flex h-full min-h-0 flex-col gap-2">
+      <section className="lila-paper-card p-3">
+        <p className="lila-utility-label">Наступна дія</p>
+        <h2 className="mt-2 text-lg font-black uppercase tracking-[-0.04em] text-[var(--lila-text-primary)]">
+          {nextActionLabel}
+        </h2>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <span className="lila-badge">{connectionState}</span>
+          {currentRoom.room.status === 'finished' ? <span className="lila-badge">Сесію завершено</span> : null}
+        </div>
+
+        {isCurrentUserHost && hostControlledPlayers.length > 0 && currentRoom.room.status === 'in_progress' && (
+          <select
+            value={hostRollTargetId}
+            onChange={(event) => setHostRollTargetId(event.target.value)}
+            className="lila-select mt-3 px-3 py-3 text-sm text-[var(--lila-text-primary)]"
+          >
+            {hostControlledPlayers.map((player) => (
+              <option key={player.userId} value={player.userId}>
+                {player.displayName}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {primaryAction ? (
+          <button
+            type="button"
+            onClick={primaryAction.onClick}
+            disabled={primaryAction.disabled}
+            className="lila-primary-button mt-3 w-full px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {primaryAction.label}
+          </button>
+        ) : (
+          <p className="mt-3 rounded-[18px] border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-3 py-2 text-xs leading-5 text-[var(--lila-text-muted)]">
+            {isCurrentUserHost
+              ? 'Основна дія зараз у гравця або відкриється після зміни статусу кімнати.'
+              : 'Чекайте свого ходу або відкрийте меню кімнати для деталей.'}
+          </p>
+        )}
+
+        {isCurrentUserHost && currentRoom.room.status === 'in_progress' && hostCanPause && (
+          <button
+            type="button"
+            onClick={() => void hostPauseGame()}
+            className="lila-secondary-button mt-2 w-full px-4 py-3 text-sm font-medium"
+          >
+            Пауза
+          </button>
+        )}
+
+        <div className="relative z-10 mt-3">
+          <Dice3D
+            rollToken={diceRollToken}
+            diceValues={pendingDiceValues}
+            onResult={() => {}}
+            onFinished={handleDiceAnimationFinished}
+          />
+        </div>
+      </section>
+
+      <section className="lila-list-card p-3">
+        <p className="lila-utility-label">Меню кімнати</p>
+        <div className="mt-2 grid gap-2">
+          {utilityTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => openUtilityPanel(tab.id)}
+              className="lila-secondary-button px-3 py-2.5 text-sm font-medium"
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </section>
+    </section>
+  );
+
+  const mobileControls = (
+    <section className="flex flex-col gap-1.5">
+      {isCurrentUserHost && hostControlledPlayers.length > 0 && currentRoom.room.status === 'in_progress' ? (
+        <select
+          value={hostRollTargetId}
+          onChange={(event) => setHostRollTargetId(event.target.value)}
+          className="lila-select px-3 py-2.5 text-sm text-[var(--lila-text-primary)]"
+        >
+          {hostControlledPlayers.map((player) => (
+            <option key={player.userId} value={player.userId}>
+              {player.displayName}
+            </option>
+          ))}
+        </select>
+      ) : null}
+
+      <section className="lila-panel-muted flex items-center gap-2 px-2.5 py-2.5">
+        <div className="min-w-0 flex-1">
+          <p className="lila-utility-label">Host Room</p>
+          <p className="mt-0.5 truncate text-sm font-semibold text-[var(--lila-text-primary)]">
+            {nextActionLabel}
+          </p>
+        </div>
+
+        {primaryAction ? (
+          <button
+            type="button"
+            onClick={primaryAction.onClick}
+            disabled={primaryAction.disabled}
+            className="lila-primary-button shrink-0 px-3 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {primaryAction.shortLabel}
+          </button>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={() => openUtilityPanel('room')}
+          className="lila-secondary-button shrink-0 px-3 py-2.5 text-sm font-medium"
+        >
+          Меню
+        </button>
+      </section>
+    </section>
+  );
+
   return (
     <>
-      <main className="lila-page-shell lila-page-shell--game" style={{ maxWidth: '1840px' }}>
-        <div className="lila-canva-frame min-h-0 flex-1 overflow-hidden">
-          {error && (
-            <p className="rounded-[18px] border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {error}
-            </p>
-          )}
-
-          <div className="grid min-h-0 flex-1 gap-2 grid-rows-[auto_minmax(0,1fr)] min-[1180px]:grid-cols-[minmax(0,1fr)_290px] min-[1180px]:grid-rows-[auto_minmax(0,1fr)]">
-            <header className="min-[1180px]:col-span-2">
-              <div className="lila-canva-topbar px-1 py-0.5">
-                <div className="min-w-0">
-                  <p className="lila-utility-label">Host Room · {roomStatusLabel[currentRoom.room.status]}</p>
-                  <h1 className="mt-1 text-[clamp(1.2rem,2vw,2rem)] font-black uppercase tracking-[-0.05em] text-[var(--lila-text-primary)]">
-                    Код {currentRoom.room.code}
-                  </h1>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="lila-badge">Хід: {currentTurnPlayer?.displayName ?? '—'}</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowUtilityModal(true)}
-                    className="lila-secondary-button px-3 py-2 text-xs font-medium min-[1180px]:hidden"
-                  >
-                    Меню
-                  </button>
-                  <Link
-                    to="/"
-                    onClick={clearCurrentRoom}
-                    className="lila-secondary-button px-3 py-2 text-xs font-medium"
-                  >
-                    Вийти
-                  </Link>
-                </div>
-              </div>
-            </header>
-
-            <section className="min-h-0 overflow-hidden">
-              <div className="flex h-full min-h-0 flex-col">
-                <div className="mb-1 flex flex-wrap items-start justify-between gap-2 px-1">
-                  <div className="min-w-0">
-                    <p className="lila-utility-label">
-                      {isCurrentUserHost ? 'Shared Board' : 'Ваше поле'}
-                    </p>
-                    <h2 className="mt-1 text-[clamp(1.05rem,1.75vw,1.7rem)] font-black uppercase tracking-[-0.04em] text-[var(--lila-text-primary)]">
-                      {currentFocusTitle}
-                    </h2>
-                    <p className="mt-1 max-w-3xl text-xs leading-5 text-[var(--lila-text-muted)] sm:text-sm">
-                      {currentFocusCopy}
-                    </p>
-                  </div>
-                  <div className="rounded-full bg-[var(--lila-surface-muted)] px-3 py-1.5 text-xs text-[var(--lila-text-primary)]">
-                    {hostMoveSummary}
-                  </div>
-                </div>
-
-                <div className="min-h-0 flex-1 overflow-hidden">
-                  <LilaBoard
-                    board={board}
-                    currentCell={boardPrimaryTokenCell}
-                    otherTokens={boardOtherTokens}
-                    tokenColor={primaryTokenPlayer?.tokenColor}
-                    animationMove={animationMove}
-                    animationTimings={DEFAULT_ANIMATION_TIMINGS}
-                    movementSettings={movementSettings}
-                    onMoveAnimationComplete={() => {
-                      if (specialFlow?.phase === 'entry-animation') {
-                        setAnimationMove(undefined);
-                        setSpecialFlow((prev) => (prev ? { ...prev, phase: 'entry-card' } : prev));
-                        scheduleCardReveal(ONLINE_CARD_TIMINGS_MS.beforeSpecialEntryCard);
-                        return;
-                      }
-                      if (specialFlow?.phase === 'special-animation') {
-                        setAnimationMove(undefined);
-                        setSpecialFlow((prev) => (prev ? { ...prev, phase: 'target-card' } : prev));
-                        scheduleCardReveal(ONLINE_CARD_TIMINGS_MS.beforeSpecialTargetCard);
-                        return;
-                      }
-                      setAnimationMove(undefined);
-                      setAnimatedPlayerId(undefined);
-                      scheduleCardReveal(ONLINE_CARD_TIMINGS_MS.afterStepMove);
-                    }}
-                    onCellSelect={(cellNumber) => {
-                      setPreviewCellNumber(cellNumber);
-                    }}
-                    holdTokenSync={holdBoardTokenSync}
-                  />
-                </div>
-
-                <div className="mt-2 min-[1180px]:hidden">
-                  <section className="lila-panel-muted flex items-center gap-2 px-2.5 py-2.5">
-                    <div className="min-w-0 flex-1">
-                      <p className="lila-utility-label">Наступна дія</p>
-                      <p className="mt-0.5 truncate text-sm font-semibold text-[var(--lila-text-primary)]">
-                        {isCurrentUserHost
-                          ? (currentRoom.room.status === 'open'
-                            ? 'Запустіть кімнату'
-                            : currentRoom.room.status === 'paused'
-                              ? 'Продовжити сесію'
-                              : canRollHostTarget
-                                ? 'Кинути за гравця'
-                                : `Хід: ${currentTurnPlayer?.displayName ?? '—'}`)
-                          : (isMyTurn ? 'Ваш хід' : `Хід: ${currentTurnPlayer?.displayName ?? '—'}`)}
-                      </p>
-                    </div>
-                    {!isCurrentUserHost && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!canRollCurrentPlayer) {
-                            return;
-                          }
-                          setIsRolling(true);
-                          void rollDice().finally(() => setIsRolling(false));
-                        }}
-                        disabled={!canRollCurrentPlayer}
-                        className="lila-primary-button shrink-0 px-3 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {isRolling ? 'Кидаємо…' : 'Кинути'}
-                      </button>
-                    )}
-                    {isCurrentUserHost && currentRoom.room.status === 'open' && (
-                      <button
-                        type="button"
-                        onClick={() => void hostStartGame()}
-                        className="lila-primary-button shrink-0 px-3 py-2.5 text-sm font-semibold"
-                      >
-                        Почати
-                      </button>
-                    )}
-                    {isCurrentUserHost && currentRoom.room.status === 'paused' && (
-                      <button
-                        type="button"
-                        onClick={() => void hostResumeGame()}
-                        className="lila-primary-button shrink-0 px-3 py-2.5 text-sm font-semibold"
-                      >
-                        Продовжити
-                      </button>
-                    )}
-                    {isCurrentUserHost && currentRoom.room.status === 'in_progress' && hostControlledPlayers.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!hostRollTargetId || !canRollHostTarget) {
-                            return;
-                          }
-                          setIsRolling(true);
-                          void rollDice(hostRollTargetId).finally(() => setIsRolling(false));
-                        }}
-                        disabled={!canRollHostTarget}
-                        className="lila-primary-button shrink-0 px-3 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {isRolling ? 'Кидаємо…' : 'Кинути'}
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setShowUtilityModal(true)}
-                      className="lila-secondary-button shrink-0 px-3 py-2.5 text-sm font-medium"
-                    >
-                      Меню
-                    </button>
-                  </section>
-                </div>
-              </div>
-            </section>
-
-            <aside className="hidden min-h-0 min-[1180px]:flex min-[1180px]:flex-col min-[1180px]:gap-2">
-              <section className="lila-panel-muted p-4">
-                <p className="lila-utility-label">Наступна дія</p>
-                <h2 className="mt-2 text-xl font-black uppercase tracking-[-0.04em] text-[var(--lila-text-primary)]">
-                  {isCurrentUserHost
-                    ? (currentRoom.room.status === 'open'
-                      ? 'Запустіть кімнату'
-                      : currentRoom.room.status === 'paused'
-                        ? 'Поверніть гру в ритм'
-                        : canRollHostTarget
-                          ? 'Кинути за гравця'
-                          : `Хід: ${currentTurnPlayer?.displayName ?? '—'}`)
-                    : (isMyTurn ? 'Ваш хід' : `Хід: ${currentTurnPlayer?.displayName ?? '—'}`)}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
-                  {hostMoveSummary}
-                </p>
-
-                {isCurrentUserHost && hostControlledPlayers.length > 0 && currentRoom.room.status === 'in_progress' && (
-                  <select
-                    value={hostRollTargetId}
-                    onChange={(event) => setHostRollTargetId(event.target.value)}
-                    className="lila-select mt-3 px-3 py-3 text-sm text-[var(--lila-text-primary)]"
-                  >
-                    {hostControlledPlayers.map((player) => (
-                      <option key={player.userId} value={player.userId}>
-                        {player.displayName}
-                      </option>
-                    ))}
-                  </select>
-                )}
-
-                <div className="mt-3 grid gap-2">
-                  {!isCurrentUserHost && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!canRollCurrentPlayer) {
-                          return;
-                        }
-                        setIsRolling(true);
-                        void rollDice().finally(() => setIsRolling(false));
-                      }}
-                      disabled={!canRollCurrentPlayer}
-                      className="lila-primary-button px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isRolling ? 'Кидаємо…' : 'Кинути кубики'}
-                    </button>
-                  )}
-                  {isCurrentUserHost && currentRoom.room.status === 'open' && (
-                    <button
-                      type="button"
-                      onClick={() => void hostStartGame()}
-                      className="lila-primary-button px-4 py-3 text-sm font-semibold"
-                    >
-                      Почати гру
-                    </button>
-                  )}
-                  {isCurrentUserHost && currentRoom.room.status === 'paused' && (
-                    <button
-                      type="button"
-                      onClick={() => void hostResumeGame()}
-                      className="lila-primary-button px-4 py-3 text-sm font-semibold"
-                    >
-                      Продовжити
-                    </button>
-                  )}
-                  {isCurrentUserHost && currentRoom.room.status === 'in_progress' && hostControlledPlayers.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!hostRollTargetId || !canRollHostTarget) {
-                          return;
-                        }
-                        setIsRolling(true);
-                        void rollDice(hostRollTargetId).finally(() => setIsRolling(false));
-                      }}
-                      disabled={!canRollHostTarget}
-                      className="lila-primary-button px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isRolling ? 'Кидаємо…' : 'Кинути за обраного гравця'}
-                    </button>
-                  )}
-                  {isCurrentUserHost && currentRoom.room.status === 'in_progress' && hostCanPause && (
-                    <button
-                      type="button"
-                      onClick={() => void hostPauseGame()}
-                      className="lila-secondary-button px-4 py-3 text-sm font-medium"
-                    >
-                      Пауза
-                    </button>
-                  )}
-                </div>
-
-                <div className="relative z-10 mt-3">
-                  <Dice3D
-                    rollToken={diceRollToken}
-                    diceValues={pendingDiceValues}
-                    onResult={() => {}}
-                    onFinished={handleDiceAnimationFinished}
-                  />
-                </div>
-              </section>
-
-              <section className="lila-canva-sidebar flex min-h-0 flex-1 flex-col px-3 py-3">
-                {utilityTabsNav}
-                <div className="lila-scroll-pane mt-3 min-h-0 flex-1 pr-1">
-                  {utilityPanelContent}
-                </div>
-              </section>
-            </aside>
-          </div>
-        </div>
-      </main>
+      <GameBoardLayout
+        header={boardHeader}
+        board={boardStage}
+        controls={controlsPanel}
+        mobileControls={mobileControls}
+      />
 
       <CompactPanelModal
         open={showUtilityModal}

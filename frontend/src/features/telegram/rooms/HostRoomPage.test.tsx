@@ -87,6 +87,7 @@ vi.mock('./TelegramRoomsContext', () => ({
     saveRoomNote: vi.fn().mockResolvedValue(undefined),
     updatePlayerTokenColor: vi.fn().mockResolvedValue(undefined),
     addHostControlledPlayer: addHostControlledPlayerMock,
+    hostSetPlayerCell: vi.fn().mockResolvedValue(undefined),
     clearCurrentRoom: vi.fn(),
     isMyTurn: false,
     connectionState: 'connected',
@@ -105,6 +106,8 @@ describe('HostRoomPage', () => {
     );
 
     const user = userEvent.setup();
+
+    expect(screen.getByTestId('game-board-layout')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Учасники' }));
     await user.type(screen.getByPlaceholderText('Імʼя гравця'), 'Anna');
     await user.click(screen.getByRole('button', { name: 'Додати' }));
