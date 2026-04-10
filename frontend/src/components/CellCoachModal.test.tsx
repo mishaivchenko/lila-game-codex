@@ -56,7 +56,10 @@ describe('CellCoachModal image layout', () => {
     );
 
     const modalShell = screen.getByTestId('cell-coach-modal-shell');
+    const modalFrame = screen.getByTestId('cell-coach-modal-frame');
     expect(modalShell.className).toContain('sm:max-w-[1180px]');
+    expect(modalFrame.className).toContain('rounded-[2rem]');
+    expect(screen.getByTestId('cell-coach-modal-content-card')).toBeTruthy();
   });
 
   it('keeps dark-theme card content readable with light content surfaces', () => {
@@ -167,6 +170,33 @@ describe('CellCoachModal image layout', () => {
 
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(onSave).toHaveBeenCalledWith(note);
+  });
+
+  it('removes legacy helper copy and shows skip explanation only inside info help', () => {
+    render(
+      <CellCoachModal
+        cellNumber={5}
+        depth="standard"
+        cellContent={{
+          title: 'Cell',
+          shortText: 'short',
+          fullText: 'full',
+          questions: ['q1'],
+        }}
+        onSave={() => {}}
+        onSkip={() => {}}
+        onClose={() => {}}
+      />,
+    );
+
+    expect(screen.queryByText(/Внутрішній scroll лишається тільки тут/i)).toBeNull();
+    const skipHint = screen.getByText(/Це нормально\. Ви зможете повернутися до цієї клітини/i);
+    const popoverPanel = skipHint.closest('[role="dialog"]');
+    expect(popoverPanel?.className).toContain('opacity-0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Що означає пропустити картку' }));
+
+    expect(popoverPanel?.className).toContain('opacity-100');
   });
 
   it('keeps loading veil visible on mobile until image load and extra delay pass', () => {

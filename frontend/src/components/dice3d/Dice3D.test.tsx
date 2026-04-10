@@ -4,6 +4,8 @@ import { Dice3D } from './Dice3D';
 import { DICE_FALL_MS, DICE_SETTLE_MS, generateDiceValue, normalizeDiceValues, sumDiceValues } from './diceRoll';
 import { transitionDiceRollLifecycle } from './useDiceRollLifecycle';
 import type { ReactNode } from 'react';
+import { BoardThemeContext, defaultBoardThemeContextValue } from '../../theme/BoardThemeContext';
+import { COSMIC_DARK_THEME } from '../../theme';
 
 vi.mock('@react-three/fiber', () => ({
   Canvas: () => <div data-testid="dice3d-canvas" />,
@@ -75,6 +77,25 @@ describe('Dice3D', () => {
     render(<Dice3D rollToken={1} diceValues={[4]} onResult={vi.fn()} />);
     const sumBadges = screen.queryAllByTestId('dice-sum');
     expect(sumBadges).toHaveLength(0);
+  });
+
+  it('uses the active board theme for dice shell colors', () => {
+    render(
+      <BoardThemeContext.Provider
+        value={{
+          ...defaultBoardThemeContextValue,
+          themeId: COSMIC_DARK_THEME.id,
+          theme: COSMIC_DARK_THEME,
+          tokenColorValue: COSMIC_DARK_THEME.token.defaultColor,
+        }}
+      >
+        <Dice3D rollToken={1} diceValues={[4]} onResult={vi.fn()} />
+      </BoardThemeContext.Provider>,
+    );
+
+    const panelStyle = screen.getByTestId('dice3d-panel').getAttribute('style') ?? '';
+    expect(panelStyle).toContain('rgba(40, 48, 70, 0.98)');
+    expect(panelStyle).toContain('rgba(101, 116, 145, 0.92)');
   });
 });
 

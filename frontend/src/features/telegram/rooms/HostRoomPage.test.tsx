@@ -6,6 +6,7 @@ import { HostRoomPage } from './HostRoomPage';
 
 const addHostControlledPlayerMock = vi.fn().mockResolvedValue(undefined);
 const rollDiceMock = vi.fn().mockResolvedValue(undefined);
+const saveRoomNoteMock = vi.fn().mockResolvedValue(undefined);
 
 const createRoomsContextValue = (overrides: any = {}) => {
   const base = {
@@ -62,7 +63,7 @@ const createRoomsContextValue = (overrides: any = {}) => {
     hostUpdateSettings: vi.fn().mockResolvedValue(undefined),
     rollDice: rollDiceMock,
     closeActiveCard: vi.fn().mockResolvedValue(undefined),
-    saveRoomNote: vi.fn().mockResolvedValue(undefined),
+    saveRoomNote: saveRoomNoteMock,
     updatePlayerTokenColor: vi.fn().mockResolvedValue(undefined),
     addHostControlledPlayer: addHostControlledPlayerMock,
     hostSetPlayerCell: vi.fn().mockResolvedValue(undefined),
@@ -137,6 +138,7 @@ describe('HostRoomPage', () => {
     roomsContextValue = createRoomsContextValue();
     addHostControlledPlayerMock.mockClear();
     rollDiceMock.mockClear();
+    saveRoomNoteMock.mockClear();
   });
 
   afterEach(() => {
@@ -162,7 +164,7 @@ describe('HostRoomPage', () => {
     expect(addHostControlledPlayerMock).toHaveBeenCalledWith('Anna');
   });
 
-  it('shows online rules in the header and lets host roll for a regular queued player', async () => {
+  it('shows compact online rules help and lets host roll for a regular queued player', async () => {
     roomsContextValue = createRoomsContextValue({
       currentRoom: {
         room: {
@@ -224,8 +226,12 @@ describe('HostRoomPage', () => {
 
     const user = userEvent.setup();
 
-    expect(screen.getAllByText('Ведучий кидає за будь-якого гравця.').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('У черзі лише гравці, кожен чекає свого ходу.').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Відкрита картка/i)).toBeNull();
+    expect(screen.queryByText('reconnecting')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Правила online' }));
+    expect(screen.getByText('Ведучий кидає за будь-якого гравця.')).toBeTruthy();
+    expect(screen.getByText('У черзі лише гравці, кожен чекає свого ходу.')).toBeTruthy();
 
     const select = screen.getAllByRole('combobox')[0] as HTMLSelectElement;
     expect(within(select).getByRole('option', { name: 'Anna' })).toBeTruthy();
@@ -235,5 +241,78 @@ describe('HostRoomPage', () => {
     await user.click(screen.getByRole('button', { name: 'Кинути за гравця' }));
 
     expect(rollDiceMock).toHaveBeenCalledWith('player-a');
+  });
+
+  it('opens room notes in the utility modal and allows host note editing', async () => {
+    roomsContextValue = createRoomsContextValue({
+      currentRoom: {
+        room: {
+          status: 'in_progress',
+        },
+        players: [
+          {
+            id: 'host-player',
+            roomId: 'room-1',
+            userId: 'host-user',
+            displayName: '@soulvio',
+            role: 'host',
+            controlMode: 'self',
+            tokenColor: '#1f2937',
+            joinedAt: new Date().toISOString(),
+            connectionStatus: 'online',
+          },
+          {
+            id: 'player-a',
+            roomId: 'room-1',
+            userId: 'player-a',
+            displayName: 'Anna',
+            role: 'player',
+            controlMode: 'self',
+            tokenColor: '#7c3aed',
+            joinedAt: new Date().toISOString(),
+            connectionStatus: 'online',
+          },
+        ],
+        gameState: {
+          currentTurnPlayerId: 'player-a',
+          notes: {
+            hostByCell: {},
+            hostByPlayerId: {
+              'player-a': 'Фокус на диханні',
+            },
+            playerByUserId: {},
+          },
+          perPlayerState: {
+            'player-a': { currentCell: 8 },
+          },
+        },
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/host-room/room-1']}>
+        <Routes>
+          <Route path="/host-room/:roomId" element={<HostRoomPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Нотатки' }));
+
+    expect(screen.getByRole('heading', { name: /Нотатки · ABCDE2/i })).toBeTruthy();
+    const textarea = screen.getByPlaceholderText('Спостереження, реакції, фокус для ведення...');
+    await user.clear(textarea);
+    await user.type(textarea, 'Нова нотатка ведучого');
+    await user.click(screen.getByRole('button', { name: 'Зберегти нотатку ведучого' }));
+
+    expect(saveRoomNoteMock).toHaveBeenCalledWith({
+      cellNumber: 1,
+      note: 'Нова нотатка ведучого',
+      scope: 'host_player',
+      targetPlayerId: 'player-a',
+    });
+    expect(screen.getByText('Anna:')).toBeTruthy();
   });
 });
