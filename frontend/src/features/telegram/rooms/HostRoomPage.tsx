@@ -5,6 +5,7 @@ import { BOARD_DEFINITIONS } from '../../../content/boards';
 import { AppearanceCustomizationPanel } from '../../../components/AppearanceCustomizationPanel';
 import { CellCoachModal } from '../../../components/CellCoachModal';
 import { CompactPanelModal } from '../../../components/CompactPanelModal';
+import { InfoPopover } from '../../../components/InfoPopover';
 import { LilaBoard, type LilaTransition } from '../../../components/lila/LilaBoard';
 import { Dice3D } from '../../../components/dice3d/Dice3D';
 import { GameBoardLayout } from '../../../ui/layout/GameBoardLayout';
@@ -26,6 +27,14 @@ const roomStatusLabel: Record<'open' | 'in_progress' | 'paused' | 'finished', st
   in_progress: 'У процесі',
   paused: 'На паузі',
   finished: 'Завершена',
+};
+
+const roomConnectionStateLabel: Record<'idle' | 'connecting' | 'connected' | 'reconnecting' | 'disconnected', string> = {
+  idle: 'Очікуємо підключення',
+  connecting: 'Підключаємося',
+  connected: 'Синхронізовано',
+  reconnecting: 'Відновлюємо звʼязок',
+  disconnected: 'Немає зʼєднання',
 };
 
 const ONLINE_CARD_TIMINGS_MS = {
@@ -475,9 +484,6 @@ export const HostRoomPage = () => {
       && user
       && (isCurrentUserHost || displayedPlayerUserId === user.id),
   );
-  const activePlayer = displayedPlayerUserId
-    ? currentRoom.players.find((player) => player.userId === displayedPlayerUserId)
-    : undefined;
   const currentCellContent = displayedCellNumber ? board.cells[displayedCellNumber - 1] : undefined;
   const activeCellNumber = displayedCellNumber;
   const noteScope = isCurrentUserHost ? 'host' : 'player';
@@ -654,7 +660,9 @@ export const HostRoomPage = () => {
     ...(isCurrentUserHost ? [{ id: 'notes' as const, label: 'Нотатки' }] : []),
   ];
   const currentFocusTitle = currentCellContent?.title ?? `Клітина ${boardPrimaryTokenCell}`;
-  const utilityTabsGridClassName = 'grid-cols-2';
+  const roomConnectionLabel = roomConnectionStateLabel[connectionState];
+  const connectionNeedsAttention = connectionState === 'connecting' || connectionState === 'reconnecting' || connectionState === 'disconnected';
+  const utilityTabsGridClassName = utilityTabs.length > 3 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3';
   const utilityTabsNav = (
     <div className={`lila-segmented text-xs ${utilityTabsGridClassName}`}>
       {utilityTabs.map((tab) => (
@@ -672,59 +680,59 @@ export const HostRoomPage = () => {
   );
 
   const roomPanelContent = (
-    <div className="space-y-3">
-      <section className="lila-list-card p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="lila-utility-label">Кімната</p>
-            <h2 className="mt-2 text-lg font-semibold text-[var(--lila-text-primary)]">Код {currentRoom.room.code}</h2>
+    <div className="grid h-full gap-3 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
+      <div className="grid gap-3 content-start">
+        <section className="lila-list-card p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="lila-utility-label">Кімната</p>
+              <h2 className="mt-2 text-lg font-semibold text-[var(--lila-text-primary)]">Код {currentRoom.room.code}</h2>
+            </div>
+            <Link
+              to="/"
+              onClick={clearCurrentRoom}
+              className="lila-secondary-button px-3 py-2 text-xs font-medium"
+            >
+              Вийти
+            </Link>
           </div>
-          <Link
-            to="/"
-            onClick={clearCurrentRoom}
-            className="lila-secondary-button px-3 py-2 text-xs font-medium"
-          >
-            Вийти
-          </Link>
-        </div>
 
-        <dl className="mt-4 grid gap-2 text-sm">
-          <div className="flex items-center justify-between rounded-2xl bg-[var(--lila-surface-muted)] px-3 py-2">
-            <dt className="text-[var(--lila-text-muted)]">Статус</dt>
-            <dd className="font-semibold text-[var(--lila-text-primary)]">{roomStatusLabel[currentRoom.room.status]}</dd>
-          </div>
-          <div className="flex items-center justify-between rounded-2xl bg-[var(--lila-surface-muted)] px-3 py-2">
-            <dt className="text-[var(--lila-text-muted)]">Зʼєднання</dt>
-            <dd className="font-semibold text-[var(--lila-text-primary)]">{connectionState}</dd>
-          </div>
-          <div className="flex items-center justify-between rounded-2xl bg-[var(--lila-surface-muted)] px-3 py-2">
-            <dt className="text-[var(--lila-text-muted)]">Поточний хід</dt>
-            <dd className="font-semibold text-[var(--lila-text-primary)]">{currentTurnPlayer?.displayName ?? '—'}</dd>
-          </div>
-        </dl>
-      </section>
+          <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+            <div className="rounded-2xl bg-[var(--lila-surface-muted)] px-3 py-3">
+              <dt className="text-[var(--lila-text-muted)]">Статус</dt>
+              <dd className="mt-1 font-semibold text-[var(--lila-text-primary)]">{roomStatusLabel[currentRoom.room.status]}</dd>
+            </div>
+            <div className="rounded-2xl bg-[var(--lila-surface-muted)] px-3 py-3">
+              <dt className="text-[var(--lila-text-muted)]">Зʼєднання</dt>
+              <dd className="mt-1 font-semibold text-[var(--lila-text-primary)]">{roomConnectionLabel}</dd>
+            </div>
+            <div className="rounded-2xl bg-[var(--lila-surface-muted)] px-3 py-3">
+              <dt className="text-[var(--lila-text-muted)]">Поточний хід</dt>
+              <dd className="mt-1 font-semibold text-[var(--lila-text-primary)]">{currentTurnPlayer?.displayName ?? '—'}</dd>
+            </div>
+          </dl>
+        </section>
 
-      <section className="lila-list-card p-4">
-        <p className="lila-utility-label">Запрошення</p>
-        <p className="mt-2 break-all text-xs leading-5 text-[var(--lila-text-muted)]">{joinLink}</p>
-        <div className="mt-3 grid gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              void copyInviteLink();
-            }}
-            className="lila-primary-button px-4 py-3 text-sm font-semibold"
-          >
-            {inviteCopied ? 'Посилання скопійовано' : 'Скопіювати посилання'}
-          </button>
-          <button
-            type="button"
-            onClick={openInviteInTelegram}
-            className="lila-secondary-button px-4 py-3 text-sm font-medium"
-          >
-            Відкрити invite в Telegram
-          </button>
-          <div className="grid gap-2 sm:grid-cols-2">
+        <section className="lila-list-card p-4">
+          <p className="lila-utility-label">Запрошення</p>
+          <p className="mt-2 break-all text-xs leading-5 text-[var(--lila-text-muted)]">{joinLink}</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => {
+                void copyInviteLink();
+              }}
+              className="lila-primary-button px-4 py-3 text-sm font-semibold"
+            >
+              {inviteCopied ? 'Посилання скопійовано' : 'Скопіювати посилання'}
+            </button>
+            <button
+              type="button"
+              onClick={openInviteInTelegram}
+              className="lila-secondary-button px-4 py-3 text-sm font-medium"
+            >
+              Відкрити invite в Telegram
+            </button>
             <a
               href={botInviteUrl}
               target="_blank"
@@ -742,166 +750,166 @@ export const HostRoomPage = () => {
               Канал про гру
             </a>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      {isCurrentUserHost && (
-        <section className="lila-list-card p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="lila-utility-label">Керуйте сесією</p>
-              <h3 className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Ритм кімнати</h3>
+      <div className="grid gap-3 content-start">
+        {isCurrentUserHost && (
+          <section className="lila-list-card p-4">
+            <p className="lila-utility-label">Керуйте сесією</p>
+            <h3 className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Ритм кімнати</h3>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => void hostStartGame()}
+                disabled={currentRoom.room.status === 'in_progress'}
+                className="lila-primary-button px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Почати гру
+              </button>
+              <button
+                type="button"
+                onClick={() => void hostPauseGame()}
+                disabled={!hostCanPause || currentRoom.room.status !== 'in_progress'}
+                className="lila-secondary-button px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Пауза
+              </button>
+              <button
+                type="button"
+                onClick={() => void hostResumeGame()}
+                disabled={currentRoom.room.status !== 'paused'}
+                className="lila-secondary-button px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Продовжити
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (finishRequested) {
+                    return;
+                  }
+                  setFinishRequested(true);
+                  void hostFinishGame().finally(() => {
+                    setFinishRequested(false);
+                  });
+                }}
+                disabled={finishRequested || currentRoom.room.status === 'finished'}
+                className="rounded-[18px] border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {finishRequested ? 'Завершуємо...' : 'Завершити кімнату'}
+              </button>
             </div>
-          </div>
 
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => void hostStartGame()}
-              disabled={currentRoom.room.status === 'in_progress'}
-              className="lila-primary-button px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Почати гру
-            </button>
-            <button
-              type="button"
-              onClick={() => void hostPauseGame()}
-              disabled={!hostCanPause || currentRoom.room.status !== 'in_progress'}
-              className="lila-secondary-button px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Пауза
-            </button>
-            <button
-              type="button"
-              onClick={() => void hostResumeGame()}
-              disabled={currentRoom.room.status !== 'paused'}
-              className="lila-secondary-button px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Продовжити
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (finishRequested) {
-                  return;
-                }
-                setFinishRequested(true);
-                void hostFinishGame().finally(() => {
-                  setFinishRequested(false);
-                });
-              }}
-              disabled={finishRequested || currentRoom.room.status === 'finished'}
-              className="rounded-[18px] border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {finishRequested ? 'Завершуємо...' : 'Завершити кімнату'}
-            </button>
-          </div>
+            <div className="mt-3 grid gap-2">
+              <label className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--lila-border-soft)] px-3 py-2 text-sm text-[var(--lila-text-primary)]">
+                <span>Ведучий може закривати будь-яку картку</span>
+                <input
+                  type="checkbox"
+                  checked={currentRoom.gameState.settings.allowHostCloseAnyCard}
+                  onChange={(event) => {
+                    void hostUpdateSettings({ allowHostCloseAnyCard: event.target.checked });
+                  }}
+                />
+              </label>
+              <label className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--lila-border-soft)] px-3 py-2 text-sm text-[var(--lila-text-primary)]">
+                <span>Дозволити паузу для цієї кімнати</span>
+                <input
+                  type="checkbox"
+                  checked={currentRoom.gameState.settings.hostCanPause}
+                  onChange={(event) => {
+                    void hostUpdateSettings({ hostCanPause: event.target.checked });
+                  }}
+                />
+              </label>
+            </div>
+          </section>
+        )}
 
-          <div className="mt-3 space-y-2">
-            <label className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--lila-border-soft)] px-3 py-2 text-sm text-[var(--lila-text-primary)]">
-              <span>Ведучий може закривати будь-яку картку</span>
-              <input
-                type="checkbox"
-                checked={currentRoom.gameState.settings.allowHostCloseAnyCard}
-                onChange={(event) => {
-                  void hostUpdateSettings({ allowHostCloseAnyCard: event.target.checked });
-                }}
-              />
-            </label>
-            <label className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--lila-border-soft)] px-3 py-2 text-sm text-[var(--lila-text-primary)]">
-              <span>Дозволити паузу для цієї кімнати</span>
-              <input
-                type="checkbox"
-                checked={currentRoom.gameState.settings.hostCanPause}
-                onChange={(event) => {
-                  void hostUpdateSettings({ hostCanPause: event.target.checked });
-                }}
-              />
-            </label>
-          </div>
-        </section>
-      )}
-
-      <section className="lila-list-card p-4">
-        <p className="lila-utility-label">Вигляд</p>
-        <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
-          Локальна тема та атмосфера для цього клієнта, без дублювання на головному полотні.
-        </p>
-        <button
-          type="button"
-          onClick={() => setShowAppearanceModal(true)}
-          className="lila-secondary-button mt-3 w-full px-4 py-3 text-sm font-medium"
-        >
-          Відкрити appearance studio
-        </button>
-      </section>
-
-      {currentRoom.room.status === 'finished' && (
-        <section className="rounded-[22px] border border-emerald-300/60 bg-emerald-50/75 p-4">
-          <h3 className="text-base font-semibold text-emerald-900">Кімнату завершено</h3>
-          <p className="mt-1 text-sm text-emerald-900/80">
-            Сесію закрито. Нові гравці більше не можуть приєднатися.
+        <section className="lila-list-card p-4">
+          <p className="lila-utility-label">Вигляд</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
+            Локальна тема та атмосфера для цього клієнта, без дублювання на головному полотні.
           </p>
+          <button
+            type="button"
+            onClick={() => setShowAppearanceModal(true)}
+            className="lila-secondary-button mt-3 w-full px-4 py-3 text-sm font-medium"
+          >
+            Відкрити appearance studio
+          </button>
         </section>
-      )}
+
+        {currentRoom.room.status === 'finished' && (
+          <section className="rounded-[22px] border border-emerald-300/60 bg-emerald-50/75 p-4">
+            <h3 className="text-base font-semibold text-emerald-900">Кімнату завершено</h3>
+            <p className="mt-1 text-sm text-emerald-900/80">
+              Сесію закрито. Нові гравці більше не можуть приєднатися.
+            </p>
+          </section>
+        )}
+      </div>
     </div>
   );
 
   const playersPanelContent = (
-    <div className="space-y-3">
-      <section className="lila-list-card p-4">
-        <p className="lila-utility-label">Моя фішка</p>
-        <h2 className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Колір токена</h2>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {ROOM_TOKEN_COLOR_PALETTE.map((color) => (
-            <button
-              key={color}
-              type="button"
-              onClick={() => void updatePlayerTokenColor(color)}
-              className={`h-10 w-10 rounded-full border-2 transition ${selfPlayer?.tokenColor === color ? 'scale-110 border-[var(--lila-accent)]' : 'border-white/60'}`}
-              style={{ backgroundColor: color }}
-              aria-label={`Token color ${color}`}
-            />
-          ))}
-        </div>
-      </section>
-
-      {isCurrentUserHost && (
+    <div className="grid h-full gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+      <div className="grid gap-3 content-start">
         <section className="lila-list-card p-4">
-          <p className="lila-utility-label">Host-controlled</p>
-          <h3 className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Додайте гравця</h3>
-          <div className="mt-3 flex gap-2">
-            <input
-              value={hostControlledDraftName}
-              onChange={(event) => setHostControlledDraftName(event.target.value)}
-              placeholder="Імʼя гравця"
-              className="lila-field min-w-0 flex-1 px-3 py-3 text-sm text-[var(--lila-text-primary)]"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                const name = hostControlledDraftName.trim();
-                if (!name) {
-                  return;
-                }
-                void addHostControlledPlayer(name).then(() => setHostControlledDraftName(''));
-              }}
-              className="lila-primary-button px-4 py-3 text-sm font-semibold"
-            >
-              Додати
-            </button>
+          <p className="lila-utility-label">Моя фішка</p>
+          <h2 className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Колір токена</h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {ROOM_TOKEN_COLOR_PALETTE.map((color) => (
+              <button
+                key={color}
+                type="button"
+                onClick={() => void updatePlayerTokenColor(color)}
+                className={`h-10 w-10 rounded-full border-2 transition ${selfPlayer?.tokenColor === color ? 'scale-110 border-[var(--lila-accent)]' : 'border-white/60'}`}
+                style={{ backgroundColor: color }}
+                aria-label={`Token color ${color}`}
+              />
+            ))}
           </div>
-          {hostControlledPlayers.length > 0 && (
-            <p className="mt-2 text-xs leading-5 text-[var(--lila-text-muted)]">
-              Активні: {hostControlledPlayers.map((player) => player.displayName).join(', ')}
-            </p>
-          )}
         </section>
-      )}
 
-      <section className="lila-list-card p-4">
+        {isCurrentUserHost && (
+          <section className="lila-list-card p-4">
+            <p className="lila-utility-label">Host-controlled</p>
+            <h3 className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Додайте гравця</h3>
+            <div className="mt-3 flex gap-2">
+              <input
+                value={hostControlledDraftName}
+                onChange={(event) => setHostControlledDraftName(event.target.value)}
+                placeholder="Імʼя гравця"
+                className="lila-field min-w-0 flex-1 px-3 py-3 text-sm text-[var(--lila-text-primary)]"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const name = hostControlledDraftName.trim();
+                  if (!name) {
+                    return;
+                  }
+                  void addHostControlledPlayer(name).then(() => setHostControlledDraftName(''));
+                }}
+                className="lila-primary-button px-4 py-3 text-sm font-semibold"
+              >
+                Додати
+              </button>
+            </div>
+            {hostControlledPlayers.length > 0 && (
+              <p className="mt-2 text-xs leading-5 text-[var(--lila-text-muted)]">
+                Активні: {hostControlledPlayers.map((player) => player.displayName).join(', ')}
+              </p>
+            )}
+          </section>
+        )}
+      </div>
+
+      <section className="lila-list-card flex min-h-0 flex-col p-4">
         <p className="lila-utility-label">Учасники</p>
-        <ul className="mt-3 space-y-2">
+        <ul className="lila-scroll-pane -mr-1 mt-3 min-h-0 flex-1 space-y-2 pr-1">
           {currentRoom.players.map((player) => {
             const playerState = currentRoom.gameState.perPlayerState[player.userId];
             const isCurrent = player.userId === currentRoom.gameState.currentTurnPlayerId;
@@ -968,14 +976,14 @@ export const HostRoomPage = () => {
   );
 
   const historyPanelContent = (
-    <div className="space-y-3">
+    <div className="grid h-full gap-3 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
       <section className="lila-list-card p-4">
         <p className="lila-utility-label">Останній рух</p>
         <p className="mt-2 text-sm leading-6 text-[var(--lila-text-primary)]">{hostMoveSummary}</p>
       </section>
-      <section className="lila-list-card p-4">
+      <section className="lila-list-card flex min-h-0 flex-col p-4">
         <p className="lila-utility-label">Історія ходів</p>
-        <ul className="mt-3 space-y-2">
+        <ul className="lila-scroll-pane -mr-1 mt-3 min-h-0 flex-1 space-y-2 pr-1">
           {currentRoom.gameState.moveHistory.length === 0 ? (
             <li className="text-sm text-[var(--lila-text-muted)]">Ще немає кидків у цій сесії.</li>
           ) : (
@@ -998,94 +1006,97 @@ export const HostRoomPage = () => {
   );
 
   const notesPanelContent = (
-    <section className="lila-list-card p-4">
-      <p className="lila-utility-label">Приватні нотатки ведучого</p>
-      <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">Видимі лише вам, не показуються гравцям.</p>
-      {hostNotesPlayers.length > 0 ? (
-        <>
-          <select
-            value={selectedHostNotesPlayerId}
-            onChange={(event) => {
-              setSelectedHostNotesPlayerId(event.target.value);
-            }}
-            className="lila-select mt-3 px-3 py-3 text-sm text-[var(--lila-text-primary)]"
-          >
-            {hostNotesPlayers.map((player) => (
-              <option key={player.userId} value={player.userId}>
-                {player.displayName}
-              </option>
-            ))}
-          </select>
-          <textarea
-            value={hostPrivateNote}
-            onChange={(event) => {
-              if (!selectedHostNotesPlayerId) {
-                return;
-              }
-              const nextValue = event.target.value;
-              setHostPrivateNotesDraftByPlayer((previous) => ({
-                ...previous,
-                [selectedHostNotesPlayerId]: nextValue,
-              }));
-            }}
-            placeholder="Спостереження, реакції, фокус для ведення..."
-            className="lila-textarea mt-3 min-h-28 px-3 py-3 text-sm leading-6 text-[var(--lila-text-primary)]"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              if (!selectedHostNotesPlayerId) {
-                return;
-              }
-              setHostNoteStatus('saving');
-              void saveRoomNote({
-                cellNumber: 1,
-                note: hostPrivateNote,
-                scope: 'host_player',
-                targetPlayerId: selectedHostNotesPlayerId,
-              })
-                .then(() => {
-                  setHostNoteStatus('saved');
-                  setHostPrivateNotesDraftByPlayer((previous) => ({
-                    ...previous,
-                    [selectedHostNotesPlayerId]: hostPrivateNote,
-                  }));
-                  window.setTimeout(() => setHostNoteStatus('idle'), 1400);
+    <div className="grid h-full gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <section className="lila-list-card flex min-h-0 flex-col p-4">
+        <p className="lila-utility-label">Приватні нотатки ведучого</p>
+        <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">Видимі лише вам, не показуються гравцям.</p>
+        {hostNotesPlayers.length > 0 ? (
+          <div className="mt-3 flex min-h-0 flex-1 flex-col">
+            <select
+              value={selectedHostNotesPlayerId}
+              onChange={(event) => {
+                setSelectedHostNotesPlayerId(event.target.value);
+              }}
+              className="lila-select px-3 py-3 text-sm text-[var(--lila-text-primary)]"
+            >
+              {hostNotesPlayers.map((player) => (
+                <option key={player.userId} value={player.userId}>
+                  {player.displayName}
+                </option>
+              ))}
+            </select>
+            <textarea
+              value={hostPrivateNote}
+              onChange={(event) => {
+                if (!selectedHostNotesPlayerId) {
+                  return;
+                }
+                const nextValue = event.target.value;
+                setHostPrivateNotesDraftByPlayer((previous) => ({
+                  ...previous,
+                  [selectedHostNotesPlayerId]: nextValue,
+                }));
+              }}
+              placeholder="Спостереження, реакції, фокус для ведення..."
+              className="lila-textarea mt-3 min-h-[13rem] flex-1 px-3 py-3 text-sm leading-6 text-[var(--lila-text-primary)]"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (!selectedHostNotesPlayerId) {
+                  return;
+                }
+                setHostNoteStatus('saving');
+                void saveRoomNote({
+                  cellNumber: 1,
+                  note: hostPrivateNote,
+                  scope: 'host_player',
+                  targetPlayerId: selectedHostNotesPlayerId,
                 })
-                .catch(() => {
-                  setHostNoteStatus('error');
-                });
-            }}
-            className="lila-primary-button mt-3 w-full px-4 py-3 text-sm font-semibold"
-          >
-            {hostNoteStatus === 'saving' ? 'Збереження...' : 'Зберегти нотатку ведучого'}
-          </button>
-          {hostNoteStatus === 'saved' && (
-            <p className="mt-2 text-xs text-emerald-700">Нотатку збережено.</p>
-          )}
-          {hostNoteStatus === 'error' && (
-            <p className="mt-2 text-xs text-rose-700">Не вдалося зберегти нотатку.</p>
-          )}
-          <div className="mt-3 rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-3">
-            <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--lila-text-muted)]">Збережені нотатки</p>
-            {hostPrivateSavedNotes.length === 0 ? (
-              <p className="mt-2 text-xs text-[var(--lila-text-muted)]">Поки немає збережених нотаток.</p>
-            ) : (
-              <ul className="mt-2 space-y-1">
-                {hostPrivateSavedNotes.map(({ player, text }) => (
-                  <li key={player.userId} className="text-xs text-[var(--lila-text-primary)]">
-                    <span className="font-semibold">{player.displayName}:</span>{' '}
-                    <span className="text-[var(--lila-text-muted)]">{text}</span>
-                  </li>
-                ))}
-              </ul>
+                  .then(() => {
+                    setHostNoteStatus('saved');
+                    setHostPrivateNotesDraftByPlayer((previous) => ({
+                      ...previous,
+                      [selectedHostNotesPlayerId]: hostPrivateNote,
+                    }));
+                    window.setTimeout(() => setHostNoteStatus('idle'), 1400);
+                  })
+                  .catch(() => {
+                    setHostNoteStatus('error');
+                  });
+              }}
+              className="lila-primary-button mt-3 w-full px-4 py-3 text-sm font-semibold"
+            >
+              {hostNoteStatus === 'saving' ? 'Збереження...' : 'Зберегти нотатку ведучого'}
+            </button>
+            {hostNoteStatus === 'saved' && (
+              <p className="mt-2 text-xs text-emerald-700">Нотатку збережено.</p>
+            )}
+            {hostNoteStatus === 'error' && (
+              <p className="mt-2 text-xs text-rose-700">Не вдалося зберегти нотатку.</p>
             )}
           </div>
-        </>
-      ) : (
-        <p className="mt-3 text-sm text-[var(--lila-text-muted)]">Зʼявиться, коли в кімнаті буде хоча б один гравець.</p>
-      )}
-    </section>
+        ) : (
+          <p className="mt-3 text-sm text-[var(--lila-text-muted)]">Зʼявиться, коли в кімнаті буде хоча б один гравець.</p>
+        )}
+      </section>
+
+      <section className="lila-list-card flex min-h-0 flex-col p-4">
+        <p className="lila-utility-label">Збережені нотатки</p>
+        {hostPrivateSavedNotes.length === 0 ? (
+          <p className="mt-3 text-sm text-[var(--lila-text-muted)]">Поки немає збережених нотаток.</p>
+        ) : (
+          <ul className="lila-scroll-pane -mr-1 mt-3 min-h-0 flex-1 space-y-2 pr-1">
+            {hostPrivateSavedNotes.map(({ player, text }) => (
+              <li key={player.userId} className="rounded-xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-3 py-2 text-xs text-[var(--lila-text-primary)]">
+                <span className="font-semibold">{player.displayName}:</span>{' '}
+                <span className="text-[var(--lila-text-muted)]">{text}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
   );
 
   const utilityPanelContent = activeUtilityPanel === 'room'
@@ -1097,6 +1108,7 @@ export const HostRoomPage = () => {
         : notesPanelContent;
 
   const currentTurnLabel = currentTurnPlayer?.displayName ?? '—';
+  const activeUtilityTabLabel = utilityTabs.find((tab) => tab.id === activeUtilityPanel)?.label ?? 'Кімната';
   const lastDiceSummary = !lastDiceRoll
     ? 'Без кидків'
     : `${currentRoom.players.find((player) => player.userId === lastDiceRoll.playerId)?.displayName ?? 'Гравець'} · ${lastDiceRoll.diceValues.join(' + ')} = ${lastDiceRoll.dice}`;
@@ -1165,7 +1177,7 @@ export const HostRoomPage = () => {
   })();
 
   const boardHeader = (
-    <header className="space-y-1 px-0.5 pb-0.5">
+    <header className="space-y-2 px-0.5 pb-0.5">
       {error && (
         <p className="rounded-[18px] border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {error}
@@ -1200,23 +1212,24 @@ export const HostRoomPage = () => {
         </div>
       </div>
 
-      <div className="grid gap-2 px-0.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-        <section className="lila-panel-muted min-w-0 p-3">
-          <p className="lila-utility-label">Правила online</p>
-          <div className="mt-2 space-y-1.5 text-xs leading-5 text-[var(--lila-text-primary)] sm:text-sm">
+      <div className="flex flex-wrap items-center gap-2 px-0.5">
+        <InfoPopover
+          srLabel="Правила online"
+          title="Правила online"
+          buttonClassName="h-8 w-8 min-w-8 px-0 text-xs"
+          panelClassName="sm:w-80"
+        >
+          <div className="space-y-1.5 text-xs leading-5 text-[var(--lila-text-primary)] sm:text-sm">
             {onlineRules.map((rule) => (
               <p key={rule}>{rule}</p>
             ))}
           </div>
-        </section>
-
-        <div className="flex flex-wrap gap-2 sm:max-w-[20rem] sm:justify-end">
-          <span className="lila-badge">Хід: {currentTurnLabel}</span>
-          <span className="lila-badge">{lastDiceSummary}</span>
-          {activeCard ? (
-            <span className="lila-badge">Відкрита картка · {activeCard.cellNumber}</span>
-          ) : null}
-        </div>
+        </InfoPopover>
+        <span className="lila-badge">Хід: {currentTurnLabel}</span>
+        <span className="lila-badge max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{lastDiceSummary}</span>
+        {connectionNeedsAttention ? (
+          <span className="lila-badge">{roomConnectionLabel}</span>
+        ) : null}
       </div>
     </header>
   );
@@ -1257,16 +1270,22 @@ export const HostRoomPage = () => {
   );
 
   const controlsPanel = (
-    <section className="flex h-full min-h-0 flex-col gap-2">
+    <section className="grid h-full min-h-0 content-start gap-2" data-testid="host-room-controls-panel">
       <section className="lila-paper-card p-3">
         <p className="lila-utility-label">Наступна дія</p>
         <h2 className="mt-2 text-lg font-black uppercase tracking-[-0.04em] text-[var(--lila-text-primary)]">
           {nextActionLabel}
         </h2>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <span className="lila-badge">{connectionState}</span>
-          {currentRoom.room.status === 'finished' ? <span className="lila-badge">Сесію завершено</span> : null}
-        </div>
+        {connectionNeedsAttention ? (
+          <p className="mt-3 rounded-[18px] border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
+            {roomConnectionLabel}
+          </p>
+        ) : null}
+        {currentRoom.room.status === 'finished' ? (
+          <p className="mt-3 rounded-[18px] border border-[var(--lila-border-soft)] bg-[var(--lila-surface-muted)] px-3 py-2 text-xs leading-5 text-[var(--lila-text-muted)]">
+            Сесію завершено.
+          </p>
+        ) : null}
 
         {isCurrentUserHost && playerEntries.length > 0 && currentRoom.room.status === 'in_progress' && (
           <select
@@ -1284,7 +1303,7 @@ export const HostRoomPage = () => {
 
         {isCurrentUserHost && playerEntries.length > 0 && currentRoom.room.status === 'in_progress' && (
           <p className="mt-2 text-xs leading-5 text-[var(--lila-text-muted)]">
-            Ведучий може кинути за будь-якого гравця, але хід спрацює тільки коли цей гравець активний у черзі.
+            Ведучий кидає лише за активного гравця в черзі.
           </p>
         )}
 
@@ -1327,13 +1346,13 @@ export const HostRoomPage = () => {
 
       <section className="lila-list-card p-3">
         <p className="lila-utility-label">Меню кімнати</p>
-        <div className="mt-2 grid gap-2">
+        <div className="mt-3 grid grid-cols-2 gap-2">
           {utilityTabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => openUtilityPanel(tab.id)}
-              className="lila-secondary-button px-3 py-2.5 text-sm font-medium"
+              className="lila-secondary-button px-3 py-2.5 text-xs font-medium"
             >
               {tab.label}
             </button>
@@ -1401,12 +1420,17 @@ export const HostRoomPage = () => {
       <CompactPanelModal
         open={showUtilityModal}
         eyebrow="Host Room"
-        title={`Кімната ${currentRoom.room.code}`}
+        title={`${activeUtilityTabLabel} · ${currentRoom.room.code}`}
         onClose={() => setShowUtilityModal(false)}
+        panelClassName="max-h-[90dvh] max-w-4xl"
+        bodyClassName="flex-1 overflow-hidden"
+        scrollBody={false}
       >
-        {utilityTabsNav}
-        <div className="mt-4">
-          {utilityPanelContent}
+        <div className="flex h-full min-h-0 flex-col">
+          {utilityTabsNav}
+          <div className="mt-4 min-h-0 flex-1 overflow-hidden">
+            {utilityPanelContent}
+          </div>
         </div>
       </CompactPanelModal>
 
@@ -1448,34 +1472,15 @@ export const HostRoomPage = () => {
         )}
       </AnimatePresence>
 
-      {isCurrentUserHost && activeCard && activePlayer && (
-        <div className="pointer-events-none fixed bottom-4 right-4 z-40 hidden rounded-2xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)]/95 px-4 py-3 shadow-lg lg:block">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--lila-text-muted)]">Відкрита картка</p>
-          <p className="text-sm font-semibold text-[var(--lila-text-primary)]">
-            Клітина {activeCard.cellNumber} · {activePlayer.displayName}
-          </p>
-        </div>
-      )}
-
-      <AnimatePresence>
-        {showAppearanceModal && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/35 p-3">
-            <div className="max-h-[88dvh] w-full max-w-[560px] overflow-y-auto rounded-3xl border border-[var(--lila-border-soft)] bg-[var(--lila-surface)] p-4 shadow-[0_28px_64px_rgba(20,18,24,0.35)]">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-[var(--lila-text-primary)]">Appearance Studio</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowAppearanceModal(false)}
-                  className="rounded-xl border border-[var(--lila-border-soft)] px-3 py-1.5 text-xs text-[var(--lila-text-primary)]"
-                >
-                  Закрити
-                </button>
-              </div>
-              <AppearanceCustomizationPanel defaultExpanded title="Ваш локальний вигляд та атмосферa" />
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
+      <CompactPanelModal
+        open={showAppearanceModal}
+        eyebrow="Appearance Studio"
+        title="Ваш локальний вигляд та атмосфера"
+        onClose={() => setShowAppearanceModal(false)}
+        panelClassName="max-w-[560px]"
+      >
+        <AppearanceCustomizationPanel defaultExpanded title="Ваш локальний вигляд та атмосфера" />
+      </CompactPanelModal>
     </>
   );
 };

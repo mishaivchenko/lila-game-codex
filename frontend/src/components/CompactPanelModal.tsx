@@ -6,6 +6,9 @@ interface CompactPanelModalProps {
   eyebrow?: string;
   title: string;
   onClose: () => void;
+  panelClassName?: string;
+  bodyClassName?: string;
+  scrollBody?: boolean;
   children: ReactNode;
 }
 
@@ -14,6 +17,9 @@ export const CompactPanelModal = ({
   eyebrow,
   title,
   onClose,
+  panelClassName,
+  bodyClassName,
+  scrollBody = true,
   children,
 }: CompactPanelModalProps) => {
   if (!open) {
@@ -28,7 +34,7 @@ export const CompactPanelModal = ({
       exit={{ opacity: 0 }}
     >
       <motion.section
-        className="lila-panel flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden p-4 sm:p-5"
+        className={`lila-panel flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden p-4 sm:p-5 ${panelClassName ?? ''}`}
         initial={{ opacity: 0, y: 18, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 10, scale: 0.99 }}
@@ -45,7 +51,7 @@ export const CompactPanelModal = ({
           </button>
         </div>
 
-        <div className="lila-scroll-pane mt-4 min-h-0 flex-1 pr-1">
+        <div className={`${scrollBody ? 'lila-scroll-pane pr-1' : 'overflow-hidden'} mt-4 min-h-0 flex-1 ${bodyClassName ?? ''}`}>
           {children}
         </div>
       </motion.section>
