@@ -12,6 +12,7 @@ import {
   sumDiceValues,
 } from './diceRoll';
 import { transitionDiceRollLifecycle, type DiceRollLifecycleState } from './useDiceRollLifecycle';
+import { resolveDiceStyle, useBoardTheme } from '../../theme';
 
 interface Dice3DProps {
   rollToken: number;
@@ -28,6 +29,9 @@ interface DiceSceneProps {
   offsetX: number;
   offsetZ: number;
   tiltOffset: number;
+  bodyColor: string;
+  faceInsetColor: string;
+  pipColor: string;
 }
 
 const FACE_MAP: Record<number, { position: [number, number, number]; rotation: [number, number, number] }> = {
@@ -65,7 +69,16 @@ const layoutByCount = (count: number): Array<{ x: number; z: number; tilt: numbe
   ];
 };
 
-const DiceBody = ({ targetValue, rolling, offsetX, offsetZ, tiltOffset }: DiceSceneProps) => {
+const DiceBody = ({
+  targetValue,
+  rolling,
+  offsetX,
+  offsetZ,
+  tiltOffset,
+  bodyColor,
+  faceInsetColor,
+  pipColor,
+}: DiceSceneProps) => {
   const groupRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Group>(null);
   const startTimeRef = useRef(0);
@@ -161,11 +174,11 @@ const DiceBody = ({ targetValue, rolling, offsetX, offsetZ, tiltOffset }: DiceSc
     <group ref={groupRef}>
       <group ref={bodyRef}>
         <RoundedBox args={[1, 1, 1]} radius={0.17} smoothness={6} castShadow receiveShadow>
-          <meshStandardMaterial color="#1f242d" roughness={0.4} metalness={0.2} />
+          <meshStandardMaterial color={bodyColor} roughness={0.4} metalness={0.2} />
         </RoundedBox>
         <mesh position={[0.02, 0.03, 0.03]}>
           <boxGeometry args={[0.96, 0.96, 0.96]} />
-          <meshStandardMaterial color="#2b313b" roughness={0.5} metalness={0.15} transparent opacity={0.2} />
+          <meshStandardMaterial color={faceInsetColor} roughness={0.5} metalness={0.15} transparent opacity={0.2} />
         </mesh>
       </group>
 
@@ -181,7 +194,7 @@ const DiceBody = ({ targetValue, rolling, offsetX, offsetZ, tiltOffset }: DiceSc
             {pips.map(([x, y], index) => (
               <mesh key={`${faceValue}-${index}`} position={[x, y, 0.014]}>
                 <sphereGeometry args={[0.055, 18, 18]} />
-                <meshStandardMaterial color="#f3f4f6" roughness={0.2} metalness={0.1} />
+                <meshStandardMaterial color={pipColor} roughness={0.2} metalness={0.1} />
               </mesh>
             ))}
           </group>
@@ -192,6 +205,8 @@ const DiceBody = ({ targetValue, rolling, offsetX, offsetZ, tiltOffset }: DiceSc
 };
 
 export const Dice3D = ({ rollToken, diceValues, onResult, onAnimationComplete, onFinished, className }: Dice3DProps) => {
+  const { theme } = useBoardTheme();
+  const diceStyle = useMemo(() => resolveDiceStyle(theme), [theme]);
   const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
   const [targetValues, setTargetValues] = useState<number[]>([1]);
@@ -269,13 +284,21 @@ export const Dice3D = ({ rollToken, diceValues, onResult, onAnimationComplete, o
   return (
     <div className={`pointer-events-none fixed inset-0 z-[60] flex items-start justify-center ${className ?? ''}`}>
       <div
+        data-testid="dice3d-panel"
         className={`pointer-events-auto mt-4 h-52 w-52 transition-opacity duration-500 sm:mt-8 sm:h-60 sm:w-60 ${
           fading ? 'opacity-0' : 'opacity-100'
         }`}
+        style={{
+          background: diceStyle.shellBackground,
+          border: `1px solid ${diceStyle.shellBorder}`,
+          boxShadow: diceStyle.shellShadow,
+          borderRadius: '30px',
+          padding: '0.55rem',
+        }}
       >
-      <Canvas shadows camera={{ position: [2.4, 2.3, 3.1], fov: 42 }}>
-          <ambientLight intensity={0.55} />
-          <hemisphereLight intensity={0.35} color="#eef2ff" groundColor="#111827" />
+        <Canvas shadows camera={{ position: [2.4, 2.3, 3.1], fov: 42 }}>
+          <ambientLight intensity={0.55} color={diceStyle.ambientLightColor} />
+          <hemisphereLight intensity={0.35} color={diceStyle.ambientLightColor} groundColor={diceStyle.groundColor} />
           <directionalLight
             castShadow
             intensity={1.15}
@@ -295,6 +318,9 @@ export const Dice3D = ({ rollToken, diceValues, onResult, onAnimationComplete, o
                 offsetX={baseLayout.x + jitter.x}
                 offsetZ={baseLayout.z + jitter.z}
                 tiltOffset={baseLayout.tilt + jitter.tilt}
+                bodyColor={diceStyle.bodyColor}
+                faceInsetColor={diceStyle.faceInsetColor}
+                pipColor={diceStyle.pipColor}
               />
             );
           })}
@@ -309,6 +335,10 @@ export const Dice3D = ({ rollToken, diceValues, onResult, onAnimationComplete, o
               lifecycleState === 'settled' ? 'opacity-100' : 'opacity-0'
             }`}
             data-testid="dice-sum"
+            style={{
+              background: diceStyle.sumBadgeBackground,
+              color: diceStyle.sumBadgeText,
+            }}
           >
             Сума: {sumDiceValues(targetValues)}
           </div>

@@ -16,6 +16,7 @@ import {
 } from '../lib/animations/lilaMotion';
 import { DEFAULT_CARD_LOADING_SETTINGS } from '../lib/animations/modalSettings';
 import { useBoardTheme } from '../theme';
+import { InfoPopover } from './InfoPopover';
 
 interface CellCoachModalProps {
   cellNumber: number;
@@ -225,16 +226,21 @@ export const CellCoachModal = ({
     >
       <motion.div
         data-testid="cell-coach-modal-shell"
-        className={`relative w-full max-h-[95vh] overflow-hidden shadow-[0_30px_80px_rgba(22,16,35,0.36)] sm:max-h-[92vh] sm:max-w-[1180px] ${theme.modal.radiusClassName}`}
+        className={`relative w-full max-h-[95vh] overflow-hidden p-[1px] shadow-[0_30px_80px_rgba(22,16,35,0.36)] sm:max-h-[92vh] sm:max-w-[1180px] ${theme.modal.radiusClassName}`}
         style={{
-          background: theme.modal.panelBackground,
-          border: `1px solid ${theme.modal.panelBorder}`,
+          background: `linear-gradient(180deg, ${theme.modal.panelBorder}, ${theme.modal.panelBackground})`,
           margin: `${theme.modal.viewportMarginPx}px`,
         }}
         variants={modalPanelVariants}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex max-h-[95vh] flex-col overflow-hidden sm:max-h-[92vh] sm:flex-row">
+        <div
+          data-testid="cell-coach-modal-frame"
+          className={`flex max-h-[95vh] flex-col overflow-hidden sm:max-h-[92vh] sm:flex-row ${theme.modal.radiusClassName}`}
+          style={{
+            background: theme.modal.panelBackground,
+          }}
+        >
           <section
             className="relative w-full shrink-0 border-b p-3 sm:w-[42%] sm:border-b-0 sm:border-r sm:p-5"
             style={{
@@ -322,103 +328,107 @@ export const CellCoachModal = ({
                   </div>
                   <span className="lila-badge self-start">Клітина {cellNumber}</span>
                 </div>
-                <p className="max-w-2xl text-sm leading-6" style={{ color: contentPanelMuted }}>
-                  Внутрішній scroll лишається тільки тут: картка може бути глибокою, але основний game shell не втрачає one-screen rhythm.
-                </p>
               </div>
 
-            {moveContext && (
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="lila-badge">
-                  Хід: {moveContext.pathLabel ?? `${moveContext.fromCell} ${movePresentation?.symbol ?? '→'} ${moveContext.toCell}`}
-                </p>
-                {movePresentation && moveContext.type !== 'normal' && (
-                  <span className={`rounded-full px-3 py-1.5 text-xs font-medium ${movePresentation.badgeClassName}`}>
-                    {movePresentation.icon} {movePresentation.label} {movePresentation.symbol}
-                  </span>
+              {moveContext && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="lila-badge">
+                    Хід: {moveContext.pathLabel ?? `${moveContext.fromCell} ${movePresentation?.symbol ?? '→'} ${moveContext.toCell}`}
+                  </p>
+                  {movePresentation && moveContext.type !== 'normal' && (
+                    <span className={`rounded-full px-3 py-1.5 text-xs font-medium ${movePresentation.badgeClassName}`}>
+                      {movePresentation.icon} {movePresentation.label} {movePresentation.symbol}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div
+                data-testid="cell-coach-modal-content-card"
+                className="lila-list-card p-4 sm:p-5"
+                style={{
+                  background: contentCardBackground,
+                  border: `1px solid ${contentPanelBorder}`,
+                  boxShadow: contentCardShadow,
+                }}
+              >
+                <MarkdownText
+                  source={combinedMarkdown}
+                  primaryColor={isDarkFramedBlend ? contentPanelText : undefined}
+                  mutedColor={isDarkFramedBlend ? '#6d5f69' : undefined}
+                />
+              </div>
+
+              <textarea
+                className="lila-textarea min-h-32 max-h-[42vh] w-full resize-y overflow-y-auto px-4 py-3 text-[15px] leading-6 placeholder:text-[color:var(--lila-text-muted)]"
+                value={text}
+                onChange={(event) => {
+                  setText(event.target.value);
+                  if (validationError) {
+                    setValidationError(undefined);
+                  }
+                }}
+                placeholder="Напишіть 1-2 чесні речення. Не обов'язково ідеально."
+                readOnly={readOnly}
+                lang="uk"
+                autoCapitalize="sentences"
+                spellCheck
+                style={{
+                  background: textareaBackground,
+                  color: textareaText,
+                  border: `1px solid ${textareaBorder}`,
+                  boxShadow: isDarkFramedBlend ? 'inset 0 1px 0 rgba(255,255,255,0.72)' : undefined,
+                }}
+              />
+              {validationError && (
+                <p className="text-sm text-amber-700">{validationError}</p>
+              )}
+
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <motion.button
+                  className="lila-primary-button flex-1 px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  type="button"
+                  onClick={handleSave}
+                  disabled={readOnly && text.trim().length === 0}
+                  style={primaryButtonStyle}
+                  whileTap={buttonTapScale}
+                  whileHover={buttonHoverScale}
+                >
+                  {readOnly ? 'Зберегти зміни' : 'Зберегти і продовжити'}
+                </motion.button>
+                {!readOnly && (
+                  <div className="flex items-center gap-2">
+                    <motion.button
+                      className="lila-secondary-button px-4 py-3 text-sm font-medium"
+                      type="button"
+                      onClick={onSkip}
+                      style={
+                        isDarkFramedBlend
+                          ? {
+                              background: 'rgba(255,255,255,0.92)',
+                              color: contentPanelText,
+                              border: `1px solid ${contentPanelBorder}`,
+                            }
+                          : undefined
+                      }
+                      whileTap={buttonTapScale}
+                      whileHover={buttonHoverScale}
+                    >
+                      Пропустити
+                    </motion.button>
+                    <InfoPopover
+                      srLabel="Що означає пропустити картку"
+                      title="Пропустити"
+                      align="end"
+                      buttonClassName="h-11 w-11 min-w-11 px-0"
+                    >
+                      <p className="text-sm leading-6" style={{ color: contentPanelMuted }}>
+                        Це нормально. Ви зможете повернутися до цієї клітини в «Мій шлях».
+                      </p>
+                    </InfoPopover>
+                  </div>
                 )}
               </div>
-            )}
-
-            <div
-              className="lila-list-card p-4 sm:p-5"
-              style={{
-                background: contentCardBackground,
-                border: `1px solid ${contentPanelBorder}`,
-                boxShadow: contentCardShadow,
-              }}
-            >
-              <MarkdownText
-                source={combinedMarkdown}
-                primaryColor={isDarkFramedBlend ? contentPanelText : undefined}
-                mutedColor={isDarkFramedBlend ? '#6d5f69' : undefined}
-              />
-            </div>
-
-            <textarea
-              className="lila-textarea min-h-32 max-h-[42vh] w-full resize-y overflow-y-auto px-4 py-3 text-[15px] leading-6 placeholder:text-[color:var(--lila-text-muted)]"
-              value={text}
-              onChange={(event) => {
-                setText(event.target.value);
-                if (validationError) {
-                  setValidationError(undefined);
-                }
-              }}
-              placeholder="Напишіть 1-2 чесні речення. Не обов'язково ідеально."
-              readOnly={readOnly}
-              lang="uk"
-              autoCapitalize="sentences"
-              spellCheck
-              style={{
-                background: textareaBackground,
-                color: textareaText,
-                border: `1px solid ${textareaBorder}`,
-                boxShadow: isDarkFramedBlend ? 'inset 0 1px 0 rgba(255,255,255,0.72)' : undefined,
-              }}
-            />
-            {validationError && (
-              <p className="text-sm text-amber-700">{validationError}</p>
-            )}
-
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <motion.button
-                className="lila-primary-button flex-1 px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-                type="button"
-                onClick={handleSave}
-                disabled={readOnly && text.trim().length === 0}
-                style={primaryButtonStyle}
-                whileTap={buttonTapScale}
-                whileHover={buttonHoverScale}
-              >
-                {readOnly ? 'Зберегти зміни' : 'Зберегти і продовжити'}
-              </motion.button>
-              {!readOnly && (
-                <motion.button
-                  className="lila-secondary-button px-4 py-3 text-sm font-medium"
-                type="button"
-                onClick={onSkip}
-                style={
-                  isDarkFramedBlend
-                    ? {
-                        background: 'rgba(255,255,255,0.92)',
-                        color: contentPanelText,
-                        border: `1px solid ${contentPanelBorder}`,
-                      }
-                    : undefined
-                }
-                whileTap={buttonTapScale}
-                whileHover={buttonHoverScale}
-              >
-                  Пропустити
-                </motion.button>
-              )}
-            </div>
-
-            {!readOnly && (
-              <p className="text-sm leading-6" style={{ color: contentPanelMuted }}>
-                Це нормально. Ви зможете повернутися до цієї клітини в «Мій шлях».
-              </p>
-            )}
             </div>
           </section>
         </div>

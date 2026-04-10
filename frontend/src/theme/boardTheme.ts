@@ -52,6 +52,19 @@ export interface TokenStyle {
   palette: { id: string; label: string; value: string }[];
 }
 
+export interface DiceStyle {
+  shellBackground: string;
+  shellBorder: string;
+  shellShadow: string;
+  bodyColor: string;
+  faceInsetColor: string;
+  pipColor: string;
+  ambientLightColor: string;
+  groundColor: string;
+  sumBadgeBackground: string;
+  sumBadgeText: string;
+}
+
 export interface ModalStyle {
   radiusClassName: string;
   panelBackground: string;
@@ -102,6 +115,7 @@ export interface BoardTheme {
   snake: SnakeStyle;
   stairs: StairsStyle;
   token: TokenStyle;
+  dice?: DiceStyle;
   modal: ModalStyle;
   typography: BoardThemeTypographyRef;
   layout: BoardLayoutStyle;
@@ -145,6 +159,19 @@ const DEFAULT_TOKEN_PALETTE: TokenStyle['palette'] = [
   { id: 'sage', label: 'Sage', value: '#79a39a' },
   { id: 'amber', label: 'Amber', value: '#d5ab73' },
 ];
+
+export const DEFAULT_DICE_STYLE: DiceStyle = {
+  shellBackground: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(242,233,250,0.98))',
+  shellBorder: 'rgba(216, 205, 230, 0.92)',
+  shellShadow: '0 18px 36px rgba(92, 74, 137, 0.2)',
+  bodyColor: '#6e59a6',
+  faceInsetColor: '#8b76c0',
+  pipColor: '#f7f5ff',
+  ambientLightColor: '#f4efff',
+  groundColor: '#241a35',
+  sumBadgeBackground: 'rgba(79, 63, 119, 0.84)',
+  sumBadgeText: '#fffaf7',
+};
 
 export const DEFAULT_SPIRITUAL_THEME: BoardTheme = {
   id: 'default-spiritual',
@@ -209,6 +236,7 @@ export const DEFAULT_SPIRITUAL_THEME: BoardTheme = {
     snakeCellGlow: 'radial-gradient(circle, rgba(185,122,150,0.2), rgba(185,122,150,0))',
     palette: DEFAULT_TOKEN_PALETTE,
   },
+  dice: DEFAULT_DICE_STYLE,
   modal: {
     radiusClassName: 'rounded-[2rem]',
     panelBackground: '#fffbff',
@@ -288,6 +316,18 @@ export const COSMIC_DARK_THEME: BoardTheme = {
       { id: 'violet', label: 'Violet', value: '#9c89c8' },
     ],
   },
+  dice: {
+    shellBackground: 'linear-gradient(180deg, rgba(40,48,70,0.98), rgba(24,29,43,0.96))',
+    shellBorder: 'rgba(101, 116, 145, 0.92)',
+    shellShadow: '0 20px 40px rgba(10, 14, 24, 0.46)',
+    bodyColor: '#81d7ef',
+    faceInsetColor: '#9ae5f4',
+    pipColor: '#172031',
+    ambientLightColor: '#d7f6ff',
+    groundColor: '#0b1020',
+    sumBadgeBackground: 'rgba(125, 215, 238, 0.22)',
+    sumBadgeText: '#eef9ff',
+  },
   modal: {
     ...DEFAULT_SPIRITUAL_THEME.modal,
     panelBackground: '#202638',
@@ -354,6 +394,18 @@ export const MINIMAL_CREAM_THEME: BoardTheme = {
       { id: 'gold', label: 'Gold', value: '#b58a4f' },
     ],
   },
+  dice: {
+    shellBackground: 'linear-gradient(180deg, rgba(255,249,241,0.98), rgba(244,232,214,0.96))',
+    shellBorder: 'rgba(222, 202, 180, 0.96)',
+    shellShadow: '0 18px 34px rgba(132, 105, 84, 0.2)',
+    bodyColor: '#b58a4f',
+    faceInsetColor: '#d0a56e',
+    pipColor: '#fff8ef',
+    ambientLightColor: '#fff3d7',
+    groundColor: '#4b3b2f',
+    sumBadgeBackground: 'rgba(101, 78, 57, 0.82)',
+    sumBadgeText: '#fff7ee',
+  },
   layout: {
     ...DEFAULT_SPIRITUAL_THEME.layout,
     floatingControlsBackground: 'rgba(249, 242, 234, 0.95)',
@@ -397,6 +449,8 @@ export const resolveTelegramBaseTheme = (colorScheme: 'light' | 'dark' | undefin
 
 export const resolveTokenColor = (theme: BoardTheme, tokenColorId: string | undefined): string =>
   theme.token.palette.find((entry) => entry.id === tokenColorId)?.value ?? theme.token.defaultColor;
+
+export const resolveDiceStyle = (theme: BoardTheme): DiceStyle => theme.dice ?? DEFAULT_DICE_STYLE;
 
 const BOARD_THEME_CSS_VARS: Record<string, BoardThemeCssVars> = {
   'default-spiritual': {
