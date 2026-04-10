@@ -78,7 +78,11 @@ const createPlayer = (index: number): PlayerDraft => ({
 
 const repositories = createRepositories();
 
-export const JourneySetupHub = () => {
+interface JourneySetupHubProps {
+  onOpenAppearanceStudio?: () => void;
+}
+
+export const JourneySetupHub = ({ onOpenAppearanceStudio }: JourneySetupHubProps) => {
   const navigate = useNavigate();
   const { startNewSession, loading } = useGameContext();
   const [activeTab, setActiveTab] = useState<TabId>('simple');
@@ -416,20 +420,48 @@ export const JourneySetupHub = () => {
       )}
 
       {activeTab === 'rules' && (
-        <div className="mt-5 grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1.25fr)_320px]">
-          <div className="lila-list-card lila-scroll-pane min-h-0 p-5">
-            <MarkdownText source={rulesMarkdown} />
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <div className="rounded-[22px] bg-[var(--lila-warning-bg)] p-4 text-sm leading-6 text-[var(--lila-warning-text)]">
-              Якщо щось емоційно непросто, сповільніться. У цій грі цінна не швидкість, а чесний контакт із собою.
+        <div className="mt-5 flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+          <section className="lila-list-card p-4 sm:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="lila-utility-label">Правила гри</p>
+                <h3 className="mt-2 text-xl font-semibold text-[var(--lila-text-primary)] sm:text-2xl">Один екран, чистий фокус, чесний темп</h3>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--lila-text-muted)]">
+                  Довгі пояснення залишаємо всередині окремих scroll-контейнерів, щоб сам екран не ламався і не стрибав.
+                </p>
+              </div>
+              {onOpenAppearanceStudio ? (
+                <button
+                  type="button"
+                  onClick={onOpenAppearanceStudio}
+                  className="lila-secondary-button shrink-0 px-4 py-2.5 text-sm font-medium"
+                >
+                  Тема та вигляд
+                </button>
+              ) : null}
             </div>
-            <div className="lila-list-card lila-scroll-pane min-h-0 p-4 text-sm leading-6 text-[var(--lila-text-muted)]">
-              <p className="lila-utility-label mb-3">8 Levels</p>
-              {chakraLevels.map((item) => (
-                <p key={item} className="mt-2 first:mt-0">{item}</p>
-              ))}
+          </section>
+
+          <div className="grid min-h-0 flex-1 gap-4 overflow-hidden xl:grid-cols-[minmax(0,1.25fr)_320px]">
+            <section className="lila-list-card flex min-h-[18rem] flex-col p-5 xl:min-h-0">
+              <p className="lila-utility-label">Основні правила</p>
+              <div className="lila-scroll-pane -mr-1 mt-4 min-h-0 flex-1 pr-1">
+                <MarkdownText source={rulesMarkdown} />
+              </div>
+            </section>
+
+            <div className="grid min-h-0 gap-4 xl:grid-rows-[auto_minmax(0,1fr)]">
+              <div className="rounded-[22px] bg-[var(--lila-warning-bg)] p-4 text-sm leading-6 text-[var(--lila-warning-text)]">
+                Якщо щось емоційно непросто, сповільніться. У цій грі цінна не швидкість, а чесний контакт із собою.
+              </div>
+              <section className="lila-list-card flex min-h-[14rem] flex-col p-4 text-sm leading-6 text-[var(--lila-text-muted)] xl:min-h-0">
+                <p className="lila-utility-label">8 Levels</p>
+                <div className="lila-scroll-pane -mr-1 mt-3 min-h-0 flex-1 pr-1">
+                  {chakraLevels.map((item) => (
+                    <p key={item} className="mt-2 first:mt-0">{item}</p>
+                  ))}
+                </div>
+              </section>
             </div>
           </div>
         </div>

@@ -62,26 +62,37 @@ export const GameSetupPage = () => {
                 <span className="lila-badge">Один екран</span>
               </div>
 
-              <AppearanceCustomizationPanel className="mt-4" defaultExpanded={false} title="Тема та вигляд" />
+              <section className="lila-list-card mt-4 p-4">
+                <p className="lila-utility-label">Appearance Studio</p>
+                <h2 className="mt-2 text-base font-semibold text-[var(--lila-text-primary)]">Тема та вигляд</h2>
+                <p className="mt-2 text-sm leading-6 text-[var(--lila-text-muted)]">
+                  Відкривається окремо, щоб правила та стартовий екран залишалися спокійними й читабельними.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowAppearanceModal(true)}
+                  className="lila-secondary-button mt-4 w-full px-4 py-3 text-sm font-medium"
+                >
+                  Відкрити appearance studio
+                </button>
+              </section>
             </div>
           </section>
 
           <div className="min-h-0 xl:pr-1">
-            <JourneySetupHub />
+            <JourneySetupHub onOpenAppearanceStudio={() => setShowAppearanceModal(true)} />
           </div>
         </div>
       </div>
 
-      <div className="xl:hidden">
-        <CompactPanelModal
-          open={showAppearanceModal}
-          eyebrow="Appearance Studio"
-          title="Тема та вигляд"
-          onClose={() => setShowAppearanceModal(false)}
-        >
-          <AppearanceCustomizationPanel defaultExpanded title="Тема та вигляд" />
-        </CompactPanelModal>
-      </div>
+      <CompactPanelModal
+        open={showAppearanceModal}
+        eyebrow="Appearance Studio"
+        title="Тема та вигляд"
+        onClose={() => setShowAppearanceModal(false)}
+      >
+        <AppearanceCustomizationPanel defaultExpanded title="Тема та вигляд" />
+      </CompactPanelModal>
     </main>
   );
 };
